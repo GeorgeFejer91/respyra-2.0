@@ -19,14 +19,16 @@ Higher-priority instructions and the current user request always win.
 | Any coding, refactor, fix, or code review | `ponytail` | Required when installed: reuse existing owners, prefer native/standard features, and implement the smallest complete change. If unavailable, disclose that and apply the YAGNI rules in `PROJECT.md`. |
 | Current or uncertain public facts, APIs, standards, libraries, or online research | `multi-source-web-search` | Conditional: open primary sources, run a blind-spot pass for nontrivial work, and cite the pages actually inspected. |
 | Architecture, ownership, contracts, authority, observability, or durable handoff design | `system-engineering` | Conditional when the task materially changes these surfaces. |
-| Large repository inventory, instruction audit, dependency pressure, or broad impact mapping | `rust-work-graph` | Conditional only when repository complexity justifies graph analysis. |
-| HTML/CSS or frontend UI generation | `uncodixfy` | Conditional for visible frontend code; preserve the product's chosen identity. |
 
 ## Project-specific routes
 
-None yet. Add exact identifiers only after the project selects a stack or
-domain that genuinely needs them. Record required vs conditional status,
-nesting order, fallback behavior, and source revision for vendored skills.
+| Work | Skill | Policy |
+| --- | --- | --- |
+| Analyzing or editing session CSVs | `spreadsheets:Spreadsheets` | Conditional for spreadsheet-style data work; keep participant data local unless sharing is explicitly cleared. |
+| Changing study flow, condition ownership, or logged-data contracts | `system-engineering` | Conditional alongside `ponytail`; check experiment and analysis consumers together. |
+
+The repository is small enough for direct source inspection; no graph skill or
+frontend skill is part of its standing route.
 
 ## Supply-chain rule
 

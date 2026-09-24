@@ -6,8 +6,9 @@ A Python workspace for researchers to run and analyze a PsychoPy breathing-belt 
 
 ## Primary goal
 
-Deliver the smallest usable result that satisfies the current user request and
-can be verified at its real output surface.
+Run the configured breathing target-tracking study and inspect its session
+measurements and self-assessments without changing the study protocol by
+accident.
 
 ## Non-goals
 
@@ -16,26 +17,35 @@ can be verified at its real output surface.
 - No second implementation tree or duplicate source of truth.
 - No capability claim without matching evidence.
 
-Add project-specific non-goals only after they prevent a plausible wrong turn.
+- Do not publish raw session recordings or self-assessments from `data/`.
 
 ## Product/control-plane boundary
 
-- Product source and deliverables: outside `for-ai/`; exact roots are
-  **Undecided until the first deliverable selects them**.
+- Product source: `src/mpi/`, `scripts/`, `notebooks/`, and `tests/`.
+- Local session output: `data/` (ignored by Git).
 - Agent orchestration and durable project memory: `for-ai/`.
 - Local generated diagnostics and scratch evidence: `.for-ai-local/` (ignored).
 
 ## Architecture and ownership
 
-The implementation stack, modules, external contracts, and deployment surface
-are currently **Undecided**. Once selected, record only the top-level ownership
-map here and route detailed protocols to task-specific files.
+- Python 3.10 project managed by `uv`; dependencies are declared in
+  `pyproject.toml` and resolved in `uv.lock`.
+- `src/mpi/validation_study_jenny.py` defines study conditions and trial order;
+  `src/mpi/signal.py` provides signal helpers.
+- `scripts/run_experiment.py` runs the belt/PsychoPy task using `respyra`;
+  `scripts/plot_session.py` summarizes session CSVs.
+- `tests/test_signal.py` checks signal helper behavior. A belt and display are
+  needed to verify the experiment itself.
 
 ## Current verified state
 
-- Fresh Git repository initialized on 2026-09-24.
-- AI control plane created and mechanically checked.
-- No product implementation has been scaffolded.
+- Imported source from `MPI-main.zip` on 2026-09-24, excluding the bundled
+  virtual environment and generated files.
+- Raw session files from the archive are present only in the ignored local
+  `data/` directory; their sharing status is **Undecided**.
+- The study module's header says 12 trials per session, while its
+  `build_conditions()` lists 48; the intended protocol needs confirmation.
+- Experiment runtime and hardware behavior have not been verified here.
 
 Git and runnable checks are the authority for branch, revision, and behavior.
 Do not turn this section into a second status ledger.

@@ -12,3 +12,16 @@ Thumbs.db
 *.swp
 *.tmp
 *.log
+
+# Python project and notebook output
+.venv/
+__pycache__/
+*.py[cod]
+build/
+dist/
+wheels/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Session recordings and participant self-assessments stay local
+data/

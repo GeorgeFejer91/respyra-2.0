@@ -29,3 +29,15 @@ For later decisions, add one compact entry with:
 
 Do not rewrite accepted history to hide a changed direction. Add a superseding
 decision and link both entries.
+
+## D-0002 — Keep raw session data local
+
+- Date: 2026-09-24
+- Status: Accepted
+- Context: The imported archive contains session force traces and
+  self-assessments with participant-style identifiers in filenames.
+- Decision: Unpack these files to local `data/` and ignore that directory in
+  Git. Exclude the bundled virtual environment and generated files.
+- Consequences: Source can be shared through the private repository; raw data
+  remains available locally for review and requires a separate sharing decision.
+- Supersedes: None

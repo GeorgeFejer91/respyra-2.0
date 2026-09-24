@@ -43,11 +43,17 @@ the project selects its stack. A syntax check proves syntax; a unit test proves
 its tested logic; neither proves UI, deployment, hardware, performance, safety,
 or scientific validity unless it directly observes that surface.
 
+For signal helpers, run `uv run pytest tests/test_signal.py`. For experiment
+changes, also inspect the configured trial order and logged column contract.
+
 ## Gate 3: integrated readiness
 
 Run proportionate build, test, lint, type, runtime, visual, device, security,
 and compatibility checks for every affected boundary. Do not run an expensive
 or irrelevant full matrix for a documentation-only edit.
+
+The experiment runtime requires a connected breathing belt and a PsychoPy
+display; mark that gate `NOT RUN` when those surfaces are unavailable.
 
 ## Gate 4: publication
 

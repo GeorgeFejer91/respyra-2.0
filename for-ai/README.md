@@ -52,4 +52,5 @@ Created: 2026-09-24
 Repository: https://github.com/GeorgeFejer91/MPI
 Visibility at initialization: private
 
-No product stack or output tree is implied by this bootstrap.
+The imported product is a Python 3.10 PsychoPy/respyra study. See `PROJECT.md`
+for source ownership and the local-data boundary.
