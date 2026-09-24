@@ -114,7 +114,7 @@ if ($LASTEXITCODE -ne 0) {
         $head = (& git -C $root rev-parse HEAD 2>$null).Trim()
         $previousPreference = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
-        $remoteLine = (& git -C $root ls-remote origin refs/heads/main 2>$null | Select-Object -First 1)
+        $remoteLine = & git -C $root ls-remote origin refs/heads/main 2>$null
         $remoteExit = $LASTEXITCODE
         $ErrorActionPreference = $previousPreference
         if ($remoteExit -ne 0 -or [string]::IsNullOrWhiteSpace($remoteLine)) {
