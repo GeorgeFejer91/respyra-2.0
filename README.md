@@ -31,9 +31,9 @@ input. The recorder must also select the Vernier raw stream; marker subscription
 alone cannot prove that the force stream is being saved. Marker publication
 fails if the subscriber disconnects; inspect the recorded file before using
 the run for analysis.
-The native participant dialog marks open, submit/cancel, and final field values;
-its character-by-character edits are outside the current PsychoPy input hook.
-Animation frames are not individual markers.
+The native participant dialog marks each key press and text edit, OK/Cancel
+button clicks, accept/reject, and final field values. Animation frames are not
+individual markers.
 
 ```sh
 uv run python scripts/run_experiment.py

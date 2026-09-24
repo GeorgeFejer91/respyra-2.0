@@ -67,6 +67,7 @@ decision and link both entries.
   of either stream. The `respyra` dependency still contains its own unused Go
   Direct and CSV modules because this project uses its study phases; removing
   those transitive modules needs an upstream package split or a separate phase
-  replacement. Native participant-dialog character edits and individual
-  animation frames are outside the discrete marker contract.
+  replacement. The native participant-dialog text fields use Qt callbacks for
+  keys and edits; individual animation frames are outside the discrete marker
+  contract.
 - Supersedes: None

@@ -49,7 +49,9 @@ against the Polar-Mini-Stream source revision used for the change. For
 marker or experiment changes, run `uv run pytest tests/test_event_markers.py`
 and `uv run pytest tests/test_experiment_flow.py` against the installed
 `respyra` dependency (the sibling checkout can differ from the published
-version). Check that every emitted event name appears in `catalog.json`, every
+version). For participant-dialog changes, run
+`uv run pytest tests/test_participant_dialog.py` with the installed Qt backend.
+Check that every emitted event name appears in `catalog.json`, every
 blocking screen has shown/dismissed markers, phase start/end and abort paths
 pair sensibly, no-data calibration fails, and the experiment creates no CSV
 file. Inspect the configured trial order and target/error units in N.

@@ -116,7 +116,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario):
 
     monkeypatch.setattr(study, "MarkerOutlet", lambda: marker)
     monkeypatch.setattr(study, "connect_force_source", lambda: force)
-    monkeypatch.setattr(study, "run_participant_dialog", lambda _cfg: {
+    monkeypatch.setattr(study, "run_marked_participant_dialog", lambda _cfg, _markers: {
         "participant": "test", "session": "001",
     })
     monkeypatch.setattr(study, "setup_display", lambda _cfg: (win, stimuli))

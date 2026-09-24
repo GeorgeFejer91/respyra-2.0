@@ -227,3 +227,73 @@ class NullSampleLogger:
 
     def flush(self, *_args, **_kwargs) -> None:
         pass
+
+
+def run_marked_participant_dialog(cfg, markers: MarkerOutlet) -> dict[str, str] | None:
+    """Use PsychoPy's dialog while marking its native Qt inputs."""
+    from psychopy import gui
+    from PyQt6 import QtCore, QtWidgets
+
+    if gui.haveQt != "PyQt6":
+        raise RuntimeError("Participant input markers require PsychoPy's PyQt6 dialog")
+
+    values = {"participant": "", "session": "001"}
+    dialog = gui.DlgFromDict(values, title=cfg.name,
+                             order=["participant", "session"], show=False)
+    failure = None
+
+    def publish(name, **fields):
+        nonlocal failure
+        if failure is not None:
+            return
+        try:
+            markers.emit(name, **fields)
+        except Exception as exc:
+            failure = exc
+            dialog.reject()
+
+    class KeyFilter(QtCore.QObject):
+        def __init__(self, field):
+            super().__init__(dialog)
+            self.field = field
+
+        def eventFilter(self, _widget, qt_event):
+            if qt_event.type() == QtCore.QEvent.Type.KeyPress:
+                publish("participant.field.key", field=self.field,
+                        key=qt_event.text() or f"QtKey:{int(qt_event.key())}")
+            return False
+
+    class DialogFilter(QtCore.QObject):
+        visible = False
+
+        def eventFilter(self, _widget, qt_event):
+            if qt_event.type() == QtCore.QEvent.Type.Show and not self.visible:
+                self.visible = True
+                publish("participant.dialog.shown")
+            elif qt_event.type() == QtCore.QEvent.Type.Hide and self.visible:
+                self.visible = False
+                publish("participant.dialog.hidden")
+            return False
+
+    dialog_filter = DialogFilter(dialog)
+    dialog.installEventFilter(dialog_filter)
+    filters = []
+    for field, widget in zip(dialog._keys, dialog.inputFields, strict=True):
+        if not isinstance(widget, QtWidgets.QLineEdit):
+            raise RuntimeError(f"Expected a text input for participant field {field}")
+        key_filter = KeyFilter(field)
+        filters.append(key_filter)
+        widget.installEventFilter(key_filter)
+        widget.textEdited.connect(
+            lambda value, field=field: publish("participant.field.edited",
+                                               field=field, value=value)
+        )
+
+    dialog.okBtn.clicked.connect(lambda: publish("participant.button.ok.clicked"))
+    dialog.cancelBtn.clicked.connect(lambda: publish("participant.button.cancel.clicked"))
+    dialog.accepted.connect(lambda: publish("participant.dialog.accepted"))
+    dialog.rejected.connect(lambda: publish("participant.dialog.rejected"))
+    dialog.show()
+    if failure is not None:
+        raise failure
+    return values if dialog.OK else None

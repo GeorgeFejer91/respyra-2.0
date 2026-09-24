@@ -4,13 +4,12 @@ from collections import deque
 from contextlib import ExitStack
 from typing import Any
 
-from mpi.event_markers import MarkerOutlet, NullSampleLogger
+from mpi.event_markers import MarkerOutlet, NullSampleLogger, run_marked_participant_dialog
 from mpi.lsl_force import LSLForceError, connect_force_source
 from respyra.configs.experiment_config import ExperimentConfig
 from respyra.core.target_generator import TargetGenerator, calibrate_from_baseline
 from respyra.core.runner import (
     setup_display,
-    run_participant_dialog,
     apply_gain,
     _compute_dot_color,
     _force_to_dot_y,
@@ -150,7 +149,11 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
         from psychopy import core, data
 
         markers.emit("participant.dialog.opened")
-        exp_info = run_participant_dialog(cfg)
+        markers.screen = "participant_dialog"
+        try:
+            exp_info = run_marked_participant_dialog(cfg, markers)
+        finally:
+            markers.screen = None
         if exp_info is None:
             markers.emit("participant.dialog.cancelled")
             abort_reason = "participant_dialog_cancelled"

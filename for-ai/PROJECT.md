@@ -40,8 +40,9 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   no-op sample logger to those phases and writes no session files.
 - `scripts/plot_session.py` remains a reader for historical local CSVs.
   `tests/test_lsl_force.py`, `tests/test_event_markers.py`,
-  `tests/test_experiment_flow.py`, and `tests/test_signal.py` cover the local
-  logic and a short simulated study run. Vernier Stream Mini in
+  `tests/test_experiment_flow.py`, `tests/test_participant_dialog.py`, and
+  `tests/test_signal.py` cover the local logic and a short simulated study run.
+  Vernier Stream Mini in
   **Separate Streams** mode, an LSL recorder, and a display are needed to
   verify the full experiment.
 
@@ -68,10 +69,10 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   compared in the local LSL clock domain. Marker publication fails if its
   subscriber disconnects, but only inspection of the recorder output verifies
   persistence.
-- Native participant-dialog character edits are outside PsychoPy's keyboard
-  event API; the submitted participant/session values and submit/cancel event
-  are marked. Continuous waveform/animation frames are represented by the
-  Vernier stream plus phase, condition, and target-parameter markers.
+- The native participant dialog uses Qt callbacks to mark its key presses,
+  field edits, button clicks, and accept/reject decisions. Continuous
+  waveform/animation frames are represented by the Vernier stream plus phase,
+  condition, and target-parameter markers.
 
 ## Current verified state
 
@@ -86,7 +87,8 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   `respyra` checkout; integration checks must use the installed package.
 - The LSL inlet and marker outlet passed focused tests and in-process LSL
   outlet/inlet checks on 2026-09-24. A short simulated trial passed against the
-  installed respyra/PsychoPy APIs with a simulated source and display. The
+  installed respyra/PsychoPy APIs with a simulated source and display; native
+  dialog inputs passed offscreen Qt checks. The
   physical belt, visual timing, and recorder file remain unverified.
 
 Git and runnable checks are the authority for branch, revision, and behavior.
