@@ -1,4 +1,4 @@
-# MPI agent instructions
+# Respyra 2.0 agent instructions
 
 Before inspecting, planning, editing, testing, or publishing this repository,
 read [`for-ai/README.md`](./for-ai/README.md). It is the canonical router to the

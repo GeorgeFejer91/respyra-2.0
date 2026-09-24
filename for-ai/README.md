@@ -1,4 +1,4 @@
-# MPI agent control plane
+# Respyra 2.0 agent control plane
 
 Read this file first. It is a router, not the complete project manual.
 
@@ -49,7 +49,7 @@ task touches.
 ## New-project state
 
 Created: 2026-09-24
-Repository: https://github.com/GeorgeFejer91/MPI
+Repository: https://github.com/GeorgeFejer91/respyra-2.0
 Visibility at initialization: private
 
 The imported product is a Python 3.10 PsychoPy/respyra study. See `PROJECT.md`

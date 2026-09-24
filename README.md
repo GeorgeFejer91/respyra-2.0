@@ -1,9 +1,11 @@
-# MPI
+# Respyra 2.0
 
 Python workspace for a breathing-belt validation study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
 amplified, attenuated, or absent. It records force measurements and brief
 self-assessments; the plotting script summarizes a session.
+
+The importable Python package keeps its original name, `mpi`.
 
 ## Setup
 
