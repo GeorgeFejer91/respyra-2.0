@@ -41,3 +41,32 @@ decision and link both entries.
 - Consequences: Source can be shared through the private repository; raw data
   remains available locally for review and requires a separate sharing decision.
 - Supersedes: None
+
+## D-0003 — Source study force through Vernier Stream Mini LSL
+
+- Date: 2026-09-24
+- Status: Accepted
+- Context: The belt acquisition path now belongs to
+  [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream).
+  Its raw LSL outlet carries Force in N; its derived respiration outlet carries
+  a normalized 0–1 value. The study's targets and errors use N. An external LSL
+  recorder, not Respyra, will persist the breathing signal and timeline.
+- Decision: Discover and validate one live `VernierRaw` outlet from Vernier
+  Stream Mini in Separate Streams mode, select the metadata-identified GDX-RB
+  Force channel, and feed it into the existing study phases. Publish every
+  discrete experiment and observed accepted/rejected PsychoPy key event on a
+  catalogued LSL marker outlet. Require a marker-stream consumer before
+  participant input.
+  Do not write new session or self-assessment CSVs. Reject the upstream
+  calibration's no-data fallback so an unmeasured run cannot continue with
+  default force values. Retain the measured calibration and feedback logic
+  until a separately reviewed protocol change.
+- Consequences: Vernier Stream Mini must run first. Discovery ambiguity or
+  signal loss stops a run. The recorder must select both the Vernier raw and
+  Respyra marker streams; a marker subscriber alone does not prove persistence
+  of either stream. The `respyra` dependency still contains its own unused Go
+  Direct and CSV modules because this project uses its study phases; removing
+  those transitive modules needs an upstream package split or a separate phase
+  replacement. Native participant-dialog character edits and individual
+  animation frames are outside the discrete marker contract.
+- Supersedes: None

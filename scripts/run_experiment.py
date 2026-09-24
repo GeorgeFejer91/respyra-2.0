@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-import colorsys
 from collections import deque
-from dataclasses import dataclass, field
+from contextlib import ExitStack
 from typing import Any
 
-import numpy as np
-
+from mpi.event_markers import MarkerOutlet, NullSampleLogger
+from mpi.lsl_force import LSLForceError, connect_force_source
 from respyra.configs.experiment_config import ExperimentConfig
-from respyra.core.breath_belt import BreathBelt, BreathBeltError
-from respyra.core.data_logger import DataLogger, create_session_file
 from respyra.core.target_generator import TargetGenerator, calibrate_from_baseline
 from respyra.core.runner import (
-    connect_belt,
     setup_display,
     run_participant_dialog,
     apply_gain,
@@ -24,12 +20,10 @@ from respyra.core.runner import (
     #  run_tracking,
     ExperimentState,
     show_trial_feedback,
-    show_end_screen,
 )
 
 
 def main():
-    from respyra.configs.breath_tracking import CONFIG as _default_cfg
     from mpi.validation_study_jenny import CONFIG as _cfg
 
     cfg = _cfg
@@ -68,7 +62,6 @@ def run_tracking(
 
     s.stimuli["phase_title"].text = f"TRACKING -- Trial {trial_num}/{total_trials}"
     s.clock.reset()
-
     while s.clock.getTime() < cfg.timing.tracking_duration_sec:
         s.frame_count += 1
         tracking_t = s.clock.getTime()
@@ -80,22 +73,9 @@ def run_tracking(
         for _ts, force in new_samples:
             s.buffer.append(force)
             latest_force = force
-            error = target_force - force
             visual_force = s.range_center + feedback_gain * (force - s.range_center)
             compensated_error = target_force - visual_force
             trial_errors.append(abs(compensated_error))
-            s.logger.log_row(
-                timestamp=round(tracking_t, 4),
-                frame=s.frame_count,
-                force_n=round(force, 4),
-                target_force=round(target_force, 4),
-                error=round(error, 4),
-                compensated_error=round(compensated_error, 4),
-                phase="tracking",
-                condition=condition_name,
-                trial_num=trial_num,
-                feedback_gain=feedback_gain,
-            )
 
         dot_y = _force_to_dot_y(target_force, s.y_min, s.y_max, trace_bottom, trace_top)
         target_dot.pos = (trace_right + cfg.dot.x_offset, dot_y)
@@ -104,7 +84,7 @@ def run_tracking(
             visual_f = s.range_center + feedback_gain * (latest_force - s.range_center)
             current_error = abs(target_force - visual_f)
 
-            if condition_def.feedback:
+            if getattr(condition_def, "feedback", True):
                 color = _compute_dot_color(current_error, cfg)
 
                 target_dot.fillColor = color
@@ -133,7 +113,7 @@ def run_tracking(
 def run_experiment(cfg: ExperimentConfig | None = None) -> None:
     """Run the standard breath tracking experiment.
 
-    Composes all phases in order: belt connection, display setup,
+    Composes all phases in order: LSL force discovery, display setup,
     participant dialog, range calibration, then the trial loop
     (baseline -> countdown -> tracking -> feedback per trial).
 
@@ -151,44 +131,47 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
 
         cfg = _default_cfg
 
-    # 1. Connect belt BEFORE PsychoPy (Windows BLE/COM constraint)
-    belt = connect_belt(cfg)
-
-    # 2. Import PsychoPy (safe now)
-    from psychopy import core, data
-
-    from respyra.core.display import show_text_and_wait
-
-    # 4. Participant dialog
-    exp_info = run_participant_dialog(cfg)
-    if exp_info is None:
-        belt.stop()
-        return
-
-    # 3. Setup display and stimuli
-    win, stimuli = setup_display(cfg)
-
-    filepath = None
-    logger = None
+    markers = MarkerOutlet()
+    markers.wait_for_recorder()
+    markers.emit("run.recorder_connected")
+    belt = None
+    win = None
     state = None
+    hooks = ExitStack()
+    abort_reason = None
+    completed_trials = 0
     error_occurred = False
 
     try:
+        belt = connect_force_source()
+        markers.emit("source.connected", source_id=belt.source_id,
+                     stream_name=belt.stream_name, force_channel_index=belt.force_index)
+
+        from psychopy import core, data
+
+        markers.emit("participant.dialog.opened")
+        exp_info = run_participant_dialog(cfg)
+        if exp_info is None:
+            markers.emit("participant.dialog.cancelled")
+            abort_reason = "participant_dialog_cancelled"
+            return
+
         participant = exp_info["participant"]
         session = exp_info["session"]
+        markers.emit("participant.dialog.submitted", participant=participant, session=session)
 
-        # 5. Create session file and logger
-        filepath = create_session_file(
-            participant_id=participant,
-            session=session,
-            output_dir=cfg.output_dir,
-        )
-        print(f"Data will be saved to: {filepath}")
+        win, stimuli = setup_display(cfg)
+        markers.emit("display.opened")
 
-        logger = DataLogger(filepath, columns=cfg.data_columns)
-        self_assessment_logger = DataLogger(
-            f"{filepath}-self-assessment.csv",
-            columns=["trial_num", "condition", "self_condition", "confidence", "self_accuracy"],
+        markers.emit(
+            "run.configured", study_name=cfg.name,
+            range_cal_s=cfg.timing.range_cal_duration_sec,
+            baseline_s=cfg.timing.baseline_duration_sec,
+            countdown_s=cfg.timing.countdown_duration_sec,
+            tracking_s=cfg.timing.tracking_duration_sec,
+            dot_feedback_mode=cfg.dot.feedback_mode,
+            range_percentiles=[cfg.range_cal.percentile_lo, cfg.range_cal.percentile_hi],
+            range_scale=cfg.range_cal.scale,
         )
         exp_clock = core.Clock()
         buffer = deque(maxlen=cfg.trace_buffer_size)
@@ -196,13 +179,15 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
         state = ExperimentState(
             belt=belt,
             win=win,
-            logger=logger,
+            logger=NullSampleLogger(),
             clock=exp_clock,
             buffer=buffer,
             stimuli=stimuli,
             y_min=cfg.trace.y_range[0],
             y_max=cfg.trace.y_range[1],
         )
+        markers.state = state
+        show_text_and_wait = hooks.enter_context(markers.observe_inputs_and_screens())
 
         # 6. Instructions
         baseline_dur = int(cfg.timing.baseline_duration_sec)
@@ -226,19 +211,42 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
         )
         if key == cfg.escape_key:
             print("Escape pressed -- ending experiment.")
+            abort_reason = "instructions_escape"
             return
 
-        # 7. Range calibration
-        if not run_range_calibration(state, cfg):
+        markers.emit("run.started", participant=participant, session=session)
+
+        markers.phase = "calibration"
+        try:
+            calibrated = run_range_calibration(state, cfg)
+        except Exception:
+            markers.end_calibration_attempt("error")
+            raise
+        else:
+            used_defaults = calibrated and markers.calibration_attempt_open
+            markers.end_calibration_attempt(
+                "no_data_fallback" if used_defaults else "escaped"
+            )
+        finally:
+            markers.phase = None
+        if not calibrated:
+            abort_reason = "calibration_escape"
             return  # finally handles cleanup
+        if used_defaults:
+            raise LSLForceError("Range calibration received no Force samples")
+        markers.emit(
+            "calibration.completed", center_n=state.range_center,
+            amplitude_n=state.global_amplitude,
+            y_min_n=state.y_min, y_max_n=state.y_max,
+        )
 
         # 8. Build trial order
-        if cfg.trial.build_conditions is not None:
-            conditions = cfg.trial.build_conditions(session)
+        conditions = (cfg.trial.build_conditions(session)
+                      if cfg.trial.build_conditions is not None
+                      else cfg.trial.conditions)
 
         if not conditions:
-            print("[error] No conditions defined -- nothing to run.")
-            return
+            raise ValueError("No conditions defined -- nothing to run")
 
         # Map condition names to defs; warn on duplicates with differing params
         condition_map: dict[str, Any] = {}
@@ -260,6 +268,8 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
             nReps=cfg.trial.n_reps,
             method=cfg.trial.method,
         )
+        markers.emit("trial.order", conditions=[c.name for c in conditions],
+                     total_trials=trials.nTotal, method=cfg.trial.method)
 
         # 9. Trial loop
         for trial in trials:
@@ -267,6 +277,14 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
             condition_def = condition_map[condition_name]
             trial_num = trials.thisN + 1
             total_trials = trials.nTotal
+            markers.trial_num = trial_num
+            markers.condition = condition_name
+            markers.emit(
+                "trial.condition.selected", feedback_gain=condition_def.feedback_gain,
+                feedback_enabled=getattr(condition_def, "feedback", True),
+                segments=[{"freq_hz": seg.freq_hz, "n_cycles": seg.n_cycles}
+                          for seg in condition_def.segments],
+            )
 
             # Trial info screen
             key = show_text_and_wait(
@@ -280,22 +298,30 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
             )
             if key == cfg.escape_key:
                 print("Escape pressed -- ending experiment.")
+                markers.emit("trial.aborted", reason="ready_escape")
+                abort_reason = "ready_escape"
                 break
+            markers.emit("trial.started")
 
             # Fresh buffer per trial
             state.buffer.clear()
             state.frame_count = 0
 
             # a) Baseline
-            baseline_forces, escaped = run_baseline(
-                state, cfg, condition_name, trial_num, total_trials
-            )
+            with markers.phase_scope("baseline", win):
+                baseline_forces, escaped = run_baseline(
+                    state, cfg, condition_name, trial_num, total_trials
+                )
             if escaped:
+                markers.emit("trial.aborted", reason="baseline_escape")
+                abort_reason = "baseline_escape"
                 break
 
             # b) Calibrate from baseline (center logged for diagnostics only;
             #    target generation uses the global range calibration values)
-            baseline_center, _baseline_amp = calibrate_from_baseline(baseline_forces)
+            baseline_center, baseline_amp = calibrate_from_baseline(baseline_forces)
+            markers.emit("baseline.calculated", center_n=baseline_center,
+                         amplitude_n=baseline_amp)
             target_gen = TargetGenerator(
                 condition_def, state.range_center, state.global_amplitude
             )
@@ -307,22 +333,47 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
             )
 
             # c) Countdown
-            escaped = run_countdown(
-                state, cfg, condition_def, condition_name, trial_num, total_trials
-            )
+            with markers.phase_scope("countdown", win):
+                with markers.countdown_ticks(win, state.stimuli["countdown_text"]):
+                    escaped = run_countdown(
+                        state, cfg, condition_def, condition_name, trial_num, total_trials
+                    )
             if escaped:
+                markers.emit("trial.aborted", reason="countdown_escape")
+                abort_reason = "countdown_escape"
                 break
 
             # d) Tracking
-            trial_errors, escaped = run_tracking(
-                state,
-                cfg,
-                condition_def,
-                target_gen,
-                condition_name,
-                trial_num,
-                total_trials,
+            markers.phase = "tracking"
+            win.callOnFlip(state.clock.reset)
+            win.callOnFlip(
+                markers.emit, "tracking.started",
+                target_center_n=state.range_center,
+                target_amplitude_n=state.global_amplitude,
+                segments=[{"freq_hz": seg.freq_hz, "n_cycles": seg.n_cycles}
+                          for seg in condition_def.segments],
+                feedback_gain=condition_def.feedback_gain,
+                feedback_enabled=getattr(condition_def, "feedback", True),
             )
+            try:
+                trial_errors, escaped = run_tracking(
+                    state, cfg, condition_def, target_gen, condition_name,
+                    trial_num, total_trials,
+                )
+            except Exception:
+                markers.emit("tracking.ended", sample_count=None,
+                             escaped=None, outcome="error")
+                raise
+            else:
+                markers.emit("tracking.ended", sample_count=len(trial_errors),
+                             escaped=escaped,
+                             outcome="escaped" if escaped else "completed")
+            finally:
+                markers.phase = None
+            if escaped:
+                markers.emit("trial.aborted", reason="tracking_escape")
+                abort_reason = "tracking_escape"
+                break
             self_accuracy = show_text_and_wait(
                  win,
                 text=(
@@ -332,6 +383,11 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
                 ),
                 key_list=[cfg.escape_key, "1", "2", "3", "4", "5"],
             )
+            if self_accuracy == cfg.escape_key:
+                markers.emit("trial.aborted", reason="accuracy_escape")
+                abort_reason = "accuracy_escape"
+                break
+            markers.emit("assessment.accuracy", value=self_accuracy)
 
             self_condition = show_text_and_wait(
                 win,
@@ -343,6 +399,11 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
                 ),
                 key_list=[cfg.escape_key, "n", "d", "s"],
             )
+            if self_condition == cfg.escape_key:
+                markers.emit("trial.aborted", reason="breathing_judgment_escape")
+                abort_reason = "breathing_judgment_escape"
+                break
+            markers.emit("assessment.breathing_judgment", value=self_condition)
             confidence = show_text_and_wait(
                 win,
                 text=(
@@ -351,50 +412,87 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
                 ),
                 key_list=[cfg.escape_key, "1", "2", "3", "4", "5"],
             )
-
-            self_assessment_logger.log_row(
-                trial_num=trial_num,
-                condition=condition_name,
-                self_condition=self_condition,
-                confidence=confidence,
-                self_accuracy=self_accuracy,
-            )
-
-            if escaped:
+            if confidence == cfg.escape_key:
+                markers.emit("trial.aborted", reason="confidence_escape")
+                abort_reason = "confidence_escape"
                 break
+            markers.emit("assessment.confidence", value=confidence)
+
+            markers.emit(
+                "assessment.completed", accuracy=self_accuracy,
+                breathing_judgment=self_condition, confidence=confidence,
+            )
 
             # e) Feedback
             if show_trial_feedback(state, cfg, trial_errors, trial_num):
                 print("Escape pressed at feedback.")
+                markers.emit("trial.aborted", reason="feedback_escape")
+                abort_reason = "feedback_escape"
                 break
+            markers.emit(
+                "trial.ended",
+                mean_abs_compensated_error_n=(
+                    sum(trial_errors) / len(trial_errors) if trial_errors else None
+                ),
+            )
+            completed_trials += 1
 
         else:
             # All trials completed normally
-            show_end_screen(state, cfg, filepath)
+            overall = (
+                sum(state.all_trial_errors) / len(state.all_trial_errors)
+                if state.all_trial_errors else None
+            )
+            mean_text = f"{overall:.2f} N" if overall is not None else "unavailable"
+            show_text_and_wait(
+                win,
+                text=(
+                    "Experiment complete!\n\n"
+                    f"Overall mean tracking error: {mean_text}\n\n"
+                    "The LSL recorder manages the breathing and event recording.\n\n"
+                    "Press SPACE to exit."
+                ),
+                key_list=["space", cfg.escape_key],
+            )
+            markers.emit("run.completed", trials_completed=completed_trials)
 
-    except Exception:
+    except Exception as exc:
         error_occurred = True
-        import traceback
-
-        traceback.print_exc()
+        if isinstance(exc, LSLForceError) and belt is not None:
+            markers.emit("source.lost", message=str(exc))
+        markers.emit("run.failed", error_type=type(exc).__name__, message=str(exc))
+        raise
 
     finally:
-        belt.stop()
-        if logger is not None:
-            logger.close()
-        if self_assessment_logger is not None:
-            self_assessment_logger.close()
+        cleanup_error = None
 
-        if filepath is not None:
-            print(f"Data saved to: {filepath}")
+        def cleanup(action):
+            nonlocal cleanup_error
+            try:
+                action()
+            except Exception as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+
+        cleanup(hooks.close)
+        if abort_reason is not None:
+            cleanup(lambda: markers.emit("run.aborted", reason=abort_reason,
+                                         trials_completed=completed_trials))
+        if belt is not None:
+            cleanup(belt.stop)
+            cleanup(lambda: markers.emit("source.disconnected"))
         if state is not None:
-            print(f"Trials completed: {len(state.all_trial_errors)}")
+            print(f"Trials completed: {completed_trials}")
             if state.all_trial_errors:
                 overall = sum(state.all_trial_errors) / len(state.all_trial_errors)
                 print(f"Overall mean error: {overall:.2f} N")
 
-        win.close()
-        if not error_occurred:
+        if win is not None:
+            cleanup(win.close)
+            cleanup(lambda: markers.emit("display.closed"))
+        if cleanup_error is not None and not error_occurred:
+            raise cleanup_error
+        if not error_occurred and win is not None:
             core.quit()
 
 

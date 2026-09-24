@@ -43,8 +43,16 @@ the project selects its stack. A syntax check proves syntax; a unit test proves
 its tested logic; neither proves UI, deployment, hardware, performance, safety,
 or scientific validity unless it directly observes that surface.
 
-For signal helpers, run `uv run pytest tests/test_signal.py`. For experiment
-changes, also inspect the configured trial order and logged column contract.
+For signal helpers, run `uv run pytest tests/test_signal.py`. For LSL input
+changes, run `uv run pytest tests/test_lsl_force.py`; inspect raw outlet metadata
+against the Polar-Mini-Stream source revision used for the change. For
+marker or experiment changes, run `uv run pytest tests/test_event_markers.py`
+and `uv run pytest tests/test_experiment_flow.py` against the installed
+`respyra` dependency (the sibling checkout can differ from the published
+version). Check that every emitted event name appears in `catalog.json`, every
+blocking screen has shown/dismissed markers, phase start/end and abort paths
+pair sensibly, no-data calibration fails, and the experiment creates no CSV
+file. Inspect the configured trial order and target/error units in N.
 
 ## Gate 3: integrated readiness
 
@@ -52,8 +60,13 @@ Run proportionate build, test, lint, type, runtime, visual, device, security,
 and compatibility checks for every affected boundary. Do not run an expensive
 or irrelevant full matrix for a documentation-only edit.
 
-The experiment runtime requires a connected breathing belt and a PsychoPy
-display; mark that gate `NOT RUN` when those surfaces are unavailable.
+The experiment runtime requires Vernier Stream Mini's live raw LSL outlet, a
+recorder subscribed to `VernierRaw` and `Respyra-Events`, and a PsychoPy
+display. Use the streamer's explicitly marked mock outlet to check discovery,
+metadata, fresh samples, marker order, early/normal/failed endings, and an LSL
+recording containing both streams. Then verify the physical belt separately.
+Mark unavailable surfaces `NOT RUN`; an LSL subscriber is not proof that the
+recorder persisted the recording.
 
 ## Gate 4: publication
 

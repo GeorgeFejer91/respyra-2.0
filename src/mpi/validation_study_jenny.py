@@ -19,13 +19,9 @@ counterbalancing: odd sessions start slow_steady, even start perturbed.
 # ------------------------------------------------------------------ #
 from respyra.configs.breath_tracking import (  # noqa: F401, E402
     BASELINE_DURATION_SEC,
-    BELT_CHANNELS,
-    BELT_PERIOD_MS,
     BG_COLOR,
-    CONNECTION,
     COUNTDOWN_DURATION_SEC,
     DATA_COLUMNS,
-    DEVICE_TO_OPEN,
     DOT_COLOR_BAD,
     DOT_COLOR_GOOD,
     DOT_COLOR_MID,
