@@ -51,6 +51,13 @@ and `uv run pytest tests/test_experiment_flow.py` against the installed
 `respyra` dependency (the sibling checkout can differ from the published
 version). For participant-dialog changes, run
 `uv run pytest tests/test_participant_dialog.py` with the installed Qt backend.
+For startup discovery and remembered selection, also run
+`uv run pytest tests/test_lsl_setup.py`: exercise the actual Qt form, reject
+incompatible results, verify saved-source reconnect and loss, prevent Start
+without valid input, and close cancelled connections without overwriting memory.
+Check identity persistence/corruption and duplicate source IDs in the input
+tests. Run a synthetic LSL outlet/inlet check for metadata, discovery, and exact
+identity reconnect; use isolated settings so tests never overwrite lab choices.
 Check that every emitted event name appears in `catalog.json`, every
 blocking screen has shown/dismissed markers, phase start/end and abort paths
 pair sensibly, no-data calibration fails, and the experiment creates no CSV

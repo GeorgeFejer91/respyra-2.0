@@ -4,7 +4,10 @@ from unittest.mock import patch
 
 import pytest
 
-from mpi.lsl_force import LSLForceError, connect_force_source, force_channel_index
+from mpi.lsl_force import (
+    LSLForceError, connect_force_source, force_channel_index, scan_force_streams,
+    load_force_selection, save_force_selection,
+)
 
 
 XML = """<info><desc>
@@ -43,8 +46,13 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
         def channel_count(self):
             return 2
 
+        def channel_format(self):
+            return 1
+
     class Inlet:
         def __init__(self, *_args, **_kwargs):
+            assert _kwargs["recover"] is False
+            assert _kwargs["processing_flags"] == 1
             self.chunks = [
                 ([[float("nan"), 10.0]], [1.0]),
                 ([[3.0, float("nan")], [4.0, 11.0]], [2.0, 3.0]),
@@ -61,8 +69,8 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
             self.closed = True
 
     module = types.SimpleNamespace(
-        resolve_byprop=lambda *_args, **_kwargs: [Info()], StreamInlet=Inlet,
-        proc_clocksync=1,
+        resolve_streams=lambda **_kwargs: [Info()], StreamInlet=Inlet,
+        proc_clocksync=1, cf_float32=1, cf_double64=2,
     )
     with patch.dict(sys.modules, {"pylsl": module}):
         source = connect_force_source()
@@ -73,7 +81,72 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
     source.stop()
     assert source.inlet.closed
 
-    module.resolve_byprop = lambda *_args, **_kwargs: [Info(), Info()]
+    module.resolve_streams = lambda **_kwargs: [Info(), Info()]
     with patch.dict(sys.modules, {"pylsl": module}):
         with pytest.raises(LSLForceError, match="found 2"):
             connect_force_source()
+
+    with patch.dict(sys.modules, {"pylsl": module}):
+        with pytest.raises(LSLForceError, match="found 0"):
+            connect_force_source(source_id="polar-stream-vernier-raw-missing")
+
+
+def test_scan_displays_rejected_units_and_rejects_duplicate_identities():
+    class Info:
+        def __init__(self, name, xml=XML, kind="VernierRaw", identity=None, fmt=1):
+            self.label, self.xml, self.kind, self.fmt = name, xml, kind, fmt
+            self.identity = identity or "polar-stream-vernier-raw-" + name
+
+        def name(self): return self.label
+        def type(self): return self.kind
+        def source_id(self): return self.identity
+        def as_xml(self): return self.xml
+        def channel_count(self): return 2
+        def channel_format(self): return self.fmt
+
+    closed = []
+
+    class Inlet:
+        def __init__(self, info, **_kwargs):
+            assert _kwargs["recover"] is False
+            self.stream = info
+        def info(self, **_kwargs):
+            return types.SimpleNamespace(source_id=self.stream.source_id, type=self.stream.type,
+                                         as_xml=self.stream.as_xml, channel_count=self.stream.channel_count,
+                                         channel_format=self.stream.channel_format)
+        def close_stream(self): closed.append(self.stream.name())
+
+    streams = [
+        Info("good"), Info("wrong units", XML.replace("<unit>N</unit>", "<unit>0-1</unit>")),
+        Info("processed", kind="Respiration"), Info("strings", fmt=3),
+        Info("duplicate1", identity="polar-stream-vernier-raw-duplicate"),
+        Info("duplicate2", identity="polar-stream-vernier-raw-duplicate"),
+        Info("unstable", identity=""),
+    ]
+    streams[-1].identity = "unrelated-producer"
+    module = types.SimpleNamespace(resolve_streams=lambda **_kwargs: streams,
+                                   StreamInlet=Inlet, cf_float32=1, cf_double64=2)
+    with patch.dict(sys.modules, {"pylsl": module}):
+        candidates = {item.info.name(): item for item in scan_force_streams()}
+    assert len(candidates) == len(streams)
+    assert candidates["good"].info is streams[0]  # full inlet metadata is not resolver connection info
+    assert candidates["good"].force_index == 1
+    assert all(item.force_index is None for name, item in candidates.items() if name != "good")
+    assert "Duplicate" in candidates["duplicate1"].reason
+    assert len(closed) == 6  # processed stream needs no metadata inlet
+
+
+def test_selection_memory_contains_identity_only_and_rejects_corruption(tmp_path):
+    path = tmp_path / "settings" / "lsl-source.json"
+    assert load_force_selection(path) is None
+    source = types.SimpleNamespace(source_id="polar-stream-vernier-raw-test", stream_name="Test")
+    save_force_selection(source, path)
+    assert load_force_selection(path) == {
+        "version": 1, "source_id": source.source_id, "stream_name": "Test",
+    }
+    assert list(path.parent.iterdir()) == [path]
+    for invalid in ('{broken', '[]', '{"version": 2}',
+                    '{"version":1,"source_id":"different-producer","stream_name":"Test"}'):
+        path.write_text(invalid, encoding="utf-8")
+        with pytest.raises(LSLForceError, match="choose a stream again"):
+            load_force_selection(path)

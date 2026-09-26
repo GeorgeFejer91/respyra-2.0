@@ -34,13 +34,17 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
 - `src/mpi/validation_study_jenny.py` defines study conditions and trial order;
   `src/mpi/signal.py` provides signal helpers.
 - `src/mpi/lsl_force.py` discovers and validates the Vernier Stream Mini raw
-  Force (N) LSL outlet. `src/mpi/event_markers/` owns the LSL marker publisher
+  Force (N) LSL outlet and stores accepted source identity. `src/mpi/lsl_setup.py`
+  adds discovery/selection to the existing Qt participant/session dialog,
+  reconnects saved input, and gates Start Experiment on a live accepted source.
+  `src/mpi/event_markers/` owns the LSL marker publisher
   and exhaustive `catalog.json`. `scripts/run_experiment.py` runs the PsychoPy
   task using that source and `respyra`'s existing study phases; it passes a
   no-op sample logger to those phases and writes no session files.
 - `scripts/plot_session.py` remains a reader for historical local CSVs.
   `tests/test_lsl_force.py`, `tests/test_event_markers.py`,
-  `tests/test_experiment_flow.py`, `tests/test_participant_dialog.py`, and
+  `tests/test_experiment_flow.py`, `tests/test_participant_dialog.py`,
+  `tests/test_lsl_setup.py`, and
   `tests/test_signal.py` cover the local logic and a short simulated study run.
   Vernier Stream Mini in
   **Separate Streams** mode, an LSL recorder, and a display are needed to
@@ -57,9 +61,21 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
 - Respyra owns only the study's range calibration, target generation, visual
   gain, performance error, and discrete event markers. Keep target/error units
   in N; do not silently replace raw Force with the normalized 0–1 outlet.
-- Discovery requires one matching live raw outlet. Missing, ambiguous, or
-  stalled force data fails the experiment rather than substituting simulated
-  or default belt values.
+- The first UI is the Qt participant/session form with Add LSL Stream and
+  Use Selected Stream. Discovery lists visible outlets with compatibility
+  reasons; only raw Force (N) with the producer contract, numeric float format,
+  and unique source_id can be selected. Connection requires fresh finite Force
+  samples. Setup discovery/connection uses one worker, without adding an
+  experiment-time background service.
+- Save only accepted source_id/name in local user settings, atomically. Later
+  launches reconnect and validate that exact identity; the environment override
+  `RESPYRA_LSL_SOURCE_ID` takes precedence. Missing/incompatible memory keeps
+  the setup UI available, with Start disabled until a valid source is accepted.
+  Never silently substitute another belt. Keep the accepted inlet drained
+  during setup and disable Start on signal loss; in-experiment loss fails the
+  run. Disable automatic inlet recovery so an outlet restart cannot reuse
+  stale channel metadata. Settings are identity memory, not a persisted signal
+  buffer.
 - The recorder owns persisted samples. Respyra's marker stream uses one JSON
   string per event, a shared run UUID, monotonic sequence, LSL timestamp, and
   trial/condition/phase/screen context. The catalog is the authority for every
@@ -70,7 +86,10 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   subscriber disconnects, but only inspection of the recorder output verifies
   persistence.
 - The native participant dialog uses Qt callbacks to mark its key presses,
-  field edits, button clicks, and accept/reject decisions. Continuous
+  field edits, button clicks, and accept/reject decisions. LSL setup actions,
+  discovery results, acceptance/failure, and memory operations use the same
+  marker publisher on the UI thread; completion timestamps describe observation
+  of the worker result. Continuous
   waveform/animation frames are represented by the Vernier stream plus phase,
   condition, and target-parameter markers.
 

@@ -71,3 +71,22 @@ decision and link both entries.
   keys and edits; individual animation frames are outside the discrete marker
   contract.
 - Supersedes: None
+
+## D-0004 — Remember validated input in the existing startup form
+
+- Date: 2026-09-26
+- Status: Accepted
+- Context: Operators need to discover compatible LSL input and reuse their
+  accepted belt without setting environment variables each session.
+- Decision: Extend the existing PsychoPy Qt participant/session form with
+  Add LSL Stream, compatibility results, and Use Selected Stream. Reuse the
+  existing Force adapter and marker publisher. Require raw Vernier Force (N),
+  unique stable source identity, full metadata, and live data before acceptance.
+  Atomically save only identity/name in local user settings and revalidate on
+  every launch. An absent or incompatible remembered outlet requires selection;
+  do not substitute another source. Retain the environment override.
+- Consequences: There is no new dashboard, dependency, signal processor, or
+  persisted sample buffer. Discovery and connection run in one setup worker;
+  markers are published by the UI when it observes results. Start is gated on
+  accepted live input, and setup drains the inlet to avoid accumulating old data.
+- Supersedes: None; extends D-0003 with UI selection and identity persistence.

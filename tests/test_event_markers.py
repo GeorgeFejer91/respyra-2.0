@@ -171,13 +171,16 @@ def test_catalog_has_pairs_and_logger_has_no_output():
     logger.flush()
 
     runner = Path(__file__).resolve().parents[1] / "scripts" / "run_experiment.py"
-    tree = ast.parse(runner.read_text(encoding="utf-8"))
+    root = runner.parent.parent
+    tree = ast.parse("\n".join(path.read_text(encoding="utf-8") for path in (
+        runner, root / "src/mpi/lsl_setup.py", root / "src/mpi/event_markers/__init__.py",
+    )))
     literal_events = {
         node.args[0].value
         for node in ast.walk(tree)
         if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and node.func.attr == "emit"
+        and ((isinstance(node.func, ast.Attribute) and node.func.attr == "emit")
+             or (isinstance(node.func, ast.Name) and node.func.id == "publish"))
         and node.args
         and isinstance(node.args[0], ast.Constant)
         and isinstance(node.args[0].value, str)

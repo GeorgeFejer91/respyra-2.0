@@ -14,13 +14,33 @@ Running the experiment requires Vernier Stream Mini from
 [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream) publishing
 its **Separate Streams** raw Vernier LSL outlet, an LSL recorder subscribed to
 both `VernierRaw` and `Respyra-Events`, and a working PsychoPy display.
-The study discovers the raw Force (N) channel automatically. Start the streamer
-and recorder before the experiment. The streamer's processed 0–1 breathing
-outlet is not used because the study's targets and errors are in Newtons.
+Start the streamer and recorder before the experiment. The first window is
+the participant/session form with breathing-input setup. Click **Add LSL
+Stream**, select a compatible result, then **Use Selected Stream**. The scan
+lists visible streams and reasons for rejecting incompatible inputs. It
+requires the Vernier Stream Mini raw outlet, its metadata-identified Force
+channel in **N**, floating-point samples, and a unique stable source ID. Live
+Force values are checked before **Start Experiment** becomes available.
+The streamer's processed 0–1 breathing outlet is not used because the study's
+targets and errors are in Newtons.
 The run stops if no Force samples arrive during calibration or if the live
 Force stream stalls.
-If more than one Vernier raw outlet is visible, set `RESPYRA_LSL_SOURCE_ID` to
-the intended outlet's LSL source ID.
+
+The accepted source ID is saved in `%LOCALAPPDATA%/Respyra/lsl-source.json`
+on Windows (otherwise `$LOCALAPPDATA`, or `~/.config/Respyra`). Later launches
+automatically reconnect that exact source and recheck metadata and live data;
+no repeated scan or acceptance is needed. Missing, changed, duplicate, or
+incompatible outlets require selection again. There is no automatic switch to
+another belt. Each accepted inlet stays pinned to that outlet; a streamer
+restart requires a new validated connection. Settings contain only source
+identity/name, never breathing samples or participant details.
+`RESPYRA_LSL_SOURCE_ID`, when set, overrides
+the saved identity on launch; remove it to use remembered UI selections.
+
+The startup form uses Qt through PsychoPy. After Start Experiment, a PsychoPy
+window presents instructions, calibration, trials, and assessments. Discovery
+and connection run in a setup worker; experiment input keeps the existing
+nonblocking LSL read path.
 
 Respyra does **not** write session or self-assessment CSVs. The recorder owns
 the continuous breathing data and the event timeline. The one-channel
@@ -32,8 +52,10 @@ alone cannot prove that the force stream is being saved. Marker publication
 fails if the subscriber disconnects; inspect the recorded file before using
 the run for analysis.
 The native participant dialog marks each key press and text edit, OK/Cancel
-button clicks, accept/reject, and final field values. Animation frames are not
-individual markers.
+button clicks, accept/reject, and final field values. LSL selection, scan
+results, connection outcomes, saved-source actions, and source loss also send
+named markers. Setup completion markers describe when the UI observes the
+worker result. Animation frames are not individual markers.
 
 ```sh
 uv run python scripts/run_experiment.py

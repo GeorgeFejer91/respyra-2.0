@@ -115,10 +115,9 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario):
         return event.waitKeys(keyList=key_list)[0]
 
     monkeypatch.setattr(study, "MarkerOutlet", lambda: marker)
-    monkeypatch.setattr(study, "connect_force_source", lambda: force)
-    monkeypatch.setattr(study, "run_marked_participant_dialog", lambda _cfg, _markers: {
+    monkeypatch.setattr(study, "run_source_setup", lambda _cfg, _markers: ({
         "participant": "test", "session": "001",
-    })
+    }, force))
     monkeypatch.setattr(study, "setup_display", lambda _cfg: (win, stimuli))
     monkeypatch.setattr(display, "show_text_and_wait", show)
     monkeypatch.setattr(event, "waitKeys", lambda **_kwargs: [key])

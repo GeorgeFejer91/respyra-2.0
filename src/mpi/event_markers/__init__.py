@@ -229,7 +229,7 @@ class NullSampleLogger:
         pass
 
 
-def run_marked_participant_dialog(cfg, markers: MarkerOutlet) -> dict[str, str] | None:
+def run_marked_participant_dialog(cfg, markers: MarkerOutlet, configure=None) -> dict[str, str] | None:
     """Use PsychoPy's dialog while marking its native Qt inputs."""
     from psychopy import gui
     from PyQt6 import QtCore, QtWidgets
@@ -293,6 +293,10 @@ def run_marked_participant_dialog(cfg, markers: MarkerOutlet) -> dict[str, str] 
     dialog.cancelBtn.clicked.connect(lambda: publish("participant.button.cancel.clicked"))
     dialog.accepted.connect(lambda: publish("participant.dialog.accepted"))
     dialog.rejected.connect(lambda: publish("participant.dialog.rejected"))
+    if configure is not None:
+        configure(dialog, publish)
+    if failure is not None:
+        raise failure
     dialog.show()
     if failure is not None:
         raise failure

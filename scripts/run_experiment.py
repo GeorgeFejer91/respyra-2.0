@@ -4,8 +4,9 @@ from collections import deque
 from contextlib import ExitStack
 from typing import Any
 
-from mpi.event_markers import MarkerOutlet, NullSampleLogger, run_marked_participant_dialog
-from mpi.lsl_force import LSLForceError, connect_force_source
+from mpi.event_markers import MarkerOutlet, NullSampleLogger
+from mpi.lsl_force import LSLForceError
+from mpi.lsl_setup import run_source_setup
 from respyra.configs.experiment_config import ExperimentConfig
 from respyra.core.target_generator import TargetGenerator, calibrate_from_baseline
 from respyra.core.runner import (
@@ -112,8 +113,8 @@ def run_tracking(
 def run_experiment(cfg: ExperimentConfig | None = None) -> None:
     """Run the standard breath tracking experiment.
 
-    Composes all phases in order: LSL force discovery, display setup,
-    participant dialog, range calibration, then the trial loop
+    Composes all phases in order: participant and LSL setup dialog,
+    display setup, instructions, range calibration, then the trial loop
     (baseline -> countdown -> tracking -> feedback per trial).
 
     Power users can call the individual phase functions above to
@@ -142,16 +143,12 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
     error_occurred = False
 
     try:
-        belt = connect_force_source()
-        markers.emit("source.connected", source_id=belt.source_id,
-                     stream_name=belt.stream_name, force_channel_index=belt.force_index)
-
         from psychopy import core, data
 
         markers.emit("participant.dialog.opened")
         markers.screen = "participant_dialog"
         try:
-            exp_info = run_marked_participant_dialog(cfg, markers)
+            exp_info, belt = run_source_setup(cfg, markers)
         finally:
             markers.screen = None
         if exp_info is None:
