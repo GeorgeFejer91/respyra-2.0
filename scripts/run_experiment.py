@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from collections import deque
-from contextlib import ExitStack
+from contextlib import ExitStack, redirect_stdout
+import sys
 from typing import Any
 
 from mpi.event_markers import MarkerOutlet, NullSampleLogger
+from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, isolate_control_input
 from mpi.lsl_force import LSLForceError
 from mpi.lsl_setup import run_source_setup
 from respyra.configs.experiment_config import ExperimentConfig
@@ -25,10 +27,37 @@ from respyra.core.runner import (
 
 def main():
     from mpi.validation_study_jenny import CONFIG as _cfg
-
-    cfg = _cfg
-    # cfg.display.fullscr = True
-    run_experiment(cfg)
+    if sys.argv[1:] != ["--desktop"]:
+        raise SystemExit("Start the HTML desktop wrapper with: pnpm tauri dev")
+    writer = sys.stdout
+    control_input = isolate_control_input(sys.stdin)
+    with redirect_stdout(sys.stderr):
+        bridge = DesktopBridge(control_input, writer)
+        markers = MarkerOutlet()
+        failure = None
+        phase = "finished"
+        message = "Experiment ended. Check the LSL recording before closing."
+        try:
+            run_experiment(_cfg, bridge, markers)
+        except DesktopCancelled:
+            pass
+        except SystemExit as exc:
+            if exc.code not in (None, 0):
+                raise
+        except Exception as exc:
+            phase, message = "error", str(exc)
+            failure = exc
+        # Retain the one outlet through the final screen and desktop closure.
+        # A consumer is not proof of persisted data; keep the recorder running.
+        if not bridge.closed.is_set():
+            if markers.sequence:
+                markers.emit("ui.wrapper.result.requested", outcome=phase, message=message)
+            bridge.send({"phase": phase, "message": message})
+            bridge.closed.wait()
+        if markers.sequence:
+            bridge.mark_close(markers)
+        if failure is not None:
+            raise failure
 
 
 def run_tracking(
@@ -110,7 +139,7 @@ def run_tracking(
     return trial_errors, False
 
 
-def run_experiment(cfg: ExperimentConfig | None = None) -> None:
+def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=None) -> None:
     """Run the standard breath tracking experiment.
 
     Composes all phases in order: participant and LSL setup dialog,
@@ -131,8 +160,14 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
 
         cfg = _default_cfg
 
-    markers = MarkerOutlet()
-    markers.wait_for_recorder()
+    if markers is None:
+        markers = MarkerOutlet()
+    if bridge is None:
+        markers.wait_for_recorder()
+    else:
+        bridge.send({"phase": "waiting_recorder", "run_id": markers.run_id,
+                     "message": "Start an LSL recorder and subscribe to Respyra-Events. Waiting up to 30 seconds…"})
+        markers.wait_for_recorder(cancel_check=bridge.check_cancel)
     markers.emit("run.recorder_connected")
     belt = None
     win = None
@@ -148,7 +183,8 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
         markers.emit("participant.dialog.opened")
         markers.screen = "participant_dialog"
         try:
-            exp_info, belt = run_source_setup(cfg, markers)
+            exp_info, belt = (run_source_setup(cfg, markers, bridge) if bridge is not None
+                              else run_source_setup(cfg, markers))
         finally:
             markers.screen = None
         if exp_info is None:
@@ -159,6 +195,10 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
         participant = exp_info["participant"]
         session = exp_info["session"]
         markers.emit("participant.dialog.submitted", participant=participant, session=session)
+
+        if bridge is not None:
+            bridge.check_cancel()
+            bridge.send({"phase": "experiment", "message": "Experiment running in PsychoPy."})
 
         win, stimuli = setup_display(cfg)
         markers.emit("display.opened")
@@ -187,7 +227,9 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
             y_max=cfg.trace.y_range[1],
         )
         markers.state = state
-        show_text_and_wait = hooks.enter_context(markers.observe_inputs_and_screens())
+        observer = (markers.observe_inputs_and_screens(cancel_check=bridge.check_cancel)
+                    if bridge is not None else markers.observe_inputs_and_screens())
+        show_text_and_wait = hooks.enter_context(observer)
 
         # 6. Instructions
         baseline_dur = int(cfg.timing.baseline_duration_sec)
@@ -456,6 +498,9 @@ def run_experiment(cfg: ExperimentConfig | None = None) -> None:
             )
             markers.emit("run.completed", trials_completed=completed_trials)
 
+    except DesktopCancelled:
+        abort_reason = "desktop_closed"
+        bridge.mark_close(markers)
     except Exception as exc:
         error_occurred = True
         if isinstance(exc, LSLForceError) and belt is not None:

@@ -28,9 +28,11 @@ Higher-priority instructions and the current user request always win.
 | Changing study flow, condition ownership, or logged-data contracts | `system-engineering` | Conditional alongside `ponytail`; check experiment and analysis consumers together. |
 | Changing LSL discovery, channel selection, timing, or the Vernier Stream Mini contract | `system-engineering` alongside `ponytail` | Check the publisher's actual raw/derived outlet metadata and the consumer's `force_n` units before editing; verify the mock stream and report physical-belt evidence separately. |
 | Changing prompts, input handling, phase timing, or LSL markers | `ponytail` and `system-engineering` | Trace all callers of the affected respyra phase, update `src/mpi/event_markers/catalog.json` with each new or removed event, and verify marker ordering and absence of local session CSV writes. Keep the event hook in one owner instead of copying the study phases. |
+| Changing the Tauri shell, native commands, permissions, or Python process lifecycle | `tauri-rust-developer` alongside `ponytail` | Keep one supervised Python engine and a closed native command surface. Verify cancellation, abnormal exit, private pipe framing and least-privilege capabilities. Keep experiment timing and LSL publication in Python. |
+| Changing text-bearing HTML/CSS/JS setup UI | `uncodixfy-pretext` and its `uncodixfy` companion alongside `ponytail` | Use locked local Pretext/fonts, semantic controls, full readable status and stream identities. Verify rendered reflow/200% text and the target WebView; never route experiment stimuli into HTML. |
 
-The repository is small enough for direct source inspection; no graph skill or
-frontend skill is part of its standing route.
+The repository is small enough for direct source inspection; no graph skill is
+part of its standing route.
 
 ## Supply-chain rule
 

@@ -163,9 +163,8 @@ def test_catalog_has_pairs_and_logger_has_no_output():
     for name in events:
         if name.startswith("ui.") and name.endswith(".shown"):
             assert name[:-5] + "dismissed" in events
-    assert {field for event in events.values() for field in event["fields"]} == set(
-        CATALOG["event_field_definitions"]
-    )
+    required = {field for event in events.values() for field in event["fields"]}
+    assert set(CATALOG["event_field_definitions"]) - required == {"ui_seq", "ui_time_ms"}
     logger = NullSampleLogger()
     logger.log_row(force_n=10)
     logger.flush()
@@ -174,13 +173,14 @@ def test_catalog_has_pairs_and_logger_has_no_output():
     root = runner.parent.parent
     tree = ast.parse("\n".join(path.read_text(encoding="utf-8") for path in (
         runner, root / "src/mpi/lsl_setup.py", root / "src/mpi/event_markers/__init__.py",
+        root / "src/mpi/desktop_bridge.py",
     )))
     literal_events = {
         node.args[0].value
         for node in ast.walk(tree)
         if isinstance(node, ast.Call)
         and ((isinstance(node.func, ast.Attribute) and node.func.attr == "emit")
-             or (isinstance(node.func, ast.Name) and node.func.id == "publish"))
+             or (isinstance(node.func, ast.Name) and node.func.id in {"publish", "emit"}))
         and node.args
         and isinstance(node.args[0], ast.Constant)
         and isinstance(node.args[0].value, str)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
@@ -59,8 +60,18 @@ class MarkerOutlet:
         desc.append_child_value("application", "Respyra 2.0")
         self._outlet = StreamOutlet(info)
 
-    def wait_for_recorder(self, timeout: float = 30.0) -> None:
-        if not self._outlet.wait_for_consumers(timeout):
+    def wait_for_recorder(self, timeout: float = 30.0, cancel_check=None) -> None:
+        if cancel_check is None:
+            connected = self._outlet.wait_for_consumers(timeout)
+        else:
+            deadline = time.monotonic() + timeout
+            connected = False
+            while time.monotonic() < deadline:
+                cancel_check()
+                if self._outlet.wait_for_consumers(min(0.1, deadline - time.monotonic())):
+                    connected = True
+                    break
+        if not connected:
             raise RuntimeError("No LSL recorder subscribed to Respyra-Events")
 
     def start_calibration_attempt(self) -> None:
@@ -98,7 +109,7 @@ class MarkerOutlet:
         )
 
     @contextmanager
-    def observe_inputs_and_screens(self):
+    def observe_inputs_and_screens(self, cancel_check=None):
         """Mark accepted/rejected keys and every known respyra text screen."""
         from psychopy import event
         from respyra.core import display, events
@@ -117,9 +128,17 @@ class MarkerOutlet:
 
         def observed_wait(*args, **kwargs):
             allowed = kwargs.pop("keyList", None)
+            deadline = time.monotonic() + kwargs.get("maxWait", float("inf"))
             while True:
+                if cancel_check is not None:
+                    cancel_check()
+                    kwargs["maxWait"] = min(0.1, max(0, deadline - time.monotonic()))
                 keys = original_wait(*args, keyList=None, **kwargs)
+                if cancel_check is not None:
+                    kwargs["clearEvents"] = False
                 if keys is None:
+                    if cancel_check is not None and time.monotonic() < deadline:
+                        continue
                     return None
                 accepted = []
                 for item in keys:
@@ -132,6 +151,8 @@ class MarkerOutlet:
                     return accepted
 
         def observed_check(key_list=None, clock=None):
+            if cancel_check is not None:
+                cancel_check()
             keys = original_check(None, clock)
             for key, timestamp in keys:
                 mark_key(key, key_list is None or key in key_list,
@@ -140,6 +161,8 @@ class MarkerOutlet:
                     if key_list is None or key in key_list]
 
         def observed_clear(*args, **kwargs):
+            if cancel_check is not None:
+                cancel_check()
             event_type = args[0] if args else kwargs.get("eventType")
             if event_type in (None, "keyboard"):
                 for key, timestamp in original_get(keyList=None, timeStamped=True):
@@ -227,77 +250,3 @@ class NullSampleLogger:
 
     def flush(self, *_args, **_kwargs) -> None:
         pass
-
-
-def run_marked_participant_dialog(cfg, markers: MarkerOutlet, configure=None) -> dict[str, str] | None:
-    """Use PsychoPy's dialog while marking its native Qt inputs."""
-    from psychopy import gui
-    from PyQt6 import QtCore, QtWidgets
-
-    if gui.haveQt != "PyQt6":
-        raise RuntimeError("Participant input markers require PsychoPy's PyQt6 dialog")
-
-    values = {"participant": "", "session": "001"}
-    dialog = gui.DlgFromDict(values, title=cfg.name,
-                             order=["participant", "session"], show=False)
-    failure = None
-
-    def publish(name, **fields):
-        nonlocal failure
-        if failure is not None:
-            return
-        try:
-            markers.emit(name, **fields)
-        except Exception as exc:
-            failure = exc
-            dialog.reject()
-
-    class KeyFilter(QtCore.QObject):
-        def __init__(self, field):
-            super().__init__(dialog)
-            self.field = field
-
-        def eventFilter(self, _widget, qt_event):
-            if qt_event.type() == QtCore.QEvent.Type.KeyPress:
-                publish("participant.field.key", field=self.field,
-                        key=qt_event.text() or f"QtKey:{int(qt_event.key())}")
-            return False
-
-    class DialogFilter(QtCore.QObject):
-        visible = False
-
-        def eventFilter(self, _widget, qt_event):
-            if qt_event.type() == QtCore.QEvent.Type.Show and not self.visible:
-                self.visible = True
-                publish("participant.dialog.shown")
-            elif qt_event.type() == QtCore.QEvent.Type.Hide and self.visible:
-                self.visible = False
-                publish("participant.dialog.hidden")
-            return False
-
-    dialog_filter = DialogFilter(dialog)
-    dialog.installEventFilter(dialog_filter)
-    filters = []
-    for field, widget in zip(dialog._keys, dialog.inputFields, strict=True):
-        if not isinstance(widget, QtWidgets.QLineEdit):
-            raise RuntimeError(f"Expected a text input for participant field {field}")
-        key_filter = KeyFilter(field)
-        filters.append(key_filter)
-        widget.installEventFilter(key_filter)
-        widget.textEdited.connect(
-            lambda value, field=field: publish("participant.field.edited",
-                                               field=field, value=value)
-        )
-
-    dialog.okBtn.clicked.connect(lambda: publish("participant.button.ok.clicked"))
-    dialog.cancelBtn.clicked.connect(lambda: publish("participant.button.cancel.clicked"))
-    dialog.accepted.connect(lambda: publish("participant.dialog.accepted"))
-    dialog.rejected.connect(lambda: publish("participant.dialog.rejected"))
-    if configure is not None:
-        configure(dialog, publish)
-    if failure is not None:
-        raise failure
-    dialog.show()
-    if failure is not None:
-        raise failure
-    return values if dialog.OK else None

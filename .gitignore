@@ -1,5 +1,12 @@
 # Local agent/runtime artifacts
 .for-ai-local/
+node_modules/
+web/vendor/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/icons/*
+!src-tauri/icons/icon.ico
+!src-tauri/icons/icon.png
 
 # Local configuration and credentials
 .env

@@ -49,10 +49,12 @@ against the Polar-Mini-Stream source revision used for the change. For
 marker or experiment changes, run `uv run pytest tests/test_event_markers.py`
 and `uv run pytest tests/test_experiment_flow.py` against the installed
 `respyra` dependency (the sibling checkout can differ from the published
-version). For participant-dialog changes, run
-`uv run pytest tests/test_participant_dialog.py` with the installed Qt backend.
+version). For HTML control/pipe changes, run
+`uv run --frozen pytest tests/test_desktop_bridge.py tests/test_desktop_process.py`
+and `pnpm test:web`. The real process check must receive setup state after a
+real marker subscription and keep the outlet alive through final Close.
 For startup discovery and remembered selection, also run
-`uv run pytest tests/test_lsl_setup.py`: exercise the actual Qt form, reject
+`uv run pytest tests/test_lsl_setup.py`: exercise the Python form controller, reject
 incompatible results, verify saved-source reconnect and loss, prevent Start
 without valid input, and close cancelled connections without overwriting memory.
 Check identity persistence/corruption and duplicate source IDs in the input
@@ -62,6 +64,38 @@ Check that every emitted event name appears in `catalog.json`, every
 blocking screen has shown/dismissed markers, phase start/end and abort paths
 pair sensibly, no-data calibration fails, and the experiment creates no CSV
 file. Inspect the configured trial order and target/error units in N.
+
+For the desktop shell and text layout:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm prepare:web
+pnpm test:web
+pnpm check:ui
+cargo fmt --manifest-path src-tauri/Cargo.toml --check
+cargo test --manifest-path src-tauri/Cargo.toml --locked
+cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+pnpm tauri build --debug --no-bundle
+uv run --frozen python tests/check_native_lsl.py
+```
+
+`check:ui` uses installed Chrome and a mocked native bridge with the actual form.
+It checks controls, action order, long identities, 320/820/1440 CSS px, doubled
+text and text-spacing overrides. The native check requires Windows/WebView2,
+the built debug executable and port 9227 free. It opens real windows, uses
+synthetic Force/normalized outlets, isolated settings and a live marker inlet;
+checks selection, automatic reconnect, PsychoPy instruction flip, abort/cleanup
+and marker sequence, plus native WebView reflow at 320/1440 CSS px and doubled
+text. The Rust lifecycle test covers normal, failed and deliberately hung Python
+children, including the bounded process-tree termination fallback on Windows.
+Keep diagnostic output in ignored `.for-ai-local/`.
+Run this separately from other live LSL sessions. Neither check verifies a
+physical belt or persistence to an XDF file.
+
+Do not let Python library subprocesses inherit the control pipe. Windows Git
+can hang when another thread reads that inherited stdin. The desktop worker
+duplicates its control input and replaces standard input with the null device;
+retain this isolation and verify the real process after startup/import changes.
 
 ## Gate 3: integrated readiness
 

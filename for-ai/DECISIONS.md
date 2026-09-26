@@ -75,7 +75,7 @@ decision and link both entries.
 ## D-0004 — Remember validated input in the existing startup form
 
 - Date: 2026-09-26
-- Status: Accepted
+- Status: Superseded for Qt UI ownership by D-0005; source identity policy retained
 - Context: Operators need to discover compatible LSL input and reuse their
   accepted belt without setting environment variables each session.
 - Decision: Extend the existing PsychoPy Qt participant/session form with
@@ -90,3 +90,28 @@ decision and link both entries.
   markers are published by the UI when it observes results. Start is gated on
   accepted live input, and setup drains the inlet to avoid accumulating old data.
 - Supersedes: None; extends D-0003 with UI selection and identity persistence.
+
+## D-0005 — HTML/Tauri setup with the PsychoPy experiment authority retained
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user approved replacing the Qt wrapper after requesting a GitHub
+  rollback checkpoint. Experiment screens and paradigm decisions must remain
+  governed by PsychoPy. The prior revision is tagged
+  `qt-wrapper-checkpoint-2026-09-27`.
+- Decision: Use a plain local HTML form in Tauri v2, with user-supplied identifier
+  `dev.georgefejer.respyra2`. Rust supervises the fixed workspace Python engine
+  over private bounded pipes and three closed commands. Reuse Python's Force
+  validation, remembered selection, study phases and single marker outlet.
+  Delete the Qt form and its event filters. Keep onset markers directly on
+  PsychoPy flips; label HTML marker timestamps as backend receipt after IPC,
+  with separate browser action sequence/time capture. Retain the outlet until
+  final desktop closure so cleanup/Close events can be received.
+- Consequences: No waveform samples or experiment frames cross desktop IPC.
+  Qt remains a transitive distribution dependency. The initial executable needs
+  the checkout and `.venv`; self-contained packaging needs separate work. Native
+  shutdown attempts cleanup and has a 15-second kill limit, which cannot
+  guarantee final markers if the engine hangs. Isolate standard input from
+  library subprocesses to avoid Windows inherited-pipe hangs.
+- Supersedes: Qt-specific ownership in D-0003/D-0004; preserves their signal,
+  units, no-CSV, recorder and remembered-identity decisions.
