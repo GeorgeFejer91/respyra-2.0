@@ -1,5 +1,6 @@
 import { actionQueue } from './action-queue.js';
 import { measureTextRegions } from './text-fit.js';
+import { mountRemoteViewer } from './remote-host.js';
 
 const byId = id => document.getElementById(id);
 const controls = byId('controls');
@@ -98,6 +99,7 @@ byId('close').addEventListener('click', () => native.core.invoke('close_app', { 
 
 measureTextRegions().catch(() => { document.documentElement.dataset.pretextFit = 'unavailable'; });
 if (native) {
+  mountRemoteViewer((command, args) => native.core.invoke(command, args));
   // Subscribe before starting the engine: no readiness/state event can be missed.
   await native.event.listen('setup-state', event => render(event.payload));
   await native.core.invoke('launch_backend').then(render).catch(fail);

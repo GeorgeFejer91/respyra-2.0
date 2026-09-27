@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-viewer-action"
+description = "Enables the viewer_action command without any pre-configured scope."
+commands.allow = ["viewer_action"]
+
+[[permission]]
+identifier = "deny-viewer-action"
+description = "Denies the viewer_action command without any pre-configured scope."
+commands.deny = ["viewer_action"]

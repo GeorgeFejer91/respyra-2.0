@@ -43,3 +43,18 @@ def test_snapshots_are_framed_and_no_generic_commands_are_accepted():
     with pytest.raises(DesktopCancelled): bridge.check_cancel()
     bridge.send({"phase": "setup", "message": "Ready"})
     assert json.loads(writer.getvalue().removeprefix(PREFIX)) == {"phase": "setup", "message": "Ready"}
+
+
+def test_progress_retains_only_latest_public_metadata_without_flip_io():
+    writer = io.StringIO()
+    bridge = DesktopBridge(io.StringIO('{"action":"shutdown","reason":"window_closed"}\n'), writer)
+    assert bridge.closed.wait(1)
+    payload = {"event": "tracking.started", "seq": 1, "lsl_time": 123.5,
+               "trial": 2, "condition": "normal", "phase": "tracking", "screen": None,
+               "participant": "private", "value": "private"}
+    bridge.note_marker(payload)
+    assert writer.getvalue() == ""
+    bridge.note_marker({**payload, "seq": 100})
+    assert bridge._progress == {"phase": "progress", "experiment_phase": "tracking",
+                               **{key: value for key, value in payload.items()
+                                  if key in {"event", "lsl_time", "trial", "condition", "screen"}}, "seq": 100}

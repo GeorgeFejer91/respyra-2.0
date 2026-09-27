@@ -6,6 +6,7 @@
   <title>Respyra 2.0</title>
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
+  <script src="./vendor/vdoninja-sdk.min.js" defer></script>
 </head>
 <body>
   <main>
@@ -36,6 +37,18 @@
       </fieldset>
     </form>
     <button id="close" type="button" hidden data-measure>Close</button>
+    <section class="viewer-setup" aria-labelledby="viewer-heading">
+      <h2 id="viewer-heading" data-measure>Remote experiment viewer</h2>
+      <p data-measure>Enable read-only monitoring in a Recorder tab or phone. The private link grants progress viewing for this session, for up to four hours.</p>
+      <div class="actions"><button id="viewer-start" type="button" data-measure>Start viewer</button><button id="viewer-stop" type="button" disabled data-measure>Stop viewer</button></div>
+      <p id="viewer-status" role="status" data-measure>Viewer inactive.</p>
+      <div id="viewer-invitation" hidden>
+        <label><span data-measure>Private viewer link</span><input id="viewer-link" readonly spellcheck="false"></label>
+        <button id="viewer-copy" type="button" data-measure>Copy viewer link</button>
+        <div id="viewer-qr"></div>
+        <p data-measure>Paste this link into the Recorder’s + tab. Approved Recorder phones receive the same tab; select Connect inside Respyra. Stop viewer revokes the invitation.</p>
+      </div>
+    </section>
   </main>
 </body>
 </html>

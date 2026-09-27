@@ -16,6 +16,7 @@ use std::{
 use tauri::{Emitter, Manager};
 
 const PREFIX: &str = "RESPYRA/1 ";
+mod viewer;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -98,6 +99,9 @@ struct Engine {
     input: Option<ChildStdin>,
     snapshot: Value,
     launched: bool,
+    progress: Value,
+    revision: u64,
+    viewer: Option<viewer::ViewerSession>,
 }
 
 struct Desktop {
@@ -113,6 +117,9 @@ impl Default for Desktop {
                 input: None,
                 snapshot: json!({"phase":"starting", "message":"Starting the experiment engine…"}),
                 launched: false,
+                progress: Value::Null,
+                revision: 0,
+                viewer: None,
             })),
             closing: Arc::new(AtomicBool::new(false)),
         }
@@ -121,6 +128,11 @@ impl Default for Desktop {
 
 fn publish(app: &tauri::AppHandle, engine: &Arc<Mutex<Engine>>, snapshot: Value) {
     if let Ok(mut state) = engine.lock() {
+        state.revision += 1;
+        if snapshot["phase"] == "progress" {
+            state.progress = snapshot;
+            return;
+        }
         state.snapshot = snapshot.clone();
     }
     if let Some(window) = app.get_webview_window("main") {
@@ -141,7 +153,7 @@ fn decode_frame(line: &str) -> Result<Option<Value>, String> {
     let value: Value = serde_json::from_str(payload).map_err(|e| e.to_string())?;
     if !matches!(
         value["phase"].as_str(),
-        Some("waiting_recorder" | "setup" | "experiment" | "finished" | "error")
+        Some("waiting_recorder" | "setup" | "experiment" | "finished" | "error" | "progress")
     ) {
         return Err("Invalid engine state".into());
     }
@@ -265,6 +277,51 @@ fn setup_action(action: Action, desktop: tauri::State<'_, Desktop>) -> Result<()
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn viewer_action(
+    action: viewer::ViewerAction,
+    desktop: tauri::State<'_, Desktop>,
+) -> Result<Value, String> {
+    if desktop.closing.load(Ordering::Acquire) {
+        return Err("Desktop is closing".into());
+    }
+    let mut state = desktop
+        .engine
+        .lock()
+        .map_err(|_| "Desktop state lock failed")?;
+    match action {
+        viewer::ViewerAction::Start {} => {
+            let (session, invitation) = viewer::ViewerSession::start()?;
+            state.viewer = Some(session);
+            Ok(invitation)
+        }
+        viewer::ViewerAction::Snapshot { token } => {
+            if !state
+                .viewer
+                .as_ref()
+                .is_some_and(|session| session.permits(&token))
+            {
+                return Err("Viewer session ended; create a fresh link".into());
+            }
+            Ok(viewer::projection(
+                &state.snapshot,
+                &state.progress,
+                state.revision,
+            ))
+        }
+        viewer::ViewerAction::Stop { token } => {
+            if state
+                .viewer
+                .as_ref()
+                .is_some_and(|session| session.permits(&token))
+            {
+                state.viewer = None;
+            }
+            Ok(Value::Null)
+        }
+    }
+}
+
 fn shutdown(engine: &Arc<Mutex<Engine>>, reason: &str) -> bool {
     if let Ok(mut state) = engine.lock()
         && let Some(mut input) = state.input.take()
@@ -322,6 +379,9 @@ fn request_close(app: tauri::AppHandle, reason: &'static str) {
         return;
     }
     let engine = Arc::clone(&desktop.engine);
+    if let Ok(mut state) = engine.lock() {
+        state.viewer = None;
+    }
     thread::spawn(move || {
         shutdown(&engine, reason);
         app.exit(0);
@@ -345,7 +405,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             launch_backend,
             setup_action,
-            close_app
+            close_app,
+            viewer_action
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {

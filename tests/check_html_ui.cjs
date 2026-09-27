@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
     if (!file.startsWith(web + path.sep)) { res.writeHead(403); res.end(); return; }
     try {
       const bytes = await fs.readFile(file);
-      res.setHeader('Content-Type', {'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'}[path.extname(file)] || 'application/octet-stream');
+      res.setHeader('Content-Type', {'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.woff2':'font/woff2'}[path.extname(file)] || 'application/octet-stream');
       res.end(bytes);
     } catch { res.writeHead(404); res.end(); }
   });

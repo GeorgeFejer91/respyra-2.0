@@ -104,6 +104,13 @@ retain this isolation and verify the real process after startup/import changes.
 
 ## Gate 3: integrated readiness
 
+For the observer panel, run `pnpm test:web`, `pnpm check:ui` and
+`pnpm check:remote` with `RECORDER_COMPANION` pointing to Recorder's companion.
+Run Rust tests/clippy and Python desktop/marker/study tests. Qualify live VDO
+separately with `RESPYRA_REAL_VDO=1`; browser checks still mock native IPC.
+Report packaged WebView, physical phone/belt and XDF evidence separately.
+See `docs/remote-viewer.md` for the ownership contract.
+
 Run proportionate build, test, lint, type, runtime, visual, device, security,
 and compatibility checks for every affected boundary. Do not run an expensive
 or irrelevant full matrix for a documentation-only edit.

@@ -60,6 +60,8 @@ def marker():
 
 
 def test_marker_payload_and_recorder_failure(marker):
+    observed = []
+    marker.observer = observed.append
     marker.wait_for_recorder()
     marker.emit("run.started", participant="p1", session="001")
     payload, timestamp = marker._outlet.samples[-1]
@@ -67,6 +69,7 @@ def test_marker_payload_and_recorder_failure(marker):
     assert payload["seq"] == 1
     assert payload["run_id"] == marker.run_id
     assert payload["lsl_time"] == timestamp == 123.5
+    assert observed == [payload]
     with pytest.raises(ValueError, match="Undocumented"):
         marker.emit("unknown")
     with pytest.raises(ValueError, match="missing marker fields"):

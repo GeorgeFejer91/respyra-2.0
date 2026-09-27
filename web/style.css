@@ -35,5 +35,11 @@ button:disabled { color: #6e7781; border-color: #d0d7de; cursor: default; backgr
 .final-actions { border-top: 1px solid #d0d7de; padding-top: 20px; }
 [data-measure] { overflow-wrap: break-word; word-break: normal; }
 [hidden] { display: none !important; }
+.viewer-setup { margin-top: 28px; padding-top: 20px; border-top: 1px solid #d0d7de; }
+#viewer-qr img { display: block; width: 320px; max-width: 100%; height: auto; image-rendering: pixelated; margin-top: 16px; }
+#viewer-copy, #pairing .actions { margin-top: 12px; }
+.progress { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px 16px; }
+.progress dt, .progress dd { margin: 0; min-width: 0; line-height: 1.5; }
+#observation { margin-top: 28px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 520px) { main { padding: 20px 16px; } .fields { grid-template-columns: minmax(0, 1fr); gap: 16px; } .actions > button { flex: 1 1 100%; } }

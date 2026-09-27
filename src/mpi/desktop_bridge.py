@@ -68,6 +68,8 @@ class DesktopBridge:
         self.sequence = 0
         self.close_reason = "window_closed"
         self.close_marked = False
+        self._write_lock = threading.Lock()
+        self._progress = None
         threading.Thread(target=self._read, args=(reader,), daemon=True,
                          name="respyra-desktop-control").start()
 
@@ -116,8 +118,34 @@ class DesktopBridge:
         line = json.dumps(snapshot, separators=(",", ":"), allow_nan=False)
         if len(line.encode("utf-8")) > 1_000_000:
             raise ValueError("Oversized desktop state")
-        self.writer.write(PREFIX + line + "\n")
-        self.writer.flush()
+        with self._write_lock:
+            self.writer.write(PREFIX + line + "\n")
+            self.writer.flush()
+
+    def note_marker(self, payload):
+        """Replace the observer projection; no pipe/network I/O on a display flip."""
+        latest = {
+            key: payload[key] for key in
+            ("event", "seq", "lsl_time", "trial", "condition", "screen")
+        }
+        latest.update(phase="progress", experiment_phase=payload["phase"])
+        self._progress = latest
+
+    def start_progress(self):
+        def publish():
+            previous = None
+            while not self.closed.wait(0.25):
+                latest = self._progress
+                if latest is None or latest is previous:
+                    continue
+                try:
+                    self.send(latest)
+                    previous = latest
+                except Exception as exc:
+                    self.error = exc
+                    self.closed.set()
+        threading.Thread(target=publish, daemon=True,
+                         name="respyra-viewer-projection").start()
 
     def mark_close(self, markers):
         if not self.close_marked:

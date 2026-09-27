@@ -95,7 +95,7 @@ pnpm check:ui
 ```
 
 `web/` owns the setup form; `src-tauri/` supervises its Python process through
-three closed native commands and a private control pipe. `src/mpi/` contains
+closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
 helpers. `scripts/plot_session.py` remains for older local CSV sessions; the new
 experiment does not produce its input. `notebooks/` contains signal exploration,
@@ -108,3 +108,12 @@ Agent instructions start at [`AGENTS.md`](./AGENTS.md).
 
 The Qt checkpoint before this migration is the Git tag
 `qt-wrapper-checkpoint-2026-09-27`.
+
+## Remote LSL Recorder panel
+
+**Start viewer** creates a private link and QR for read-only progress.
+Paste it into Recorder's **+** tab and select **Connect** inside the panel.
+Approved Recorder phones receive the same tab. The permanent descriptor is
+[`companion/panel.json`](companion/panel.json). See
+[remote-viewer.md](docs/remote-viewer.md) for pairing, one-observer lifecycle,
+hosting, privacy, checks and qualification limits.

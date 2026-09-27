@@ -49,6 +49,7 @@ class MarkerOutlet:
         self.phase: str | None = None
         self.screen: str | None = None
         self.state = None
+        self.observer = None
         self.calibration_attempt_open = False
         info = StreamInfo(
             "Respyra-Events", "Markers", 1, 0.0, cf_string,
@@ -109,6 +110,8 @@ class MarkerOutlet:
             [json.dumps(payload, separators=(",", ":"), allow_nan=False)],
             timestamp=timestamp,
         )
+        if self.observer is not None:
+            self.observer(payload)
 
     @contextmanager
     def observe_inputs_and_screens(self, cancel_check=None):

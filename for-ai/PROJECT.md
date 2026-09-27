@@ -45,7 +45,12 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   supervises one Python child through closed commands (`launch_backend`,
   `setup_action`, `close_app`) and private bounded JSON pipes. Python is the
   sole LSL source/experiment/marker authority; Rust validates the native command
-  surface and process lifecycle. There is no web server or remote control.
+  surface and process lifecycle. There is no web server. The opt-in read-only
+  observer is defined in `docs/remote-viewer.md`. Rust owns expiring grants and
+  sanitized projections; Python publishes latest-only marker progress through
+  a worker without viewer I/O on display flips. BRSP/VDO grants only
+  `experiment.observe`, no study mutations. `companion/` supplies Remote
+  Panel/1 assets hosted under the Recorder's `panels/respyra/` path.
   The shell hides during PsychoPy and returns for the final result/Close.
   The workspace executable requires the checkout's `.venv`; standalone
   PsychoPy packaging is outside this migration. App identity is

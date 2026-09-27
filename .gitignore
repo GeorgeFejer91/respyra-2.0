@@ -2,6 +2,10 @@
 .for-ai-local/
 node_modules/
 web/vendor/
+companion/vendor/
+companion/style.css
+companion/text-fit.js
+companion/remote-profile.js
 src-tauri/target/
 src-tauri/gen/
 src-tauri/icons/*

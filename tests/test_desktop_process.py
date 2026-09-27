@@ -69,6 +69,7 @@ def check_engine_lifecycle(tmp_path):
             inlet = StreamInlet(streams[0], recover=False)
             inlet.open_stream(timeout=5)
             setup = states.get(timeout=8)
+            while setup["phase"] == "progress": setup = states.get(timeout=8)
             assert setup["phase"] == "setup" and not setup["can_start"]
             for seq, action in enumerate([
                 {"action": "shown"},

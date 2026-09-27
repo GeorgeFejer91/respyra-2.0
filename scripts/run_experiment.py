@@ -23,6 +23,8 @@ def main():
     with redirect_stdout(sys.stderr):
         bridge = DesktopBridge(control_input, writer)
         markers = MarkerOutlet()
+        markers.observer = bridge.note_marker
+        bridge.start_progress()
         failure = None
         phase = "finished"
         message = "Experiment ended. Check the LSL recording before closing."

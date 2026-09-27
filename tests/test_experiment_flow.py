@@ -90,6 +90,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario):
     marker.sequence = 0
     marker.trial_num = marker.condition = marker.phase = marker.screen = None
     marker.state = None
+    marker.observer = None
     marker.calibration_attempt_open = False
     force = Force()
     force.produce = scenario != "no_force"
