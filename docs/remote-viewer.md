@@ -99,7 +99,7 @@ Never publish an invitation inside a panel descriptor.
 
 Source lives here in companion/ with shared presentation/profile generated
 from web/. pnpm prepare:web produces reviewed static assets and pinned vendor
-licenses. Only these assets are published on Respyra's own GitHub Pages site:
+licenses. The configured GitHub Pages destination for these assets is:
 https://georgefejer91.github.io/respyra-2.0/
 The gh-pages branch contains static companion files and their source SHA only.
 Python, session data and grants are never deployed. The Recorder iframe is
@@ -109,6 +109,9 @@ disables only its unavailable optional cache hooks.
 After committing validated source, run scripts/publish-phone.ps1. It prepares
 the locked assets and publishes only companion/ to an isolated gh-pages
 worktree. First-time site enablement uses GitHub Pages' branch source setting.
+GitHub Pages needs an eligible account plan for a private source repository;
+pushing the static branch does not activate hosting. Site activation must
+succeed before the generated QR link can open the controller on a phone.
 Confirm the Pages build and public source.json/index/module bytes before
 claiming the updated phone controller is live.
 
