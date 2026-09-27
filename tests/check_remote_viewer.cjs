@@ -22,7 +22,7 @@ const path = require('node:path');
     values:{participant:'',session:'001'},message:'Choose a Force stream',busy:false,
     can_start:false,can_use:false,selected_row:null,streams:[],source:null,omitted_streams:0,
     marker_name:'Respyra-Events',save_csv:false };
-  let mutations = 0, ownerClaimed = false;
+  let mutations = 0, ownerClaimed = false, approvalPending = false;
   const started = new Set(), calls = [], errors = [];
   let lanesReady = false;
   const pending = [];
@@ -30,7 +30,7 @@ const path = require('node:path');
   const nativeInvite = { room: `brsp_${'a'.repeat(64)}`, secret: 'b'.repeat(64), token: 'c'.repeat(64) };
   const target = await context.newPage(), viewer = await context.newPage();
   for (const page of [target, viewer]) page.on('pageerror', error => errors.push(error.message));
-  const source = side => side === 'target' ? target : child;
+  const source = side => side === 'target' ? target : child || viewer.frames().find(frame => frame.url().startsWith(panelBase));
   for (const [side, page] of [['target', target], ['viewer', viewer]]) {
     await page.exposeFunction('fixtureSend', (lane, data) => {
       const other = side === 'target' ? 'viewer' : 'target';
@@ -58,7 +58,13 @@ const path = require('node:path');
       assert.equal(args.action.token, nativeInvite.token);
       if (args.action.action === 'stop') { granted = false; return null; }
       if (!granted) throw new Error('Grant revoked');
-      if (args.action.action === 'claim') { ownerClaimed = true; return {owner:'d'.repeat(64)}; }
+      if (args.action.action === 'claim') { approvalPending = true; return {request:'e'.repeat(64)}; }
+      if (args.action.action === 'review') {
+        assert(approvalPending);
+        assert.equal(args.action.request,'e'.repeat(64));
+        assert.equal(args.action.approve,true);
+        approvalPending = false; ownerClaimed = true; return {owner:'d'.repeat(64)};
+      }
       assert(ownerClaimed, 'No state or commands before native ownership');
       assert.equal(args.action.owner,'d'.repeat(64));
       if (args.action.action === 'dispatch') {
@@ -112,13 +118,29 @@ const path = require('node:path');
   try {
     await target.goto('https://respyra.test/index.html');
     assert.deepEqual(calls, []);
-    await target.locator('.viewer-setup > summary').click();
-    await target.getByRole('button', { name: 'Enable phone control', exact: true }).click();
+    const restored=await context.newPage();
+    await restored.goto(panelBase);
+    assert(await restored.locator('#connect').isEnabled());
+    assert(await restored.locator('#invitation-field').isVisible());
+    assert.equal(await restored.locator('#controller').isVisible(),false);
+    assert(!started.has('viewer'),'Restoring a base page must not connect');
+    await restored.close();
+    await target.locator('#viewer-open').click();
     await target.locator('#viewer-qr img').waitFor();
     const link = await target.locator('#viewer-link').inputValue();
     assert(link.includes('#room='));
     assert(await target.locator('#viewer-qr img').evaluate(image => image.complete && image.naturalWidth > 0));
-    await target.locator('dialog[open] > button').click();
+    for(const [width,height] of [[820,760],[1440,900]]) {
+      await target.setViewportSize({width,height});
+      await target.evaluate(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done))));
+      const fit=await target.locator('#viewer-dialog').evaluate(dialog=>{
+        const bounds=dialog.getBoundingClientRect();
+        return {width:bounds.width,height:bounds.height,clipped:[...dialog.querySelectorAll('[data-measure]')].filter(node=>node.getClientRects().length && (node.scrollWidth>node.clientWidth+1 || node.scrollHeight>node.clientHeight+1)).length};
+      });
+      assert(fit.width<=width-24 && fit.height<=height-24 && fit.clipped===0,JSON.stringify({width,height,fit}));
+      assert(await target.locator('#viewer-qr img').isVisible());
+    }
+    await target.locator('#viewer-done').click();
     await viewer.goto(base);
     await viewer.getByRole('button', { name: 'Add external page tab' }).click();
     await viewer.getByLabel('Tab name', { exact: true }).fill('Respyra 2.0');
@@ -127,13 +149,16 @@ const path = require('node:path');
     await viewer.frameLocator('iframe').getByRole('button', { name: 'Connect', exact: true }).waitFor();
     child = viewer.frames().find(frame => frame.url().startsWith(panelBase));
     assert(child);
-    await child.locator('#connection-status').getByText('Private invitation received. Select Connect to control Respyra.', { exact: true }).waitFor();
+    await child.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…', { exact: true }).waitFor({timeout:45000});
     assert.equal(await child.evaluate(() => location.hash), '');
     assert.equal(await child.locator('#controller').isVisible(), false);
-    assert(!started.has('viewer'));
+    assert(!ownerClaimed && approvalPending);
+    assert(!calls.includes('snapshot') && !calls.includes('dispatch'), 'No remote state or commands before approval');
     const blocked = await child.evaluate(() => { let parentBlocked = false, storageBlocked = false; try { void parent.document.body; } catch { parentBlocked = true; } try { void localStorage.length; } catch { storageBlocked = true; } return { parentBlocked, storageBlocked }; });
     assert.deepEqual(blocked, { parentBlocked: true, storageBlocked: true });
-    await child.getByRole('button', { name: 'Connect', exact: true }).click();
+    await target.locator('#viewer-approval').waitFor();
+    assert(await target.locator('#viewer-dialog').evaluate(dialog=>dialog.open));
+    await target.locator('#viewer-approve').click();
     await child.locator('#phase').getByText('Starting', { exact: true }).waitFor({ timeout: 45000 });
     assert.equal(mutations,0);
     snapshot={...snapshot,phase:'setup',revision:2,monitorRevision:2,setup,
@@ -212,8 +237,8 @@ const path = require('node:path');
     await child.locator('#abort').click();
     await child.locator('#phase').getByText('Finished', {exact:true}).waitFor();
     assert(mutations>=8,'Setup, selection, start and stop reached the target');
-    await target.locator('.viewer-setup > summary').click();
-    await target.getByRole('button', { name: 'Disable phone control', exact: true }).click();
+    await target.locator('#viewer-open').click();
+    await target.locator('#viewer-stop').click();
     await child.locator('#connection-status').getByText(/Disconnected/u).waitFor();
     assert.equal(granted, false);
     assert.equal(await target.locator('#viewer-link').inputValue(), '');

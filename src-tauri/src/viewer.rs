@@ -9,6 +9,7 @@ use std::{
 
 pub const SCOPES: [&str; 3] = ["experiment.observe", "experiment.setup", "experiment.run"];
 const LEASE: Duration = Duration::from_secs(6);
+const APPROVAL_WINDOW: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -29,6 +30,11 @@ pub enum ViewerAction {
         peer_id: String,
         epoch: u32,
         scopes: Vec<String>,
+    },
+    Review {
+        token: String,
+        request: String,
+        approve: bool,
     },
     Snapshot {
         token: String,
@@ -61,10 +67,19 @@ struct Cached {
     outcome: Option<Value>,
 }
 
+struct Pending {
+    request: String,
+    peer_id: String,
+    epoch: u32,
+    scopes: Vec<String>,
+    deadline: Instant,
+}
+
 pub struct ViewerSession {
     token: String,
     expires: Instant,
     owner: Option<Owner>,
+    pending: Option<Pending>,
     commands: HashMap<String, Cached>,
 }
 
@@ -83,6 +98,7 @@ impl ViewerSession {
                 token: grant,
                 expires: Instant::now() + Duration::from_secs(4 * 60 * 60),
                 owner: None,
+                pending: None,
                 commands: HashMap::new(),
             },
             invite,
@@ -100,7 +116,7 @@ impl ViewerSession {
         epoch: u32,
         scopes: Vec<String>,
     ) -> Result<Value, String> {
-        if !self.permits(key) || self.owner.is_some() {
+        if !self.permits(key) || self.owner.is_some() || self.pending.is_some() {
             return Err("Remote session is unavailable; enable a fresh link".into());
         }
         if !(8..=96).contains(&peer_id.len())
@@ -117,12 +133,37 @@ impl ViewerSession {
         {
             return Err("Invalid remote owner or scopes".into());
         }
-        let owner_token = token()?;
-        self.owner = Some(Owner {
-            token: owner_token.clone(),
+        let request = token()?;
+        self.pending = Some(Pending {
+            request: request.clone(),
             peer_id,
             epoch,
             scopes,
+            deadline: Instant::now() + APPROVAL_WINDOW,
+        });
+        Ok(json!({"request":request}))
+    }
+
+    // Local-only consent. This action is never part of the BRSP command registry.
+    pub fn review(&mut self, key: &str, request: &str, approve: bool) -> Result<Value, String> {
+        if !self.permits(key)
+            || !self.pending.as_ref().is_some_and(|pending| {
+                pending.request == request && Instant::now() < pending.deadline
+            })
+        {
+            return Err("Remote approval request expired or changed".into());
+        }
+        let owner_token = if approve { Some(token()?) } else { None };
+        let pending = self.pending.take().ok_or("Remote request missing")?;
+        let Some(owner_token) = owner_token else {
+            self.expires = Instant::now();
+            return Ok(Value::Null);
+        };
+        self.owner = Some(Owner {
+            token: owner_token.clone(),
+            peer_id: pending.peer_id,
+            epoch: pending.epoch,
+            scopes: pending.scopes,
             sequence: 0,
             deadline: Instant::now() + LEASE,
         });
@@ -309,13 +350,16 @@ mod tests {
         let (mut session, invite) = ViewerSession::start().unwrap();
         let key = invite["token"].as_str().unwrap();
         assert!(session.read(key, "unclaimed").is_err());
-        let owner = session
+        let request = session
             .claim(
                 key,
                 "phone_test".into(),
                 7,
                 SCOPES.iter().map(|s| s.to_string()).collect(),
             )
+            .unwrap();
+        let owner = session
+            .review(key, request["request"].as_str().unwrap(), true)
             .unwrap();
         let owner = owner["owner"].as_str().unwrap();
         assert!(
@@ -368,6 +412,72 @@ mod tests {
         assert!(
             serde_json::from_value::<ViewerAction>(json!({"action":"start","path":"x"})).is_err()
         );
+    }
+    #[test]
+    fn local_approval_required_and_bound_to_pending_request() {
+        let (mut session, invite) = ViewerSession::start().unwrap();
+        let key = invite["token"].as_str().unwrap();
+        assert!(
+            session
+                .claim("wrong", "phone_test".into(), 7, vec![SCOPES[0].into()])
+                .is_err()
+        );
+        let request = session
+            .claim(key, "phone_test".into(), 7, vec![SCOPES[0].into()])
+            .unwrap();
+        assert!(request["owner"].is_null());
+        let request = request["request"].as_str().unwrap();
+        assert!(session.read(key, request).is_err());
+        assert!(
+            session
+                .authorize(key, request, "phone_test", 7, 1, SCOPES[0])
+                .is_err()
+        );
+        assert!(!session.has_scope(SCOPES[0]));
+        assert!(
+            session
+                .claim(key, "second_phone".into(), 8, vec![SCOPES[0].into()])
+                .is_err()
+        );
+        assert!(session.review("wrong", request, true).is_err());
+        assert!(session.review(key, "wrong", true).is_err());
+        let owner = session.review(key, request, true).unwrap();
+        session.read(key, owner["owner"].as_str().unwrap()).unwrap();
+        assert!(session.review(key, request, true).is_err());
+        assert!(session.has_scope(SCOPES[0]));
+        assert!(!session.has_scope(SCOPES[1]));
+    }
+    #[test]
+    fn rejection_timeout_and_new_invitation_deny_old_request() {
+        for expired in [false, true] {
+            let (mut session, invite) = ViewerSession::start().unwrap();
+            let key = invite["token"].as_str().unwrap();
+            let request = session
+                .claim(key, "phone_test".into(), 7, vec![SCOPES[0].into()])
+                .unwrap();
+            let request = request["request"].as_str().unwrap();
+            if expired {
+                session.pending.as_mut().unwrap().deadline =
+                    Instant::now() - Duration::from_secs(1);
+                assert!(session.review(key, request, true).is_err());
+            } else {
+                session.review(key, request, false).unwrap();
+                assert!(!session.permits(key));
+                assert!(session.review(key, request, true).is_err());
+            }
+            assert!(session.read(key, request).is_err());
+            let (mut replacement, next) = ViewerSession::start().unwrap();
+            let new_request = replacement
+                .claim(
+                    next["token"].as_str().unwrap(),
+                    "phone_test".into(),
+                    7,
+                    vec![SCOPES[0].into()],
+                )
+                .unwrap();
+            assert_ne!(new_request["request"], request);
+            assert!(replacement.review(key, request, true).is_err());
+        }
     }
     #[test]
     fn projections_are_bounded_and_scoped() {

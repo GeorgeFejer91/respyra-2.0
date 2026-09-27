@@ -35,10 +35,10 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | unrecorded | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | unrecorded | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
-| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `style.css`, controller/desktop/text-fit modules | `pnpm check:ui` plus inspect changed area | unrecorded | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
-| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | unrecorded | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
+| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `style.css`, controller/desktop/text-fit modules | `pnpm check:ui` plus inspect changed area | reusable; see remote approval receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
+| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | reusable; see remote approval receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | unrecorded | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
-| Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | unrecorded | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
+| Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | reusable; see remote approval receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/check_native_lsl.py` after a matching native build | historical-unbound; see native receipt below | Native/pipe/lifecycle/remote contracts or consuming runtime change; UI-sensitive changes need focused WebView evidence rather than automatically this whole harness. |
 | Current public phone page pairing and published byte parity | Published mode in `tests/check_native_lsl.py`; deployment/parity readback | unrecorded | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
 | Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | unrecorded | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
@@ -75,6 +75,32 @@ work. A different HEAD alone does not discard a pass. `REUSED` cites the origina
 entry; it never updates the execution date or pretends the check ran again.
 
 ## Retained baseline evidence
+
+### Remote QR request and local approval
+
+- Result/date: `VERIFIED`, 2026-09-27; Windows debug WebView2 target and Chrome.
+- Scope: QR button/popup; automatic private-link request; pending native consent,
+  no state/effects before Approve; Reject, fresh QR retry in the same tab,
+  request expiry/binding; approved setup/Start/Stop/Close, real PsychoPy flip and
+  independently decoded XDF. Restored base pages remain disconnected.
+- Checks: `pnpm test:web` (6 pass), `pnpm check:ui` (14 actions, 7 layouts,
+  zero clipping/errors), `pnpm check:remote` (12 phone layouts, 9 mutations,
+  opaque Recorder iframe, plus QR popup at 820×760/1440×900); Cargo fmt/test
+  (9 pass)/clippy; `pnpm tauri build --debug --no-bundle`;
+  `uv run --frozen python tests/check_native_lsl.py remote` (public VDO,
+  locally routed companion, 27 markers through Close, 3 nonempty XDF streams).
+- Inputs: base `5262dab597ac74dc270226f1122d610531037991` plus scoped working
+  source/test/lock hashes in ignored `.for-ai-local/approval-inputs.json`;
+  manifest SHA-256 `3ff39ba64aaee8c8d70137a9a0f4adf218472b98447418ff06286396db49dbca`.
+  Native executable SHA-256
+  `a323cd101539febd1ca7f25014d80026989ba4d9b288d3766d94dfc2b08a9fa6`.
+  Node 24.19.0, Cargo 1.96.0, Python 3.10.11; locked dependencies unchanged.
+- Evidence: `.for-ai-local/native-approval-check.log`,
+  `.for-ai-local/remote-approval-browser.log`, rendered native QR/approval PNGs.
+  The QR pixels decoded to the private link; no physical camera was used.
+- Limits/state: `reusable` for the named inputs; no physical phone/belt,
+  installed release, forced relay or scientific timing claim. Public asset
+  publication and non-intercepted pairing require their own receipt.
 
 These local logs were inspected when this policy was adopted. Their passing
 results remain historical evidence, but they do not record the exact tested

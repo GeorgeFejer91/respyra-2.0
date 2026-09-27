@@ -10,16 +10,19 @@ stimuli, keyboard responses, assessments and display-flip markers.
 
 1. Launch Respyra and select live Force input. Start automatically records XDF
    with the bundled native recorder before calibration. Optional CSV output is separate.
-2. Select **Enable phone control** in Experiment control. Scan the QR code or
-   open its private link in a phone browser.
-3. Select **Connect** on the phone. One phone controls the same setup and run.
-   The enabled invitation explicitly shares participant/session fields and
+2. Click **Connect remote experiment controller**. Its popup creates a QR code
+   automatically. Scan it or open its private link in a phone browser.
+3. The phone requests access automatically. Click **Approve** in the desktop
+   popup to share state and controls, or **Reject** to revoke the invitation.
+   Requests expire after 60 seconds; no state or commands are available before
+   approval. One approved phone controls the same setup and run.
+   Approval explicitly shares participant/session fields and
    live raw-channel readings, marker names and LSL metadata with that phone. Keep it private.
 4. **Stop experiment** ends the study and cleans up its source/display, while
    the native recorder finalizes XDF after cleanup; the controller and marker
    outlet stay open. Wait for **Saved**, then **Close**.
-5. **Disable phone control**, app closure, phone disconnect or ownership expiry
-   revokes remote control. Enable again for a fresh link. Phone loss leaves an
+5. **Disconnect remote controller**, app closure, phone disconnect or ownership expiry
+   revokes remote control. Open the button again for a fresh link. Phone loss leaves an
    ongoing study running; participant inputs remain local to PsychoPy.
 
 A second display or the phone lets the experimenter monitor without moving
@@ -72,11 +75,17 @@ request; it cannot establish XDF persistence. An uncertain command outcome
 pauses control and requires checking the local controller; there is no automatic
 new-ID retry.
 
-Rust owns the invitation, peer/epoch-bound owner, six-second monotonic lease,
+Rust owns the invitation, single pending approval request, peer/epoch-bound owner, six-second monotonic lease,
 scopes, ordered dispatch sequence, mutation-ID/body deduplication and separate
 control revision. The phone renews through authenticated commands every second.
 Native reads/effects fail after revocation or expiry. Only the bundled main
 WebView has the narrow native capability; external pages have none.
+The local-only review action binds approval to the current request and invitation.
+Authentication creates a pending request, never an owner. Reject invalidates the
+invitation; timeout denies late approval. Opening the popup or scanning its QR
+does not start an experiment. Closing the popup does not disconnect an approved
+controller. Restored base pages stay disconnected and retain a manual Connect
+option for a pasted fresh invitation; private links request access on load.
 
 Mutual HMAC proof and the wire sequence remain in pinned BRSP JavaScript in
 that trusted bundled WebView. Native claim/dispatch therefore trusts its
@@ -106,8 +115,8 @@ actual quality readback; this is not offline-LAN control.
 
 You can load the private link in Recorder's **+** external page tab. Approved
 Recorder phones receive that tab, but Respyra has its own connection and
-supports one controller: leave the desktop Respyra panel disconnected and
-Connect on the phone. Recorder's pairing does not grant Respyra controls.
+supports one controller: use the private invitation on the intended controller
+and approve it in Respyra. Recorder's pairing does not grant Respyra controls.
 
 The Respyra QR opens this controller directly; Recorder's QR opens its combined
 workspace. Import companion/panel.json for a permanent disconnected tab.
@@ -145,7 +154,9 @@ tests/check_native_lsl.py additionally pairs the built Windows WebView target
 with an external Chrome controller over real VDO and actual Rust/Python,
 synthetic Force streams, a real PsychoPy instruction display and LSL marker
 inlet. It checks controller-origin edits/Start/Stop/final Close, cleanup and
-continuous marker ordering. Its phone assets are locally routed; deployment
+continuous marker ordering, rejection and a fresh locally approved request.
+Use `tests/check_native_lsl.py remote` to run only the affected remote path.
+Its phone assets are locally routed; deployment
 checks must confirm the published static bytes separately.
 
 Physical phone camera/touch/browser lifecycle, physical belt, Raspberry Pi,

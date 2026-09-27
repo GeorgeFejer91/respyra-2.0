@@ -20,22 +20,29 @@
         <ul id="recorded-streams" aria-label="Streams subscribed by the recorder"></ul>
       </details>
     </section>
-    <details class="viewer-setup"><summary data-measure>Phone control</summary>
+    <div class="viewer-setup"><button id="viewer-open" type="button" data-measure>Connect remote experiment controller</button></div>
+    <dialog id="viewer-dialog" aria-labelledby="viewer-title">
+      <h2 id="viewer-title" data-measure>Remote experiment controller</h2>
       <section aria-label="Phone remote control">
       <div class="actions">
-        <button id="viewer-start" type="button" data-measure>Enable phone control</button>
-        <button id="viewer-stop" type="button" disabled data-measure>Disable phone control</button>
+        <button id="viewer-start" type="button" hidden data-measure>Create new QR code</button>
+        <button id="viewer-stop" type="button" disabled data-measure>Disconnect remote controller</button>
       </div>
-      <p id="viewer-status" role="status" aria-live="polite" data-measure>Phone control disabled.</p>
+      <p id="viewer-status" role="status" aria-live="polite" data-measure>Remote control disconnected.</p>
+      <section id="viewer-approval" hidden aria-label="Remote control approval">
+        <p data-measure>A remote controller requests access to study setup, live monitoring, Start, Stop and Close. Approve only the device you invited.</p>
+        <div class="actions"><button id="viewer-approve" type="button" data-measure>Approve</button><button id="viewer-reject" type="button" data-measure>Reject</button></div>
+      </section>
       <div id="viewer-invitation" hidden>
-        <p data-measure>Scan, then Connect on your phone. This private link shares live LSL data, markers, setup and control. Internet is required; it expires after four hours.</p>
+        <p data-measure>Scan to request control. Approve the request here to share study setup, live data and experiment controls. Internet is required.</p>
         <label><span data-measure>Private control link</span><input id="viewer-link" type="text" readonly spellcheck="false"></label>
         <button id="viewer-copy" type="button" data-measure>Copy link</button>
         <div id="viewer-qr"></div>
-        <p data-measure>You can also load this link in the Recorder’s Add external page tab. Disable phone control to revoke the link. Disconnecting the phone leaves an ongoing experiment running.</p>
+        <p data-measure>The link expires after four hours. Disconnect revokes access and leaves an ongoing study running.</p>
       </div>
       </section>
-    </details>
+      <button id="viewer-done" type="button" data-measure>Done</button>
+    </dialog>
     <div id="controller"></div>
   </main>
   <div id="viewport-notice" hidden role="status"><p data-measure>The experiment control center needs more room. Enlarge the window to show all controls and monitoring together.</p></div>

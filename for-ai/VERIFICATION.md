@@ -221,7 +221,10 @@ the real Pages endpoint without interception. The native check decodes the
 rendered opening-panel QR and pairs the phone. Verify published byte parity and
 ordinary 390×844 compact setup separately. Enlarged text/expanded details may
 scroll while preserving every control.
-Check no state before claim, wrong owner/epoch/scope/sequence, expiry/revocation,
+For remote ownership changes, `tests/check_native_lsl.py remote` selects only
+the remote mode. Check automatic private-link requests, inert restored base pages,
+no state/commands before local approval, Reject followed by a fresh invitation,
+late/wrong-request approval denial, wrong owner/epoch/scope/sequence, expiry/revocation,
 stale revisions, unknown actions and duplicate IDs without repeated effects.
 Report physical phone/belt, Raspberry Pi and XDF evidence separately.
 See `docs/remote-viewer.md` for the ownership contract.

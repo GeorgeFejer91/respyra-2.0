@@ -17,8 +17,9 @@ native-specific layout/focus, fonts, embedding or WebView inputs change.
   automatic stream checks plus checked inclusion list and stacked channel traces;
   one salient red Start/action bar. Record all available and late LSL streams by
   default. Never add a desktop view dropdown. Source selection, CSV, naming and
-  diagnostics are optional native Settings dialogs; recording-file and phone
-  details also stay outside the default workflow.
+  diagnostics are optional native Settings dialogs; recording-file details stay
+  outside the default workflow. The remote controller is a button opening a QR
+  popup automatically, with desktop Approve/Reject on an authenticated request.
 - Start launches respyrecorder and verifies exact Force/marker subscriptions and
   raw and marker samples before opening PsychoPy. After calibration, require actual
   native reception of the study's calibrated outlet before trials begin.

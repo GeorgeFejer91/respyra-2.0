@@ -1,5 +1,6 @@
 """Native setup + real LSL, isolated identity settings; no physical belt."""
 import json
+import argparse
 import csv
 import math
 import os
@@ -10,6 +11,9 @@ import uuid
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('modes', nargs='*', choices=['select','memory','remote'], default=['select','memory','remote'])
+modes=parser.parse_args().modes
 # Configure before importing liblsl; keep test streams out of live lab sessions.
 config = root / '.for-ai-local' / ('native-lsl-' + uuid.uuid4().hex + '.cfg')
 config.parent.mkdir(exist_ok=True)
@@ -48,8 +52,14 @@ if os.environ.get('RESPIRA_INSTALLED_EXE'):
 else:
     env['RESPIRA_DATA_DIR']=str(root/'.for-ai-local'/('native-recordings-'+uuid.uuid4().hex))
 results=[]
+if modes[0] != 'select':
+    # A focused reconnect/remote run owns its own saved-source fixture.
+    from types import SimpleNamespace
+    from mpi.lsl_force import save_force_selection
+    save_force_selection(SimpleNamespace(source_id=identity, stream_name=raw.name()),
+                         Path(env['LOCALAPPDATA'])/'Respyra/lsl-source.json')
 try:
-    for mode in ['select','memory','remote']:
+    for mode in modes:
         Path(env['RESPYRA_UI_TEST_READY_PATH']).unlink(missing_ok=True)
         stderr=open(root/f'.for-ai-local/native-{mode}.log','w',encoding='utf-8')
         process=subprocess.Popen([str(exe)],cwd=work,env=env,stdout=stderr,stderr=stderr)
@@ -121,7 +131,7 @@ try:
             if inlet: inlet.close_stream()
             stderr.close()
         time.sleep(2)
-    if os.environ.get('RESPIRA_INSTALLED_EXE'):
+    if os.environ.get('RESPIRA_INSTALLED_EXE') and 'memory' in modes:
         # Rust uses Windows' known local-data folder, not the isolated Python
         # identity-memory override. Only inspect/remove this test's unique IDs.
         output=Path(os.environ['LOCALAPPDATA'])/'Respira/data'

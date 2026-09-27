@@ -129,7 +129,7 @@ details > label { display: block; }
 .desktop #phase-summary { display: inline; }
 .desktop #observation > .progress > :nth-child(4) { color: #57606a; }
 .desktop .viewer-setup { margin: 0; padding: 0; border: 0; }
-.desktop .viewer-setup > summary { font-weight: 600; }
+.desktop #viewer-open { font-size: inherit; padding: 6px 10px; }
 .desktop .recording-note { display: none; }
 .desktop .actions { gap: 8px; }
 .desktop #input-details > summary { display: none; }

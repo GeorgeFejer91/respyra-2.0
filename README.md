@@ -151,8 +151,10 @@ The Qt checkpoint before this migration is the Git tag
 
 ## QR phone controller
 
-**Enable phone control** creates a private link and QR. Scan it, then select
-**Connect** in the phone browser. The phone can edit participant/session,
+**Connect remote experiment controller** opens a QR popup and creates a private
+link automatically. Scanning it requests access; click **Approve** on the desktop
+before the phone receives study state or controls. **Reject** revokes the request.
+The phone can edit participant/session,
 scan/select/use LSL input, Start, Cancel, Stop experiment and Close the final
 screen. The phone opens **LSL data & markers**: select a raw Vernier channel,
 view its current value/unit and a ten-second trace with marker ticks and recent
@@ -162,7 +164,7 @@ show phase/trial progress and recording status.
 The named marker outlet, sent-event count and latest event stay visible; recent
 12 markers, identities and battery status expand under details. The current
 stream provides no battery telemetry, so battery reads **Not reported**.
-**Disable phone control** revokes the session; phone disconnect does not stop an
+**Disconnect remote controller** revokes the session; phone disconnect does not stop an
 ongoing study. The link needs Internet signaling and must stay private.
 You can also paste it into Recorder's **+** tab; approved Recorder phones receive
 the same tab. The permanent descriptor is

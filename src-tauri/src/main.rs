@@ -469,6 +469,15 @@ fn handle_viewer(
             .as_mut()
             .ok_or("Remote control disabled")?
             .claim(&token, peer_id, epoch, scopes),
+        viewer::ViewerAction::Review {
+            token,
+            request,
+            approve,
+        } => state
+            .viewer
+            .as_mut()
+            .ok_or("Remote control disabled")?
+            .review(&token, &request, approve),
         viewer::ViewerAction::Snapshot { token, owner } => {
             let session = state.viewer.as_ref().ok_or("Remote control disabled")?;
             session.read(&token, &owner)?;

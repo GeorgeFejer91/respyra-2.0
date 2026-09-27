@@ -67,7 +67,7 @@ export function mountDesktop() {
     <p class="preview-note" data-measure>Last 10 seconds · live preview</p>`;
   root.append(overview);
   document.querySelector('header').append(document.querySelector('.viewer-setup'));
-  for (const details of [settings, ...document.querySelectorAll('#recording-details, .diagnostics, .viewer-setup')]) {
+  for (const details of [settings, ...document.querySelectorAll('#recording-details, .diagnostics')]) {
     const summary = details.querySelector('summary');
     const dialog = document.createElement('dialog');
     dialog.setAttribute('aria-label', summary.textContent);
@@ -89,6 +89,16 @@ export function mountDesktop() {
       if (records.some(record => record.target !== content)) checkViewport();
     }).observe(content, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['hidden'] });
   }
+  const remoteDialog = document.querySelector('#viewer-dialog');
+  // The remote popup keeps a usable close button when a window is too small.
+  const remoteContent = document.createElement('div');
+  remoteContent.append(...remoteDialog.querySelectorAll(':scope > h2, :scope > section'));
+  const message = document.createElement('p'); message.hidden = true; message.dataset.measure = '';
+  message.textContent = 'Remote controls need more room. Enlarge the window.';
+  remoteDialog.prepend(message, remoteContent);
+  dialogs.push({ dialog:remoteDialog, content:remoteContent, message });
+  new MutationObserver(checkViewport).observe(remoteContent, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['hidden'] });
+  remoteDialog.addEventListener('close', () => window.dispatchEvent(new Event('resize')));
   checkViewport();
 }
 

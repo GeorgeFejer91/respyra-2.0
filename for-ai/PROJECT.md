@@ -143,7 +143,9 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   drain the accepted inlet; active study phases keep their existing reads.
   The current raw Force contract provides no battery telemetry; do not invent it.
 - Experiment control is the opening HTML panel and stays available in the
-  background during PsychoPy. Its QR pairs one phone to the same controls over
+  background during PsychoPy. A Connect remote experiment controller button opens
+  a QR popup; scanning requests access automatically. Desktop Approve grants one
+  controller, while Reject/timeout deny state and commands. Its QR pairs over
   VDO.Ninja/BRSP from the public GitHub Pages site. Show compact run/input/output
   status, actual sent-event count, latest event and an expandable last-12 list.
   Native recording status reflects subscribed sources and verified file completion.
