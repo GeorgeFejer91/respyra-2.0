@@ -12,8 +12,10 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('modes', nargs='*', choices=['select','memory','remote'], default=['select','memory','remote'])
-modes=parser.parse_args().modes
+parser.add_argument('modes', nargs='*', metavar='{select,memory,remote}')
+modes=parser.parse_args().modes or ['select','memory','remote']
+if any(mode not in {'select','memory','remote'} for mode in modes):
+    parser.error('modes must be select, memory or remote')
 # Configure before importing liblsl; keep test streams out of live lab sessions.
 config = root / '.for-ai-local' / ('native-lsl-' + uuid.uuid4().hex + '.cfg')
 config.parent.mkdir(exist_ok=True)

@@ -40,7 +40,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | unrecorded | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | reusable; see remote approval receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/check_native_lsl.py` after a matching native build | historical-unbound; see native receipt below | Native/pipe/lifecycle/remote contracts or consuming runtime change; UI-sensitive changes need focused WebView evidence rather than automatically this whole harness. |
-| Current public phone page pairing and published byte parity | Published mode in `tests/check_native_lsl.py`; deployment/parity readback | unrecorded | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
+| Current public phone page pairing and published byte parity | Published mode in `tests/check_native_lsl.py`; deployment/parity readback | see published approval receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
 | Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | unrecorded | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
 | Physical belt/phone, scientific timing and other operating systems | Separate named hardware/platform qualification | NOT RUN / unverified in `PROJECT.md` | Those surfaces are requested or claimed; synthetic/browser evidence does not qualify them. |
 | Agent routing, policy links and control-plane structure | `for-ai/scripts/check-context.ps1`, diff and local-link review | Record the policy change's final checks in handoff | Router/rule/linked document changes; this never triggers product suites by itself. |
@@ -101,6 +101,32 @@ entry; it never updates the execution date or pretends the check ran again.
 - Limits/state: `reusable` for the named inputs; no physical phone/belt,
   installed release, forced relay or scientific timing claim. Public asset
   publication and non-intercepted pairing require their own receipt.
+
+### Published approval flow
+
+- Result/date: `VERIFIED`, 2026-09-27. GitHub Pages reported `built` for
+  `f4f92132f0f72d394684eda1f2051203c8aaed29`, from source
+  `73991b1fad951065c903e08bb30d8e6ce1ab2b8a`.
+- Checks: fetched 14 public HTML/module/profile/vendor/provenance assets and
+  compared exact bytes with the Pages Git blobs; all matched. With
+  `RESPYRA_PUBLISHED_PHONE=1`, `uv run --frozen python tests/check_native_lsl.py remote`
+  passed without asset interception: displayed QR decoded, phone requested
+  access, desktop rejected then approved a fresh same-tab request, typed remote
+  setup/Start/Stop/Close reached Rust/Python, and 3 XDF streams had nonempty
+  samples and matching footers. 27 markers stayed contiguous through Close.
+- Inputs: source commit above, executable hash in the remote approval receipt,
+  locked runtime unchanged. Evidence: `.for-ai-local/public-approval-bytes.json`
+  (SHA-256 `28bd2cd36a01f103fdfbf1ac26261f24be1fefbe9ac850d5321400300d66f743`),
+  `.for-ai-local/published-approval-check.log`
+  (SHA-256 `c5aed12866f15140313fe0c76b1cc1fc0b8a0460639655c4f64d239ea525d41a`).
+- Harness follow-up: removed Python 3.10's invalid list default/choices
+  combination. The actual parser prefix passed default/all-mode and explicit
+  remote-mode checks; no runtime behavior or published bytes changed.
+  Final harness SHA-256 `3e073aacc77c978c8891b558b65b2f73c1ca0cded7237a1fb87cb159d439a2f8`.
+- Limits: observed public endpoint and same-machine Windows WebView2/Chrome
+  pairing with synthetic LSL. No physical camera/touch, live belt, installed
+  release or forced-relay qualification. Reuse requires unchanged relevant
+  source/runtime inputs and deployment; this receipt is not indefinite endpoint monitoring.
 
 These local logs were inspected when this policy was adopted. Their passing
 results remain historical evidence, but they do not record the exact tested
