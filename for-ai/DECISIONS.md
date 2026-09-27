@@ -209,3 +209,19 @@ decision and link both entries.
 - Supersedes: External recording and no native-readiness gate in D-0007, and
   external-only recorder ownership in earlier decisions. CSV stays opt-in;
   study protocol, Force units, scoped control and local data retention remain.
+
+## D-0010 — Verify changed behavior and retain unaffected passes
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user requested avoiding repeated whole-project qualification
+  during opening-panel UI iteration and remembering already verified behavior.
+- Decision: Select gates by dependency/behavior impact in `VERIFICATION.md`.
+  Keep reusable evidence in `VERIFIED.md`; run affected checks once per final
+  input set. Isolated presentation edits use browser layout evidence without
+  repeating study, recording, Rust, remote-pairing or installer checks.
+- Consequences: Relevant changes/regressions invalidate only consuming evidence.
+  Historical passes keep their limits; new installer bytes and external/device
+  claims still need their own evidence. No automated cache or new test runner.
+- Supersedes: Blanket interpretation of earlier verification lists; product
+  protocol, runtime readiness and data-integrity requirements remain.

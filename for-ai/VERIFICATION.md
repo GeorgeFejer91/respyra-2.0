@@ -6,14 +6,82 @@ runtime access produce `BLOCKED` or `NOT RUN`, never `VERIFIED`.
 ## Result vocabulary
 
 - `VERIFIED`: the named check directly observed the claimed surface and passed.
+- `REUSED`: a recorded `VERIFIED` result still covers unchanged inputs; cite its
+  entry in `VERIFIED.md`. This is inherited evidence, not a new execution.
 - `PARTIAL`: some required evidence passed and the missing scope is named.
 - `BLOCKED`: a concrete external or authority blocker prevented the check.
 - `NOT RUN`: the check was intentionally not applicable or not attempted, with
   the reason stated.
 
-## Gate 0: bootstrap readiness
+## Select checks by impact
 
-From the repository root:
+This is the default for every task, including opening-panel UI work. The command
+lists below are a catalogue, not a checklist to run in full. Select only checks
+whose behavior or dependencies the final diff can affect. Repository impact
+selection takes precedence over broader generic skill checklists, as explicitly
+requested by the user. Keep the skills' implementation and design requirements.
+
+| Changed surface | Required focused evidence | Broader checks only when |
+| --- | --- | --- |
+| Documentation or `for-ai/` rules only | Context checker, diff and local-link review | Runnable commands or product contracts also change; check only that affected surface. No product build or runtime suite. |
+| Opening-panel wording, colors, spacing, CSS or presentation markup | `pnpm check:ui` and inspect the changed rendered area | Native-specific fit/focus, font loading, WebView configuration or embedding changes need a focused real WebView check. No Python, Cargo, recorder, study or remote-pairing rerun for isolated presentation work. |
+| UI interactions, state projection or action queue | Relevant `node --test tests/<affected>.test.mjs` and `pnpm check:ui` | Action names/payloads, sequencing, field identity, readiness, Start/Stop/Close semantics or shared phone controls change: add the affected bridge/remote checks. |
+| Python signal, discovery, setup, markers or study logic | Corresponding `pytest` files from Gate 2 | A changed cross-process, LSL, study or recording contract needs its consuming integration check. Unchanged sibling modules keep their prior evidence. |
+| Rust IPC, supervision, permissions or remote ownership | Rust fmt/test/clippy for the affected crate | Changed lifecycle/IPC needs the real process/native check; changed remote grants or dispatch needs remote qualification. |
+| Recorder, calibration output, input capture or XDF contracts | Corresponding focused tests and affected recording/control-center proof | Run `--full-study` only for changes affecting trial progression, calibration use, study timing/markers, all-phase logging or finalization across the complete study, or a regression in those paths. |
+| Locks, toolchain, runtime resources, installer or release candidate | Checks for consumers of the changed input; packaging gates for a new installer | A shared input change invalidates only its consuming evidence. Qualify each new promoted installer by exact artifact bytes as `PACKAGING.md` requires. |
+
+Trace affected callers, imports, consumers and shared assets before declaring
+an edit presentation-only. Moving controls can affect handlers or field IDs;
+changing disabled states can affect readiness. Follow behavior, not just file
+extensions. If impact is uncertain, inspect the boundary and run its smallest
+relevant integration check; uncertainty alone does not require the full matrix.
+`prepare-web.mjs` copies shared CSS/controller assets into the phone companion;
+check affected phone rendering when a presentation edit reaches that surface,
+without requalifying unchanged live pairing or study behavior.
+
+Run selected checks once against the final relevant inputs. After a fix or later
+edit, rerun only checks invalidated by that change. Do not repeat a passing check
+for handoff, a new agent/session, a commit/push, or a control-plane update.
+Do not install dependencies or rebuild unchanged runtimes as a ritual:
+`pnpm install --frozen-lockfile` is needed only when dependencies are missing or
+the lock changed; `pnpm check:ui` already runs `prepare:web`.
+
+## Reuse recorded verification
+
+Read [`VERIFIED.md`](./VERIFIED.md) for affected scopes before expensive checks.
+After an observed pass, keep one compact entry per behavior/check, recording:
+the command, result/date, tested commit (plus hashes for any uncommitted tested
+inputs), covered behavior, relevant source/test/shared paths, locks/configuration,
+runtime/tool versions or artifact hashes, evidence location and limitations.
+Keep raw logs, screenshots and recordings in ignored `.for-ai-local/`.
+
+A function's pass is reusable only for the behavior tested and while its inputs,
+relevant dependencies, consuming contract, test and environment remain compatible.
+A new commit SHA or time elapsed alone does not invalidate it. Compare the
+recorded revision with the current tree, including staged, unstaged and new
+inputs; for example `git diff <tested-commit> -- <covered-paths>`, then inspect
+untracked inputs and recorded runtime/artifact identity. Use narrower function
+reuse within a changed file only when the dependency review supports it.
+
+Invalidate only affected entries when those inputs change, a relevant regression
+appears, or the prior result lacks the evidence needed for the current claim.
+Mark the reason and refresh the smallest necessary check. A missing entry does
+not make unrelated checks applicable: populate the ledger as relevant work is
+verified, never by running the whole project just to fill it. Preserve historical
+passes without inventing source bindings. Live hosted endpoints, physical devices
+and installed artifacts retain their separate evidence limits; reused local
+evidence cannot certify their current state or a different installer.
+
+## Gate 0: local context; bootstrap only when initializing
+
+For an existing checkout, inspect `git status --short` and `git rev-parse HEAD`.
+Run the context checker once when `for-ai/` changes or bootstrap is being checked;
+it is not a product test. A feature branch or unrelated work is not a failure.
+Check the actual branch's remote during publication, not `origin/main` on each
+UI iteration.
+
+For initial bootstrap synchronization only, from the repository root:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File for-ai/scripts/check-context.ps1 -ProjectRoot . -RequireRemote
@@ -38,9 +106,8 @@ Before implementation, name:
 
 ## Gate 2: focused change
 
-Run the narrowest real check for the change. Add the exact commands here when
-the project selects its stack. A syntax check proves syntax; a unit test proves
-its tested logic; neither proves UI, deployment, hardware, performance, safety,
+Run the narrowest real check selected by impact above. A syntax check proves
+syntax; a unit test proves its tested logic; neither proves UI, deployment, hardware, performance, safety,
 or scientific validity unless it directly observes that surface.
 
 For signal helpers, run `uv run pytest tests/test_signal.py`. For LSL input
@@ -49,7 +116,7 @@ against the Polar-Mini-Stream source revision used for the change. For
 marker or experiment changes, run `uv run pytest tests/test_event_markers.py`
 and `uv run pytest tests/test_experiment_flow.py` against the installed
 `respyra` dependency (the sibling checkout can differ from the published
-version). For HTML control/pipe changes, run
+version). For changed HTML-to-Python action/pipe contracts, run
 `uv run --frozen pytest tests/test_desktop_bridge.py tests/test_desktop_process.py`
 and `pnpm test:web`. The real process check must receive setup state after a
 real marker subscription and keep the outlet alive through final Close. Verify
@@ -66,20 +133,19 @@ without valid input, and close cancelled connections without overwriting memory.
 Check identity persistence/corruption and duplicate source IDs in the input
 tests. Run a synthetic LSL outlet/inlet check for metadata, discovery, and exact
 identity reconnect; use isolated settings so tests never overwrite lab choices.
-Check that every emitted event name appears in `catalog.json`, every
-blocking screen has shown/dismissed markers, phase start/end and abort paths
+For affected marker/study/logging contracts, check that every emitted event name
+appears in `catalog.json`, every blocking screen has shown/dismissed markers,
+phase start/end and abort paths
 pair sensibly and no-data calibration fails. Run original CSV mode both on/off:
 off creates no files; on preserves sample columns and self-assessment schema,
 writes all phases and closes files even on early/error exit. Inspect trial order
 and target/error units in N.
 
-For the desktop shell and text layout:
+For text layout, use `pnpm check:ui`. For changed frontend logic, add the relevant
+web tests (`pnpm test:web` runs all of them). For changed Rust shell/lifecycle
+inputs, select these checks; this block is not required for layout-only edits:
 
 ```powershell
-pnpm install --frozen-lockfile
-pnpm prepare:web
-pnpm test:web
-pnpm check:ui
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 cargo test --manifest-path src-tauri/Cargo.toml --locked
 cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
@@ -114,7 +180,10 @@ display creation, contiguous marker sequences, cleanup/finalization and footers.
 It verifies a synthetic source, not a physical belt. Give WebView2 a unique test
 user-data folder as described by [Playwright](https://playwright.dev/docs/webview2).
 
-For recorder changes, also run:
+For recorder/calibration/input changes, select the affected checks below.
+Build the recorder only when its source/build inputs or required binary change.
+The full-study trigger is defined in the impact table; it is not a default
+recorder or UI check:
 
 ```powershell
 pnpm prepare:recorder
@@ -138,9 +207,11 @@ retain this isolation and verify the real process after startup/import changes.
 
 ## Gate 3: integrated readiness
 
-For the controller panel, run `pnpm test:web`, `pnpm check:ui` and
+For changed remote controller contracts or shared control behavior, run the
+affected web tests, `pnpm check:ui` and
 `pnpm check:remote` with `RECORDER_COMPANION` pointing to Recorder's companion.
-Run Rust tests/clippy and Python desktop/marker/study tests. Qualify live VDO
+Run Rust tests/clippy and Python desktop/marker/study tests only for affected
+owners. Presentation-only changes follow the UI row above. Qualify live VDO
 separately with `RESPYRA_REAL_VDO=1`; browser checks still mock native IPC.
 `check_native_lsl.py` also pairs an actual packaged WebView target with a Chrome
 controller over public VDO and observes remote edits/Start/Stop/Close in Python,
@@ -183,5 +254,7 @@ embedded import/resource check and the installed native/LSL/QR check via
 
 ## Handoff evidence
 
-Report exact commands or observed surfaces, results, untested scope, commit SHA,
+Report checks run now, recorded evidence reused and why omitted suites are
+unaffected. Report exact commands or observed surfaces, results, untested scope,
+commit SHA,
 remote synchronization, CI/deployment state, and whether `for-ai/` changed.

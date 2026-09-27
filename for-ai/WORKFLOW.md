@@ -6,7 +6,10 @@
 2. Inspect Git status, branch, remotes, relevant code, tests, and recent history.
 3. Preserve user work and distinguish pre-existing failures from regressions.
 4. Apply YAGNI: check the existing owner before adding anything.
-5. Implement one bounded outcome and verify it proportionately.
+5. Implement one bounded outcome. Use `VERIFICATION.md` to select affected
+   checks, compare prior entries in `VERIFIED.md`, and run only invalidated or
+   missing applicable checks once against the final inputs. Record observed
+   passes for reuse; do not restart the full matrix on each UI edit or handoff.
 6. Review the diff for accidental scope, secrets, generated output, and stale
    context.
 7. Update project memory and publish only when the rules below apply.
@@ -44,7 +47,8 @@ facts already obvious from source and tests.
 
 ## Self-review
 
-Run `for-ai/scripts/check-context.ps1`. Then review control-plane changes for
+When the control plane changes, run `for-ai/scripts/check-context.ps1` once
+against the final edits. Then review control-plane changes for
 contradictions, duplication, stale facts, oversized always-read material, and
 rules that lack a current consumer. Consolidate or delete rather than append
 forever.
@@ -53,7 +57,8 @@ forever.
 
 - Outcome and affected product surfaces.
 - Intended files changed; unrelated work left untouched.
-- Verification run, result, and evidence limitations.
+- Verification run, valid evidence reused, omitted checks with impact reason,
+  and evidence limitations.
 - `for-ai/` update: yes/no and why.
 - Commit SHA, branch, remote sync, CI/deployment result.
 - Remaining blocker or next smallest product decision.

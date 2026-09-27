@@ -3,6 +3,11 @@
 Read this before any HTML interface change. Always use `uncodixfy-pretext`,
 its Pretext reference, `uncodixfy`, and `ponytail`. Reuse the locked local
 Pretext package/fonts; measure bounded text and verify the rendered DOM.
+Select verification by impact in `VERIFICATION.md` and reuse prior unaffected
+evidence from `VERIFIED.md`. Isolated opening-panel presentation changes require
+`pnpm check:ui` plus inspection of the changed area; they do not require a study,
+recorder, Rust, remote-pairing or installer run. Qualify the actual WebView when
+native-specific layout/focus, fonts, embedding or WebView inputs change.
 
 ## Main experiment interface
 
@@ -44,6 +49,8 @@ Respyra does not adopt that project's scrollable-sheet exception.
 - Verify page edges, text, neighbors, keyboard navigation and focus at minimum,
   normal, and large viewports, long identities, 200% text, and spacing overrides.
   Report unsupported conditions honestly; Chromium does not prove WebView2.
+  Distinguish a fresh browser check from inherited native evidence; ordinary
+  presentation iteration need not repeat native lifecycle/LSL qualification.
 
 The phone companion is a separate surface. Its reflow policy must not
 reintroduce scrolling into the desktop interface.

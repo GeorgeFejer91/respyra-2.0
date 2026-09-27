@@ -53,12 +53,19 @@ Source/provenance is in `native/recorder/README.md`.
   Full-stream stacks, calibrated health, native data receipts and local input
   options stay outside the existing bounded phone protocol.
 
-Verify `tests/check_recording.py` with independent PyXDF import, pre-calibration
-raw samples, marker order, late numeric/int64/source-less streams, clock offsets,
+Select checks by affected behavior under `VERIFICATION.md`; reuse valid
+unchanged recording/study evidence from `VERIFIED.md`. Merely editing the
+opening panel or recording-status presentation does not require these proofs.
+For affected recording contracts, verify `tests/check_recording.py` with
+independent PyXDF import, pre-calibration raw samples, marker order,
+late numeric/int64/source-less streams, clock offsets,
 Unicode paths and matching footers. Run failure tests in `tests/test_recording.py`,
-then the real native UI/LSL check and packaged synthetic round trip. Report the
+then the real native UI/LSL check when lifecycle/IPC is affected and the packaged
+synthetic round trip for a new installer. Report the
 physical belt, scientific display timing and physical phone separately.
 `tests/check_control_center.py` proves all-channel/late-marker preview and calibrated
 XDF values with independent PyXDF. `--full-study` additionally executes all 48
 configured trials and real PsychoPy displays with accelerated timings and simulated
 responses; it is not a full-duration participant or physical-belt qualification.
+Run it only for the complete-study triggers in `VERIFICATION.md`, not on every
+UI or recorder edit.

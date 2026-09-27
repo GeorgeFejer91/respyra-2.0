@@ -29,6 +29,7 @@ the easiest interpretation.
 | Native LSL/XDF recording, calibration boundary and completion evidence | [`RECORDING.md`](./RECORDING.md) |
 | Which installed skills apply and in what order | [`SKILLS.md`](./SKILLS.md) |
 | Acceptance criteria, commands, gates, evidence limits | [`VERIFICATION.md`](./VERIFICATION.md) |
+| Verification inventory, prior results and reuse limits | [`VERIFIED.md`](./VERIFIED.md) |
 | Session loop, updates, Git publication, handoff | [`WORKFLOW.md`](./WORKFLOW.md) |
 | Standalone Windows installer, runtime inputs, installation and release gates | [`PACKAGING.md`](./PACKAGING.md) |
 | Why a durable choice was made or superseded | [`DECISIONS.md`](./DECISIONS.md) |
@@ -44,7 +45,9 @@ task touches.
 3. Inspect the existing owner before adding code, files, dependencies, or
    abstractions.
 4. Make the smallest complete change and preserve unrelated work.
-5. Run focused checks, then proportionate integration and publication gates.
+5. Select checks by change impact; reuse valid recorded passes and run only
+   affected focused/integration checks. The verification catalogue is not a
+   mandatory full-project checklist.
 6. Update the narrowest canonical control-plane file when a durable fact
    changed.
 7. Report evidence, limitations, commit/remote state, and any blocker.

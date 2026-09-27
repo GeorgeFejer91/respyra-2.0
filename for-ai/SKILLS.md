@@ -2,6 +2,9 @@
 
 Use the smallest applicable skill set. Read every selected skill completely
 before acting, but do not load unrelated skills merely because they exist.
+Use `VERIFICATION.md` to select checks by impact and `VERIFIED.md` to reuse
+unaffected passes. Generic skill verification lists do not require rerunning
+unrelated product checks; implementation/design requirements still apply.
 
 ## Nesting order
 
@@ -33,7 +36,7 @@ Higher-priority instructions and the current user request always win.
 | Changing the Tauri shell, native commands, permissions, or Python process lifecycle | `tauri-rust-developer` alongside `ponytail` | Keep one supervised Python engine and a closed native command surface. Verify cancellation, abnormal exit, private pipe framing and least-privilege capabilities. Keep experiment timing and LSL publication in Python. |
 | Standalone Windows installer, resources, icons or release preparation | `tauri-rust-developer` and `ponytail`; `multi-source-web-search` for current distribution APIs/provenance | Read `PACKAGING.md` and the skill's release/sidecar references. Use one locked embedded Python engine, installed runtime evidence and explicit distribution gates. |
 | Remote controller or Recorder panel | `tauri-remote-app-builder`, `browser-remote-sync-protocol`, `tauri-rust-developer` and `ponytail` | Read `docs/remote-viewer.md` and the experiment-panel reference. Preserve typed scopes, native ownership, backend receipts, private QR/Connect, opaque iframe support and evidence tiers. Verify the displayed QR decodes and the actual published page pairs. Never inject participant keys or move PsychoPy timing into HTML. |
-| Changing text-bearing HTML/CSS/JS setup UI | `uncodixfy-pretext` and its `uncodixfy` companion alongside `ponytail` | Read `HTML-UI.md`; always apply this route. Use locked local Pretext/fonts, semantic controls, full readable status and stream identities. Verify rendered reflow/200% text and the target WebView; never route experiment stimuli into HTML. |
+| Changing text-bearing HTML/CSS/JS setup UI | `uncodixfy-pretext` and its `uncodixfy` companion alongside `ponytail` | Read `HTML-UI.md`; always apply this route. Use locked local Pretext/fonts, semantic controls, full readable status and stream identities. Verify rendered reflow/200% text; use impact selection for fresh versus inherited target-WebView evidence. Never route experiment stimuli into HTML. |
 
 The repository is small enough for direct source inspection; no graph skill is
 part of its standing route.
