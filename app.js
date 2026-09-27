@@ -15,6 +15,7 @@ if (location.hash) {
 const controller = mountController(byId('controller'), (action, fields) => active?.send(action, fields));
 byId('controller').querySelector('.diagnostics').append(byId('route'));
 controller.setEnabled(false);
+byId('remote-view').addEventListener('change', () => { document.body.dataset.view = byId('remote-view').value; });
 measureTextRegions().catch(() => { document.documentElement.dataset.pretextFit = 'unavailable'; });
 if (invitation) byId('connection-status').textContent = 'Private invitation received. Select Connect to control Respyra.';
 byId('pairing').addEventListener('submit', event => { event.preventDefault(); void connect(); });
@@ -27,6 +28,8 @@ async function stop(message = 'Disconnected. Enable a fresh phone invitation in 
   active = undefined;
   invitation = null;
   controller.setEnabled(false);
+  controller.clearMonitor();
+  byId('remote-view-picker').hidden = true;
   document.body.classList.remove('coupled');
   byId('pairing-note').hidden = false;
   byId('controller').hidden = true;
@@ -70,7 +73,7 @@ async function connect() {
       const timer = setTimeout(() => {
         context.pending.delete(id);
         reject(new Error('Command outcome unknown. Check the local controller before trying again.'));
-      }, 15000);
+      }, 30000);
       context.pending.set(id, { resolve,reject,timer });
     });
   }, error => { controller.fail(String(error)); void stop(String(error)); });
@@ -91,6 +94,7 @@ async function connect() {
       controller.render({ ...(value.setup || {}), phase:value.phase, message:value.message, progress:value.progress });
       controller.setEnabled(value.phase !== 'setup' || value.setup !== null);
       byId('controller').hidden = false; byId('connect').hidden = true;
+      byId('remote-view-picker').hidden = false;
       document.body.classList.add('coupled');
       byId('pairing-note').hidden = true;
       byId('route').textContent = 'Phone route: ' + context.route;

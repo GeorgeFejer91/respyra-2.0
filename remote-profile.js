@@ -71,7 +71,7 @@ export function validateControllerState(value) {
       || typeof row.compatible !== 'boolean' || (row.force_channel_index !== null && !integer(row.force_channel_index))) return false;
   }
   if (value.progress !== null) {
-    const p = value.progress, keys = ['phase','event','seq','lsl_time','trial','condition','screen','experiment_phase','health','markers','recent'];
+    const p = value.progress, keys = ['phase','event','seq','lsl_time','trial','condition','screen','experiment_phase','health','markers','recent','recording'];
     if (typeof p !== 'object' || Array.isArray(p) || p.phase !== 'progress' || Object.keys(p).some(key=>!keys.includes(key))) return false;
     for (const key of ['event','condition','screen','experiment_phase']) if (p[key] != null && !text(p[key],80)) return false;
     for (const key of ['seq','trial']) if (p[key] != null && !integer(p[key])) return false;
@@ -81,10 +81,20 @@ export function validateControllerState(value) {
       || typeof p.markers.online !== 'boolean' || !integer(p.markers.emitted))) return false;
     if (p.recent != null && (!Array.isArray(p.recent) || p.recent.length > 12 || p.recent.some(row =>
       !exact(row,['event','seq','lsl_time']) || !text(row.event,80) || !integer(row.seq,1) || !Number.isFinite(row.lsl_time) || row.lsl_time < 0))) return false;
-    if (p.health != null && (!exact(p.health,['signal','sample_age_ms','battery_percent'])
+    if (p.recording != null && (!exact(p.recording,['phase','error','bytes_written'])
+      || !['idle','preparing','recording','finalizing','complete','error'].includes(p.recording.phase)
+      || (p.recording.error !== null && !text(p.recording.error)) || !integer(p.recording.bytes_written))) return false;
+    if (p.health != null && (!exact(p.health,['signal','sample_age_ms','battery_percent',
+      ...(Object.hasOwn(p.health,'preview') ? ['preview'] : [])])
       || !['not_selected','live','stale','lost','disconnected'].includes(p.health.signal)
       || (p.health.sample_age_ms !== null && !integer(p.health.sample_age_ms))
       || (p.health.battery_percent !== null && (!Number.isFinite(p.health.battery_percent) || p.health.battery_percent < 0 || p.health.battery_percent > 100)))) return false;
+    const preview = p.health?.preview;
+    if (preview != null && (!exact(preview,['source_id','name','lsl_time','force_index','channels'])
+      || !text(preview.source_id) || !text(preview.name) || !Number.isFinite(preview.lsl_time) || preview.lsl_time < 0
+      || !integer(preview.force_index) || !Array.isArray(preview.channels) || preview.channels.length > 32
+      || preview.channels.some(channel => !exact(channel,['index','label','unit','value']) || !integer(channel.index)
+        || !text(channel.label) || !text(channel.unit) || (channel.value !== null && !Number.isFinite(channel.value))))) return false;
   }
   return true;
 }

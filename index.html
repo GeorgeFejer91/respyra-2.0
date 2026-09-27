@@ -10,8 +10,8 @@
   <script src="./vendor/vdoninja-sdk.min.js" defer></script>
   <script type="module" src="./app.js"></script>
 </head>
-<body><main>
-  <header><h1 data-measure>Experiment control</h1><p data-measure>Respyra 2.0 · phone controller</p></header>
+<body class="remote" data-view="data"><main>
+  <header><h1 data-measure>LSL monitor</h1><p data-measure>Respyra 2.0 · phone controller</p></header>
   <div class="connection-row">
   <p id="connection-status" role="status" aria-live="polite" data-measure>Disconnected. Enable phone control in Respyra for a fresh invitation.</p>
   <form id="pairing" autocomplete="off">
@@ -19,7 +19,8 @@
     <div class="actions"><button id="connect" type="submit" data-measure>Connect</button><button id="disconnect" type="button" disabled data-measure>Disconnect</button></div>
   </form>
   </div>
-  <p id="pairing-note" data-measure>Connect to share setup fields and control Respyra. PsychoPy stays local. Disconnecting leaves the study running.</p>
+  <p id="pairing-note" data-measure>Connect to view live LSL data and markers and control Respyra. PsychoPy stays local. Disconnecting leaves the study running.</p>
+  <label class="view-picker" id="remote-view-picker" hidden><span data-measure>View</span><select id="remote-view"><option value="data">LSL data &amp; markers</option><option value="controls">Experiment controls</option></select></label>
   <div id="controller" hidden></div>
   <p id="route" data-measure></p>
 </main></body></html>
