@@ -17,6 +17,13 @@ for name in ("numpy", "scipy", "pandas", "matplotlib", "pylsl", "psychopy.core",
     module = importlib.import_module(name)
     assert Path(module.__file__).resolve().is_relative_to(runtime), (name, module.__file__)
 from mpi.event_markers import MarkerOutlet
+import psutil
+support = [Path(m.path) for m in psutil.Process().memory_maps()
+           if "msvcp140" in m.path.lower() or "vcruntime140" in m.path.lower()]
+for path in support:
+    # NTFS may report an original name for an immutable build hardlink. Installed
+    # copies must load their own files, never another environment/system CRT.
+    assert path.is_relative_to(runtime) or any(path.samefile(candidate) for candidate in runtime.rglob(path.name)), path
 markers = MarkerOutlet()
 assert markers.health_snapshot()["online"]
 catalog = runtime / "Lib/site-packages/mpi/event_markers/catalog.json"
@@ -24,4 +31,4 @@ assert catalog.is_file()
 print(json.dumps({"result": "passed", "isolated": bool(sys.flags.isolated),
                   "python": sys.version.split()[0], "psychopy": metadata.version("psychopy"),
                   "respyra": metadata.version("respyra"), "pylsl": metadata.version("pylsl"),
-                  "marker_outlet": markers.health_snapshot()["online"]}))
+                  "marker_outlet": markers.health_snapshot()["online"], "app_local_msvc": True}))

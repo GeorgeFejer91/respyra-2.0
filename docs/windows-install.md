@@ -6,7 +6,8 @@ an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
 folder on the destination page if desired.
 
-Python 3.10.11, the locked PsychoPy/Respyra/LSL and analysis dependencies, fonts,
+Python 3.10.11, the locked PsychoPy/Respyra/LSL and analysis dependencies, app-local
+MSVC runtime DLLs from the locked Qt wheel, fonts,
 HTML controller and an offline WebView2 installer are included. Users do not
 need Python, Git, Node, Rust, a source checkout or package downloads to launch.
 The Windows Universal C Runtime supplied by Windows 10/11 is required.

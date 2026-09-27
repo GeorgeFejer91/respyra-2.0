@@ -20,6 +20,8 @@ the control plane.
   Preserve locked PsychoPy/respyra/LSL dependencies and wheel data/DLL/licenses.
   Reinstall the local `mpi` wheel on every package build so uv's project cache
   cannot ship stale source or README metadata after a source-only edit.
+  Copy the locked Qt wheel's MSVC support DLLs beside embedded Python and check
+  loaded DLL paths; Python-module isolation alone can miss a borrowed system CRT.
   Python `-I` excludes user site/environment paths. Retain stdio isolation.
 - Include only installed runtime packages, fixed product scripts, notices and
   public HTML/fonts/protocol assets. Never include `data/`, notebooks containing

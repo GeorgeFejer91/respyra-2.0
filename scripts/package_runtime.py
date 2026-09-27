@@ -51,6 +51,10 @@ def stage_runtime() -> None:
         return destination
     shutil.copytree(packages, site, copy_function=link_or_copy,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "_virtualenv.*", "direct_url.json"))
+    # Qt's locked wheel supplies current MSVC support. Put the same DLLs beside
+    # python.exe so Windows never needs a separately installed VC redistributable.
+    for support in (site / "PyQt6/Qt6/bin").glob("*140*.dll"):
+        shutil.copy2(support, python / support.name)
     if list(site.glob("__editable__*")) or not (site / "mpi/event_markers/catalog.json").is_file():
         raise RuntimeError("Runtime must contain the installed project, not an editable checkout link")
     (python / "python310._pth").write_text("python310.zip\n.\nLib/site-packages\nimport site\n", encoding="utf-8")
@@ -77,6 +81,7 @@ def stage_runtime() -> None:
     print(f"Staged {len(inventory)} locked packages; hashing installed inputs…", flush=True)
     manifest = {"product": "Respira", "version": json.loads((ROOT / "package.json").read_text())["version"],
                 "platform": "windows-x86_64", "python": {"version": "3.10.11", "url": PYTHON_URL, "sha256": PYTHON_SHA256},
+                "runtime_support": "App-local MSVC DLLs from the locked PyQt6-Qt6 wheel",
                 "source_revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                 "source_dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT)),
                 "locks": {name: digest(ROOT / name) for name in ("uv.lock", "pnpm-lock.yaml", "src-tauri/Cargo.lock")},
