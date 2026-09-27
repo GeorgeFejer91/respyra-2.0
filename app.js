@@ -13,6 +13,7 @@ if (location.hash) {
   catch { location.replace('#'); }
 }
 const controller = mountController(byId('controller'), (action, fields) => active?.send(action, fields));
+byId('controller').querySelector('.diagnostics').append(byId('route'));
 controller.setEnabled(false);
 measureTextRegions().catch(() => { document.documentElement.dataset.pretextFit = 'unavailable'; });
 if (invitation) byId('connection-status').textContent = 'Private invitation received. Select Connect to control Respyra.';
@@ -26,6 +27,8 @@ async function stop(message = 'Disconnected. Enable a fresh phone invitation in 
   active = undefined;
   invitation = null;
   controller.setEnabled(false);
+  document.body.classList.remove('coupled');
+  byId('pairing-note').hidden = false;
   byId('controller').hidden = true;
   byId('participant').value = ''; byId('session').value = '';
   byId('streams').replaceChildren();
@@ -88,8 +91,10 @@ async function connect() {
       controller.render({ ...(value.setup || {}), phase:value.phase, message:value.message, progress:value.progress });
       controller.setEnabled(value.phase !== 'setup' || value.setup !== null);
       byId('controller').hidden = false; byId('connect').hidden = true;
+      document.body.classList.add('coupled');
+      byId('pairing-note').hidden = true;
       byId('route').textContent = 'Phone route: ' + context.route;
-      byId('connection-status').textContent = 'Connected. Experiment controls and live status.';
+      byId('connection-status').textContent = 'Connected to Respyra';
     };
     context.connection.addEventListener('snapshot', event => state(event.detail.state));
     context.connection.addEventListener('state', event => state(event.detail.state));

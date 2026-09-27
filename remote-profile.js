@@ -23,7 +23,7 @@ export function parseInvitation(value) {
 }
 
 export function scopeForAction(action) {
-  if (['field_key','field_edit','scan','select','use','cancel'].includes(action)) return SETUP_SCOPE;
+  if (['field_key','field_edit','option','scan','select','use','cancel'].includes(action)) return SETUP_SCOPE;
   if (['start','abort','close'].includes(action)) return RUN_SCOPE;
   return null;
 }
@@ -37,9 +37,11 @@ export function validCommand(command) {
   if (command.action === 'field_key') keys.push('field','key');
   if (command.action === 'field_edit') keys.push('field','value');
   if (command.action === 'select') keys.push('row');
+  if (command.action === 'option') keys.push('field','enabled');
   const args = command.args;
   if (!exact(args, keys) || !integer(args.ui_seq, 1) || !Number.isFinite(args.ui_time_ms) || args.ui_time_ms < 0) return false;
-  if (keys.includes('field') && !['participant','session'].includes(args.field)) return false;
+  if (keys.includes('field') && !(command.action === 'option' ? ['save_csv'] : ['participant','session','marker_name']).includes(args.field)) return false;
+  if (keys.includes('enabled') && typeof args.enabled !== 'boolean') return false;
   if (keys.includes('key') && !text(args.key,128)) return false;
   if (keys.includes('value') && !text(args.value,128)) return false;
   return !keys.includes('row') || integer(args.row);
@@ -53,14 +55,14 @@ const text = (v,max=4096) => typeof v === 'string' && v.length <= max;
 export function validateControllerState(value) {
   if (!exact(value, ['profile','revision','monitorRevision','phase','message','setup','progress'])
     || value.profile !== 'respyra.controller/1' || !integer(value.revision) || !integer(value.monitorRevision)
-    || !['starting','waiting_recorder','setup','experiment','finished','error'].includes(value.phase)
+    || !['starting','setup','experiment','finished','error'].includes(value.phase)
     || !text(value.message) || new TextEncoder().encode(JSON.stringify(value)).length > 8192) return false;
   if (value.setup !== null) {
     const s = value.setup;
-    if (value.phase !== 'setup' || !exact(s,['phase','ui_seq','study_name','values','message','busy','can_start','can_use','selected_row','streams','source','omitted_streams'])
+    if (value.phase !== 'setup' || !exact(s,['phase','ui_seq','study_name','values','message','busy','can_start','can_use','selected_row','streams','source','omitted_streams','marker_name','save_csv'])
       || s.phase !== 'setup' || !integer(s.ui_seq) || !text(s.study_name) || !text(s.message)
       || !exact(s.values,['participant','session']) || !text(s.values.participant,128) || !text(s.values.session,128)
-      || ['busy','can_start','can_use'].some(key=>typeof s[key] !== 'boolean')
+      || !text(s.marker_name,128) || ['busy','can_start','can_use','save_csv'].some(key=>typeof s[key] !== 'boolean')
       || (s.selected_row !== null && !integer(s.selected_row)) || !integer(s.omitted_streams)
       || !Array.isArray(s.streams)) return false;
     if (s.source !== null && (!exact(s.source,['source_id','stream_name']) || !text(s.source.source_id) || !text(s.source.stream_name))) return false;
@@ -69,11 +71,16 @@ export function validateControllerState(value) {
       || typeof row.compatible !== 'boolean' || (row.force_channel_index !== null && !integer(row.force_channel_index))) return false;
   }
   if (value.progress !== null) {
-    const p = value.progress, keys = ['phase','event','seq','lsl_time','trial','condition','screen','experiment_phase','health'];
+    const p = value.progress, keys = ['phase','event','seq','lsl_time','trial','condition','screen','experiment_phase','health','markers','recent'];
     if (typeof p !== 'object' || Array.isArray(p) || p.phase !== 'progress' || Object.keys(p).some(key=>!keys.includes(key))) return false;
     for (const key of ['event','condition','screen','experiment_phase']) if (p[key] != null && !text(p[key],80)) return false;
     for (const key of ['seq','trial']) if (p[key] != null && !integer(p[key])) return false;
     if (p.lsl_time != null && (!Number.isFinite(p.lsl_time) || p.lsl_time < 0)) return false;
+    if (p.markers != null && (!exact(p.markers,['name','source_id','online','emitted'])
+      || !text(p.markers.name,128) || !text(p.markers.source_id,128)
+      || typeof p.markers.online !== 'boolean' || !integer(p.markers.emitted))) return false;
+    if (p.recent != null && (!Array.isArray(p.recent) || p.recent.length > 12 || p.recent.some(row =>
+      !exact(row,['event','seq','lsl_time']) || !text(row.event,80) || !integer(row.seq,1) || !Number.isFinite(row.lsl_time) || row.lsl_time < 0))) return false;
     if (p.health != null && (!exact(p.health,['signal','sample_age_ms','battery_percent'])
       || !['not_selected','live','stale','lost','disconnected'].includes(p.health.signal)
       || (p.health.sample_age_ms !== null && !integer(p.health.sample_age_ms))
