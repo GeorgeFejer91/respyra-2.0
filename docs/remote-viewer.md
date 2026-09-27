@@ -7,6 +7,14 @@ screen and the latest marker's name, sequence and original LSL timestamp.
 It excludes participant/session fields, responses, source identities, raw
 force samples, private paths and detailed error messages.
 
+The default view is four plain rows: status, trial/condition, phase/screen and
+latest event. Pairing input disappears once an invitation is present. Route,
+revision, input readiness and marker timestamps are under Connection details.
+VDO.Ninja is the coupling mechanism; there is no HTTP polling between peers.
+The host sends complete latest state at up to four updates per second and the
+viewer replaces its displayed state. The two-second stale indicator remains
+visible. This is live monitoring, not a scientific timing guarantee.
+
 ## Use it
 
 1. Launch the updated Respyra desktop executable. Select **Start viewer**.
