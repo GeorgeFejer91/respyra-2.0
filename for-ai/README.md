@@ -25,6 +25,7 @@ the easiest interpretation.
 | Need | Read |
 | --- | --- |
 | Scope, goals, boundaries, architecture, current state | [`PROJECT.md`](./PROJECT.md) |
+| HTML interface design and viewport fitting | [`HTML-UI.md`](./HTML-UI.md) |
 | Which installed skills apply and in what order | [`SKILLS.md`](./SKILLS.md) |
 | Acceptance criteria, commands, gates, evidence limits | [`VERIFICATION.md`](./VERIFICATION.md) |
 | Session loop, updates, Git publication, handoff | [`WORKFLOW.md`](./WORKFLOW.md) |

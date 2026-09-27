@@ -109,6 +109,7 @@ const path = require('node:path');
   try {
     await target.goto('https://respyra.test/index.html');
     assert.deepEqual(calls, []);
+    await target.locator('#view').selectOption('phone');
     await target.getByRole('button', { name: 'Enable phone control', exact: true }).click();
     await target.locator('#viewer-qr img').waitFor();
     const link = await target.locator('#viewer-link').inputValue();
@@ -174,6 +175,7 @@ const path = require('node:path');
     await child.locator('#abort').click();
     await child.locator('#phase').getByText('Finished', {exact:true}).waitFor();
     assert(mutations>=8,'Setup, selection, start and stop reached the target');
+    await target.locator('#view').selectOption('phone');
     await target.getByRole('button', { name: 'Disable phone control', exact: true }).click();
     await child.locator('#connection-status').getByText(/Disconnected/u).waitFor();
     assert.equal(granted, false);

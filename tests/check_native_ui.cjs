@@ -68,6 +68,7 @@ const assert = require('node:assert/strict');
       assert(file.startsWith(path.resolve('companion')+path.sep));
       await route.fulfill({body:await fs.readFile(file),contentType:{'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'}[path.extname(file)]||'application/octet-stream'});
     });
+    await page.locator('#view').selectOption('phone');
     await page.locator('#viewer-start').click();
     await page.locator('#viewer-qr img').waitFor();
     const link=await page.locator('#viewer-link').inputValue();
@@ -93,13 +94,21 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(()=>!document.getElementById('save_csv').checked);
   }
   if(mode==='select') {
-    await page.locator('#input-details summary').click();
+    await page.locator('#view').selectOption('input');
     await page.locator('#scan').click();
-    await page.locator('.stream').filter({hasText:'Synthetic raw Force'}).locator('input').check({timeout:20000});
+    const choose = async name => {
+      const row = page.locator('.stream').filter({hasText:name});
+      await row.waitFor({state:'attached',timeout:20000});
+      const previous = page.locator('#streams + .page-actions button').first();
+      while (await previous.isEnabled()) await previous.click();
+      for (let i=0; !(await row.isVisible()) && i<20; i++) await page.locator('#streams + .page-actions button').last().click();
+      await row.locator('input').check();
+    };
+    await choose('Synthetic raw Force');
     assert(await page.locator('.stream').filter({hasText:'Synthetic normalized'}).count());
-    await page.locator('.stream').filter({hasText:'Synthetic normalized'}).locator('input').check();
+    await choose('Synthetic normalized');
     assert(await page.locator('#use').isDisabled());
-    await page.locator('.stream').filter({hasText:'Synthetic raw Force'}).locator('input').check();
+    await choose('Synthetic raw Force');
     await page.locator('#use').click();
   }
   await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000});

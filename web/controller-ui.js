@@ -27,7 +27,7 @@ export const CONTROL_HTML = `
         </details>
       </section>
       <label class="check-option"><input id="save_csv" type="checkbox"><span data-measure>Save original CSV files locally</span></label>
-      <p class="recording-note" data-measure>In LSL Recorder, record VernierRaw and the marker stream below. Keep recording through Close.</p>
+      <p class="recording-note" data-measure>In LSL Recorder, record VernierRaw and the marker stream. Keep recording through Close.</p>
       <div class="actions final-actions">
         <button id="start" type="submit" disabled data-measure>Start Experiment</button>
         <button id="cancel" type="button" data-measure>Cancel</button>

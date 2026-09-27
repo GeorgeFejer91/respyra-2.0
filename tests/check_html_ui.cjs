@@ -45,17 +45,19 @@ const assert = require('node:assert/strict');
   await page.locator('#save_csv').check();
   assert(await page.locator('#save_csv').isChecked());
   assert(await page.locator('#start').isDisabled());
-  await page.locator('#input-details summary').click();
+  await page.locator('#view').selectOption('input');
   await page.locator('#scan').click();
   await page.locator('input[value="0"]').check();
   assert(await page.locator('#use').isDisabled());
+  await page.locator('#streams + .page-actions button').last().click();
   await page.locator('input[value="1"]').check();
   await page.locator('#use').click();
   await page.waitForFunction(()=>!document.getElementById('start').disabled);
   assert.equal(await page.locator('#participant').inputValue(), 'synthetic participant');
-  await page.locator('#input-details summary').click();
+  await page.locator('#view').selectOption('input');
   await page.locator('#scan').click();
   await page.waitForFunction(()=>![...document.querySelectorAll('#streams input')].some(r=>r.checked));
+  await page.locator('#streams + .page-actions button').last().click();
   await page.locator('input[value="1"]').check();
   assert(!(await page.locator('#use').isDisabled()), 'Unchanged scan results must still be selectable');
   for(const [width,textSize,spacing] of [[320,16,false],[820,16,false],[1440,16,false],[320,32,false],[820,32,true]]) {
@@ -68,11 +70,34 @@ const assert = require('node:assert/strict');
     const layout=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1, clipped:[...document.querySelectorAll('[data-measure]')].filter(e=>e.getClientRects().length && (e.scrollWidth>e.clientWidth+1||e.scrollHeight>e.clientHeight+1)).map(e=>e.textContent), measured:document.querySelectorAll('[data-pretext-fit]').length}));
     assert.equal(layout.overflow,false,JSON.stringify({width,textSize,spacing,layout}));
     assert.deepEqual(layout.clipped,[],JSON.stringify({width,textSize,spacing,layout}));
-    assert(layout.measured>10);
+    assert(layout.measured>5);
   }
   await page.setViewportSize({width:820,height:1000});
   await page.evaluate(()=>{document.documentElement.style.fontSize='16px';document.querySelector('style')?.remove();});
+  for (const [view,width,height] of [['setup',360,480],['setup',820,760],['setup',1440,900],['input',820,760],['markers',360,480],['status',820,760],['phone',360,480]]) {
+    await page.setViewportSize({width,height});
+    await page.locator('#view').selectOption(view);
+    await page.waitForTimeout(100);
+    assert(await page.locator('main').isVisible(), JSON.stringify({view,width,height}));
+    const fit = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight,
+      clipped: [...document.querySelectorAll('[data-measure]')].filter(e => e.getClientRects().length && (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)).map(e => e.textContent)
+    }));
+    assert(fit.width <= width + 1 && fit.height <= height + 1, JSON.stringify({view,width,height,fit}));
+    assert.deepEqual(fit.clipped, [], JSON.stringify({view,width,height,fit}));
+  }
+  await page.setViewportSize({width:320,height:480});
+  await page.locator('#view').selectOption('input');
+  await page.evaluate(() => { document.documentElement.style.fontSize = '32px'; });
+  await page.waitForTimeout(150);
+  assert(await page.locator('#viewport-notice').isVisible(), 'Impossible fits must be explicit');
+  assert(await page.locator('#view').isVisible(), 'No-fit state keeps navigation available');
+  assert(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1 && document.documentElement.scrollWidth <= innerWidth + 1));
+  await page.evaluate(() => { document.documentElement.style.fontSize = '16px'; });
+  await page.locator('#view').selectOption('setup');
+  await page.setViewportSize({width:820,height:760});
   await page.screenshot({path:'.for-ai-local/html-setup.png',fullPage:true});
+  await page.locator('#view').selectOption('setup');
   await page.locator('#start').click();
   await page.waitForFunction(()=>document.getElementById('controls').disabled);
   const actions=await page.evaluate(()=>window.testActions);
@@ -81,7 +106,7 @@ const assert = require('node:assert/strict');
   assert(actions.some(a=>a.action==='field_edit'&&a.field==='session'&&a.value==='002'));
   assert.equal(actions.at(-1).action,'start');
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({result:'passed',actions:actions.length,layouts:5,clipping:0,pageErrors:0}));
+  console.log(JSON.stringify({result:'passed',actions:actions.length,reflowLayouts:5,viewportLayouts:7,noFitRecovery:true,clipping:0,pageErrors:0}));
   await browser.close();
   await new Promise(resolve => server.close(resolve));
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -87,6 +87,12 @@ uv run --frozen python tests/check_native_lsl.py
 ```
 
 `check:ui` uses installed Chrome and a mocked native bridge with the actual form.
+For desktop layout changes, read `HTML-UI.md`. Check the start view at 360×480,
+820×760 and 1440×900, every secondary view, stream pagination with original
+row identities, and explicit no-fit recovery. Assert both page dimensions
+fit, visible content is unclipped, and navigation survives enlarged text.
+Secondary desktop controls reuse the viewport; they must never form a scrolling
+page. The separate phone companion retains its accessibility reflow policy.
 It checks controls, action order, long identities, 320/820/1440 CSS px, doubled
 text and text-spacing overrides. The native check requires Windows/WebView2,
 the built debug executable and port 9227 free. It opens real windows, uses

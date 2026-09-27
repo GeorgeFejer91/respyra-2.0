@@ -87,8 +87,10 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
 - Respyra owns only the study's range calibration, target generation, visual
   gain, performance error, and discrete event markers. Keep target/error units
   in N; do not silently replace raw Force with the normalized 0–1 outlet.
-- The first UI is Experiment control, with participant/session fields and the
-  expandable LSL input / marker name controls (Scan streams / Use stream).
+- The first UI is Experiment control, with compact participant/session setup.
+  Input selection, marker naming, monitoring and phone pairing use separate
+  desktop views of the same viewport; stream/event lists paginate. See
+  `HTML-UI.md` for the no-scroll and explicit no-fit contract.
   Discovery lists visible outlets with compatibility
   reasons; only raw Force (N) with the producer contract, numeric float format,
   and unique source_id can be selected. Connection requires fresh finite Force

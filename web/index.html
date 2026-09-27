@@ -9,9 +9,10 @@
   <script src="./vendor/vdoninja-sdk.min.js" defer></script>
   <script type="module" src="./app.js"></script>
 </head>
-<body>
+<body class="desktop" data-view="setup">
   <main>
     <header><h1 data-measure>Experiment control</h1><p id="study" data-measure>Respyra 2.0</p></header>
+    <label class="view-picker"><span data-measure>View</span><select id="view"><option value="setup">Start experiment</option><option value="input">Breathing input</option><option value="markers">Marker name</option><option value="status">Experiment status</option><option value="phone">Phone control</option></select></label>
     <section class="viewer-setup" aria-label="Phone remote control">
       <div class="actions">
         <button id="viewer-start" type="button" data-measure>Enable phone control</button>
@@ -28,5 +29,7 @@
     </section>
     <div id="controller"></div>
   </main>
+  <div id="viewport-notice" hidden role="status"><p data-measure>This view needs more room. Enlarge the window or choose another view.</p></div>
+  <script type="module" src="./desktop-view.js"></script>
 </body>
 </html>
