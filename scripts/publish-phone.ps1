@@ -52,7 +52,7 @@ $files = @('index.html', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.j
 foreach ($name in $files) {
     Copy-Item -LiteralPath (Join-Path $sourceRoot "companion/$name") -Destination $publishRoot -Recurse -Force
 }
-$provenance = @{ repository='https://github.com/GeorgeFejer91/respyra-2.0'; commit=$sourceCommit; profile='respyra.controller/1' }
+$provenance = [ordered]@{ repository='https://github.com/GeorgeFejer91/respyra-2.0'; commit=$sourceCommit; profile='respyra.controller/1' }
 $provenance | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $publishRoot 'source.json') -Encoding utf8
 [IO.File]::WriteAllText((Join-Path $publishRoot '.nojekyll'), '')
 RunGit $publishRoot (@('add', '--') + $files + @('source.json', '.nojekyll'))
