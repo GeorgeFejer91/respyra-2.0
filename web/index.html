@@ -12,23 +12,21 @@
 <body>
   <main>
     <header><h1 data-measure>Experiment control</h1><p id="study" data-measure>Respyra 2.0</p></header>
-    <div id="controller"></div>
     <section class="viewer-setup" aria-label="Phone remote control">
-      <h2 data-measure>Phone remote control</h2>
-      <p data-measure>Enable a private link, scan the QR code, then select Connect on your phone. The connected phone can edit setup, select LSL input, start or stop the experiment, and view its status.</p>
-      <p data-measure>This shares participant and session fields with the connected phone. Keep the link private. Internet access is required; the invitation expires after four hours.</p>
       <div class="actions">
         <button id="viewer-start" type="button" data-measure>Enable phone control</button>
         <button id="viewer-stop" type="button" disabled data-measure>Disable phone control</button>
       </div>
       <p id="viewer-status" role="status" aria-live="polite" data-measure>Phone control disabled.</p>
       <div id="viewer-invitation" hidden>
+        <p data-measure>Scan, then Connect on your phone. This private link shares setup and control. Internet is required; it expires after four hours.</p>
         <label><span data-measure>Private control link</span><input id="viewer-link" type="text" readonly spellcheck="false"></label>
         <button id="viewer-copy" type="button" data-measure>Copy link</button>
         <div id="viewer-qr"></div>
         <p data-measure>You can also load this link in the Recorder’s Add external page tab. Disable phone control to revoke the link. Disconnecting the phone leaves an ongoing experiment running.</p>
       </div>
     </section>
+    <div id="controller"></div>
   </main>
 </body>
 </html>

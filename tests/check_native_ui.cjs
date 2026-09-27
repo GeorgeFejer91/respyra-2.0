@@ -62,7 +62,7 @@ const assert = require('node:assert/strict');
     const base='https://georgefejer91.github.io/respyra-2.0/';
     phoneBrowser=await chromium.launch({channel:'chrome',headless:true});
     const context=await phoneBrowser.newContext();
-    await context.route(base+'**',async route=>{
+    if (!process.env.RESPYRA_PUBLISHED_PHONE) await context.route(base+'**',async route=>{
       const relative=new URL(route.request().url()).pathname.slice(new URL(base).pathname.length)||'index.html';
       const file=path.resolve('companion',relative);
       assert(file.startsWith(path.resolve('companion')+path.sep));
@@ -71,6 +71,11 @@ const assert = require('node:assert/strict');
     await page.locator('#viewer-start').click();
     await page.locator('#viewer-qr img').waitFor();
     const link=await page.locator('#viewer-link').inputValue();
+    await page.locator('#viewer-qr img').screenshot({path:'.for-ai-local/native-qr.png'});
+    const {execFileSync}=require('node:child_process');
+    execFileSync('.venv/Scripts/python.exe',['-c',
+      'import cv2,sys; image=cv2.imread(".for-ai-local/native-qr.png"); text,points,_=cv2.QRCodeDetector().detectAndDecode(image); assert text == sys.stdin.read(), "Displayed QR did not decode to the invitation"'],
+      {input:link,timeout:15000});
     ui=await context.newPage();ui.on('pageerror',e=>errors.push(String(e)));
     await ui.setViewportSize({width:390,height:844});
     await ui.goto(link);
@@ -80,7 +85,14 @@ const assert = require('node:assert/strict');
   }
   await ui.locator('#participant').fill('synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
+  if(mode==='remote') {
+    await ui.locator('#save_csv').check();
+    await page.waitForFunction(()=>document.getElementById('save_csv').checked);
+    await ui.locator('#save_csv').uncheck();
+    await page.waitForFunction(()=>!document.getElementById('save_csv').checked);
+  }
   if(mode==='select') {
+    await page.locator('#input-details summary').click();
     await page.locator('#scan').click();
     await page.locator('.stream').filter({hasText:'Synthetic raw Force'}).locator('input').check({timeout:20000});
     assert(await page.locator('.stream').filter({hasText:'Synthetic normalized'}).count());
@@ -91,6 +103,12 @@ const assert = require('node:assert/strict');
   }
   await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000});
   assert((await ui.locator('#accepted').textContent()).includes('Synthetic raw Force'));
+  if(mode==='remote') {
+    await ui.evaluate(()=>document.fonts.ready);
+    const compact=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth}));
+    await ui.screenshot({path:'.for-ai-local/native-phone-setup.png',fullPage:true});
+    assert(compact.height<=compact.viewport+1,'Phone setup needs scrolling: '+JSON.stringify(compact));
+  }
   const geometry=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1, measured:document.querySelectorAll('[data-pretext-fit]').length}));
   assert(!geometry.overflow && geometry.measured>10,JSON.stringify(geometry));
   for (const [width,size] of [[320,16],[1440,16],[320,32]]) {
@@ -121,5 +139,5 @@ const assert = require('node:assert/strict');
   }
   if(phoneBrowser) await phoneBrowser.close();
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({mode,geometry,pageErrors:errors.length}));
+    console.log(JSON.stringify({mode,geometry,pageErrors:errors.length,publishedPhone:!!process.env.RESPYRA_PUBLISHED_PHONE,qrDecoded:mode==='remote'}));
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -54,8 +54,9 @@ version). For HTML control/pipe changes, run
 and `pnpm test:web`. The real process check must receive setup state after a
 real marker subscription and keep the outlet alive through final Close. Verify
 the launcher imports no study/PsychoPy modules, the startup outlet is discoverable
-without any belt, and a subscriber joining after 30 seconds still enables setup
-on the same outlet identity. Run the lifecycle helper in its private LSL
+without any belt, setup edits work before any subscriber and markers remain
+available through Close. Verify pre-subscription renaming and no recorder
+readiness gate; only source/participant preconditions gate Start. Run the lifecycle helper in its private LSL
 SessionID so an existing recorder cannot satisfy its subscription gate.
 For startup discovery and remembered selection, also run
 `uv run pytest tests/test_lsl_setup.py`: exercise the Python form controller, reject
@@ -66,8 +67,10 @@ tests. Run a synthetic LSL outlet/inlet check for metadata, discovery, and exact
 identity reconnect; use isolated settings so tests never overwrite lab choices.
 Check that every emitted event name appears in `catalog.json`, every
 blocking screen has shown/dismissed markers, phase start/end and abort paths
-pair sensibly, no-data calibration fails, and the experiment creates no CSV
-file. Inspect the configured trial order and target/error units in N.
+pair sensibly and no-data calibration fails. Run original CSV mode both on/off:
+off creates no files; on preserves sample columns and self-assessment schema,
+writes all phases and closes files even on early/error exit. Inspect trial order
+and target/error units in N.
 
 For the desktop shell and text layout:
 
@@ -111,7 +114,11 @@ separately with `RESPYRA_REAL_VDO=1`; browser checks still mock native IPC.
 `check_native_lsl.py` also pairs an actual packaged WebView target with a Chrome
 controller over public VDO and observes remote edits/Start/Stop/Close in Python,
 with synthetic LSL input and real PsychoPy instruction flips. The static phone
-assets are locally routed for this check; qualify published byte parity separately.
+assets are locally routed by default. Set RESPYRA_PUBLISHED_PHONE=1 to qualify
+the real Pages endpoint without interception. The native check decodes the
+rendered opening-panel QR and pairs the phone. Verify published byte parity and
+ordinary 390×844 compact setup separately. Enlarged text/expanded details may
+scroll while preserving every control.
 Check no state before claim, wrong owner/epoch/scope/sequence, expiry/revocation,
 stale revisions, unknown actions and duplicate IDs without repeated effects.
 Report physical phone/belt, Raspberry Pi and XDF evidence separately.
@@ -121,9 +128,9 @@ Run proportionate build, test, lint, type, runtime, visual, device, security,
 and compatibility checks for every affected boundary. Do not run an expensive
 or irrelevant full matrix for a documentation-only edit.
 
-The experiment runtime requires Vernier Stream Mini's live raw LSL outlet, a
-recorder subscribed to `VernierRaw` and `Respyra-Events`, and a PsychoPy
-display. Use the streamer's explicitly marked mock outlet to check discovery,
+The experiment runtime requires Vernier Stream Mini's live raw LSL outlet and a
+PsychoPy display. Recording is separately operated in the external recorder.
+Use the streamer's explicitly marked mock outlet to check discovery,
 metadata, fresh samples, marker order, early/normal/failed endings, and an LSL
 recording containing both streams. Then verify the physical belt separately.
 Mark unavailable surfaces `NOT RUN`; an LSL subscriber is not proof that the

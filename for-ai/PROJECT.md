@@ -17,7 +17,7 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
 - No second implementation tree or duplicate source of truth.
 - No capability claim without matching evidence.
 - No direct Vernier Bluetooth/USB connection or second force-to-breathing processor in this project.
-- No new session CSV or self-assessment CSV output from the experiment.
+- No session CSV output unless the experimenter enables the original CSV mode.
 - Do not publish raw session recordings or self-assessments from `data/`.
 
 ## Product/control-plane boundary
@@ -40,7 +40,8 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   `src/mpi/event_markers/` owns the LSL marker publisher
   and exhaustive `catalog.json`. `scripts/run_experiment.py` runs the PsychoPy
   task using that source and `respyra`'s existing study phases; it passes a
-  no-op sample logger to those phases and writes no session files.
+  no-op sample logger by default. Optional CSV mode reuses respyra's DataLogger,
+  original configured sample columns and self-assessment schema in ignored data/.
 - `web/` is plain HTML/CSS/JS with locally bundled Pretext/fonts. `src-tauri/`
   supervises one Python child through closed commands (`launch_backend`,
   `setup_action`, `close_app`, `viewer_action`) and private bounded JSON pipes. Python is the
@@ -84,8 +85,9 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
 - Respyra owns only the study's range calibration, target generation, visual
   gain, performance error, and discrete event markers. Keep target/error units
   in N; do not silently replace raw Force with the normalized 0–1 outlet.
-- The first UI is the HTML/Tauri participant/session form with Add LSL Stream and
-  Use Selected Stream. Discovery lists visible outlets with compatibility
+- The first UI is Experiment control, with participant/session fields and the
+  expandable LSL input / marker name controls (Scan streams / Use stream).
+  Discovery lists visible outlets with compatibility
   reasons; only raw Force (N) with the producer contract, numeric float format,
   and unique source_id can be selected. Connection requires fresh finite Force
   samples. Setup discovery/connection uses one worker, without adding an
@@ -101,17 +103,17 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   buffer.
 - The recorder owns persisted samples. Respyra's marker stream uses one JSON
   string per event. Its outlet is advertised at desktop Python-engine startup,
-  before study/PsychoPy imports or Force selection, and waits cancellably without
-  a subscription deadline. No marker samples or participant interaction occur
-  before subscription. Keep the same outlet through final Close. Markers use a
+  before study/PsychoPy imports or Force selection. Neither setup nor Start waits
+  for recorder readiness; the experimenter operates recording in the other app.
+  Marker pushes do not require a subscriber. Keep the run's outlet through final
+  Close; its default name may change during setup before subscription or Start. Markers use a
   shared run UUID, monotonic sequence, LSL timestamp, and
   trial/condition/phase/screen context. The catalog is the authority for every
   emitted marker name and its timing meaning. Record both LSL streams from
   before participant interaction through final cleanup. The force inlet
   enables LSL clock synchronization so source and marker timestamps can be
-  compared in the local LSL clock domain. Marker publication fails if its
-  subscriber disconnects, but only inspection of the recorder output verifies
-  persistence.
+  compared in the local LSL clock domain. Setup events sent before recording may
+  be absent from the file. Only inspection of the recorder output verifies persistence.
 - HTML actions capture `ui_seq` and `performance.now()` (`ui_time_ms`) before
   serialized IPC. Rust assigns global pipe `ui_seq` and retains browser sequence
   as `ui_client_seq` with `ui_origin` local/remote. Each browser has its own clock.
@@ -129,6 +131,11 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   belt contact or physiological quality. Blocking instruction/assessment waits
   drain the accepted inlet; active study phases keep their existing reads.
   The current raw Force contract provides no battery telemetry; do not invent it.
+- Experiment control is the opening HTML panel and stays available in the
+  background during PsychoPy. Its QR pairs one phone to the same controls over
+  VDO.Ninja/BRSP from the public GitHub Pages site. Show compact run/input/output
+  status, actual sent-event count, latest event and an expandable last-12 list.
+  Online output is not a recorder-readiness check. Recordings never go to Pages.
 
 ## Current verified state
 

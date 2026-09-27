@@ -59,10 +59,9 @@ def marker():
         yield MarkerOutlet()
 
 
-def test_marker_payload_and_recorder_failure(marker):
+def test_marker_payload_does_not_depend_on_recorder(marker):
     observed = []
     marker.observer = observed.append
-    marker.wait_for_recorder()
     marker.emit("run.started", participant="p1", session="001")
     payload, timestamp = marker._outlet.samples[-1]
     assert payload["event"] == "run.started"
@@ -75,24 +74,27 @@ def test_marker_payload_and_recorder_failure(marker):
     with pytest.raises(ValueError, match="missing marker fields"):
         marker.emit("run.completed")
     marker._outlet.connected = False
-    with pytest.raises(RuntimeError, match="no LSL recorder"):
-        marker.emit("run.completed", trials_completed=1)
-    assert len(marker._outlet.samples) == 1
+    marker.emit("run.completed", trials_completed=1)
+    assert len(marker._outlet.samples) == 2
+
+def test_name_can_change_before_subscription_but_not_during_run(marker):
+    marker._outlet.connected = False
+    marker.rename("Lab breathing markers")
+    assert marker.name == "Lab breathing markers"
+    with pytest.raises(ValueError, match="locked"):
+        marker.rename("Another name")
+    marker._outlet.connected = False
+    marker.name_locked = True
+    with pytest.raises(ValueError, match="locked"):
+        marker.rename("Another name")
 
 
-def test_recorder_wait_without_deadline_remains_cancellable(marker, monkeypatch):
-    checks = []
-    attempts = iter([False, False, True])
-    monkeypatch.setattr(marker._outlet, "wait_for_consumers", lambda _timeout: next(attempts))
-    monkeypatch.setattr("mpi.event_markers.time.monotonic", lambda: 1000.0 * len(checks))
-    marker.wait_for_recorder(timeout=None, cancel_check=lambda: checks.append(True))
-    assert len(checks) == 3 and marker.sequence == 0
-
-    def cancel():
-        raise DesktopCancelled()
-
-    with pytest.raises(DesktopCancelled):
-        marker.wait_for_recorder(timeout=None, cancel_check=cancel)
+def test_marker_health_reports_own_output_not_recording(marker):
+    marker._outlet.connected = False
+    marker.emit("run.started", participant="p", session="001")
+    assert marker.health_snapshot() == {"name":"Respyra-Events",
+        "source_id":"respyra-events-" + marker.run_id, "online":True,
+        "emitted":1}
 
 
 @pytest.mark.parametrize("cancel_only", [False, True])
@@ -214,4 +216,3 @@ def test_catalog_has_pairs_and_logger_has_no_output():
         and isinstance(node.args[0].value, str)
     }
     assert literal_events <= events.keys()
-    assert "create_session_file" not in runner.read_text(encoding="utf-8")

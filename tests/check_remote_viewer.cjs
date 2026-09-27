@@ -14,12 +14,13 @@ const path = require('node:path');
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const context = await browser.newContext();
   let child, delivery = Promise.resolve(), snapshot = {
-    profile:'respyra.controller/1', revision:1, monitorRevision:1, phase:'waiting_recorder',
-    message:'Waiting for marker subscriber', setup:null, progress:null,
+    profile:'respyra.controller/1', revision:1, monitorRevision:1, phase:'starting',
+    message:'Marker outlet online', setup:null, progress:null,
   };
   const setup = { phase:'setup',ui_seq:0,study_name:'Respyra breathing validation',
     values:{participant:'',session:'001'},message:'Choose a Force stream',busy:false,
-    can_start:false,can_use:false,selected_row:null,streams:[],source:null,omitted_streams:0 };
+    can_start:false,can_use:false,selected_row:null,streams:[],source:null,omitted_streams:0,
+    marker_name:'Respyra-Events',save_csv:false };
   let mutations = 0, ownerClaimed = false;
   const started = new Set(), calls = [], errors = [];
   let lanesReady = false;
@@ -49,7 +50,7 @@ const path = require('node:path');
     });
   }
   await target.exposeFunction('fixtureInvoke', (command, args) => {
-    if (command === 'launch_backend') return { phase: 'waiting_recorder', message: 'Waiting for marker subscriber' };
+    if (command === 'launch_backend') return { phase: 'starting', message: 'Marker outlet online' };
     if (command === 'viewer_action') {
       calls.push(args.action.action);
       if (args.action.action === 'start') { granted = true; return nativeInvite; }
@@ -128,13 +129,14 @@ const path = require('node:path');
     const blocked = await child.evaluate(() => { let parentBlocked = false, storageBlocked = false; try { void parent.document.body; } catch { parentBlocked = true; } try { void localStorage.length; } catch { storageBlocked = true; } return { parentBlocked, storageBlocked }; });
     assert.deepEqual(blocked, { parentBlocked: true, storageBlocked: true });
     await child.getByRole('button', { name: 'Connect', exact: true }).click();
-    await child.locator('#phase').getByText('Waiting for recorder', { exact: true }).waitFor({ timeout: 45000 });
+    await child.locator('#phase').getByText('Starting', { exact: true }).waitFor({ timeout: 45000 });
     assert.equal(mutations,0);
     snapshot={...snapshot,phase:'setup',revision:2,monitorRevision:2,setup,
       progress:{phase:'progress',health:{signal:'not_selected',sample_age_ms:null,battery_percent:null}}};
     await child.locator('#participant').fill('synthetic-phone');
     await child.locator('#participant').press('ArrowLeft');
     await child.locator('#session').fill('002');
+    await child.locator('#input-details summary').click();
     await child.locator('#scan').click();
     await child.locator('input[value="0"]').check();
     assert(await child.locator('#use').isDisabled());
@@ -148,13 +150,13 @@ const path = require('node:path');
     await child.locator('#phase').getByText('Running', {exact:true}).waitFor();
     snapshot = { ...snapshot, progress:{phase:'progress',trial:3,seq:19,lsl_time:321.5,event:'tracking.started',
       experiment_phase:'tracking',condition:'normal',screen:null,health:{signal:'live',sample_age_ms:100,battery_percent:null}} };
-    await child.locator('#trial-summary').getByText('3 · normal', { exact: true }).waitFor();
+    await child.locator('#trial-summary').getByText(' · Trial 3 · normal', { exact: true }).waitFor();
     assert.equal(await child.locator('.diagnostics').getAttribute('open'), null);
     assert.equal(await child.locator('#invitation-field').isVisible(), false);
     await child.locator('.diagnostics summary').click();
     await child.locator('#lsl-time').getByText('321.5', { exact: true }).waitFor();
-    for (const [width, size] of [[320, 16], [390, 16], [844, 16], [1280, 16], [320, 32]]) {
-      await viewer.setViewportSize({ width, height: 844 });
+    for (const [width, size, height=844] of [[320, 16], [390, 16], [844, 16], [1280, 16], [320, 32], [844, 16, 390]]) {
+      await viewer.setViewportSize({ width, height });
       await child.evaluate(size => { document.documentElement.style.fontSize = size + 'px'; }, size);
       await child.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
       assert(await child.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `iframe overflow at ${width}/${size}`);
@@ -177,7 +179,7 @@ const path = require('node:path');
     assert.equal(granted, false);
     assert.equal(await target.locator('#viewer-link').inputValue(), '');
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({ result:'passed',transport:process.env.RESPYRA_REAL_VDO ? 'public VDO' : 'deterministic BRSP bridge',route,iframe:'opaque',layouts:5,native:'mocked ownership and backend',mutationCalls:mutations }));
+    console.log(JSON.stringify({ result:'passed',transport:process.env.RESPYRA_REAL_VDO ? 'public VDO' : 'deterministic BRSP bridge',route,iframe:'opaque',layouts:6,native:'mocked ownership and backend',mutationCalls:mutations }));
   } catch (error) {
     console.error({ started: [...started], targetStatus: await target.locator('#viewer-status').textContent(), viewerStatus: await child?.locator('#connection-status').textContent(), errors });
     throw error;

@@ -45,7 +45,7 @@ decision and link both entries.
 ## D-0003 — Source study force through Vernier Stream Mini LSL
 
 - Date: 2026-09-24
-- Status: Accepted
+- Status: Accepted for raw Force/study ownership; recorder gating and no-CSV superseded by D-0007.
 - Context: The belt acquisition path now belongs to
   [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream).
   Its raw LSL outlet carries Force in N; its derived respiration outlet carries
@@ -142,3 +142,29 @@ decision and link both entries.
   Raspberry Pi or scientific timing qualification.
 - Supersedes: Startup-only HTML visibility in D-0005 and the read-only observer
   contract; retains Python/PsychoPy, recorder, no-CSV and source ownership.
+
+## D-0007 — Public QR controller, own-output feedback and optional original CSVs
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user explicitly authorized making respyra-2.0 public, asked for
+  simple opening-panel QR coupling, compact status and original CSVs as an
+  option, and clarified that recorder readiness belongs in the recorder app.
+- Decision: Publish this repository publicly and only static companion assets
+  to its Pages site. Tailor the existing control plane via the for-ai skill;
+  never bootstrap over it. Keep one Experiment control panel for setup and
+  background monitoring, with a QR button at the top. Show Force reception,
+  named marker output, successfully pushed event count, latest event and
+  expandable last-12 events. Allow naming only before subscription/Start.
+  Do not wait for recorder readiness, require confirmation or abort on subscriber
+  loss. The experimenter records both streams elsewhere. CSV stays off by default;
+  enabling it reuses the original logger, sample schema/filenames and assessment
+  schema with cleanup on all exits.
+- Consequences: Events sent before recording may be absent from the file. Online
+  output is not persisted XDF proof. CSV flushes may add disk latency. Session
+  data and credentials stay local/ignored even though source is public. Qualify
+  displayed QR decoding, the deployed page and native/Python round trips;
+  physical devices and scientific timing need their own evidence.
+- Supersedes: Recorder gates and no-CSV in D-0003/D-0005/D-0006, private source
+  visibility in D-0002/D-0006. Raw source, Python/PsychoPy, scoped control and
+  local-data boundaries remain.

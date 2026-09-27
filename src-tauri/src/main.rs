@@ -25,6 +25,13 @@ mod viewer;
 enum Field {
     Participant,
     Session,
+    MarkerName,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum RecordingOption {
+    SaveCsv,
 }
 
 #[derive(Deserialize)]
@@ -52,6 +59,12 @@ enum Action {
         ui_time_ms: f64,
         field: Field,
         value: String,
+    },
+    Option {
+        ui_seq: u64,
+        ui_time_ms: f64,
+        field: RecordingOption,
+        enabled: bool,
     },
     Scan {
         ui_seq: u64,
@@ -184,7 +197,7 @@ fn decode_frame(line: &str) -> Result<Option<Value>, String> {
     if !matches!(
         value["phase"].as_str(),
         Some(
-            "waiting_recorder"
+            "starting"
                 | "setup"
                 | "experiment"
                 | "finished"
@@ -497,7 +510,7 @@ fn remote_action(command: &viewer::RemoteCommand) -> Result<Action, String> {
     let permitted = match command.scope.as_str() {
         "experiment.setup" => matches!(
             command.action.as_str(),
-            "field_key" | "field_edit" | "scan" | "select" | "use" | "cancel"
+            "field_key" | "field_edit" | "option" | "scan" | "select" | "use" | "cancel"
         ),
         "experiment.run" => matches!(command.action.as_str(), "start" | "abort"),
         _ => false,
@@ -698,6 +711,8 @@ mod tests {
     }
     #[test]
     fn framed_state_only() {
+        assert!(decode_frame("RESPYRA/1 {\"phase\":\"starting\"}\n").is_ok());
+        assert!(decode_frame("RESPYRA/1 {\"phase\":\"waiting_recorder\"}\n").is_err());
         assert!(
             decode_frame("ordinary PsychoPy diagnostic\n")
                 .unwrap()

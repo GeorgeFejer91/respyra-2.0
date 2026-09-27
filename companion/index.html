@@ -12,12 +12,14 @@
 </head>
 <body><main>
   <header><h1 data-measure>Experiment control</h1><p data-measure>Respyra 2.0 · phone controller</p></header>
+  <div class="connection-row">
   <p id="connection-status" role="status" aria-live="polite" data-measure>Disconnected. Enable phone control in Respyra for a fresh invitation.</p>
   <form id="pairing" autocomplete="off">
     <label id="invitation-field"><span data-measure>Private Respyra control link</span><input id="invitation" type="url" maxlength="4096" spellcheck="false" required></label>
     <div class="actions"><button id="connect" type="submit" data-measure>Connect</button><button id="disconnect" type="button" disabled data-measure>Disconnect</button></div>
   </form>
-  <p data-measure>Connecting shares setup fields with this phone and enables experiment control. Participant displays remain on the local PsychoPy window. Disconnecting leaves an ongoing experiment running.</p>
+  </div>
+  <p id="pairing-note" data-measure>Connect to share setup fields and control Respyra. PsychoPy stays local. Disconnecting leaves the study running.</p>
   <div id="controller" hidden></div>
   <p id="route" data-measure></p>
 </main></body></html>

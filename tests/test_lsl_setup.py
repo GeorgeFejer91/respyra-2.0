@@ -11,6 +11,7 @@ from mpi.lsl_force import ForceStreamCandidate, LSLForceError, LSLForceSource
 
 
 class Collector:
+    name = "Respyra-Events"
     def __init__(self): self.events = []
     def emit(self, name, **fields):
         assert name in CATALOG["events"]

@@ -51,6 +51,7 @@ task touches.
 Created: 2026-09-24
 Repository: https://github.com/GeorgeFejer91/respyra-2.0
 Visibility at initialization: private
+Current visibility: public, explicitly authorized by the user.
 
 The imported product is a Python 3.10 PsychoPy/respyra study. See `PROJECT.md`
 for source ownership and the local-data boundary.

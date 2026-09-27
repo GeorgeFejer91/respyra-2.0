@@ -24,6 +24,9 @@ def main():
         bridge = DesktopBridge(control_input, writer)
         markers = MarkerOutlet()
         markers.observer = bridge.note_marker
+        bridge.markers = markers
+        bridge.send({"phase": "starting", "run_id": markers.run_id,
+                     "message": "Marker outlet online. Select live Force input; recording belongs to LSL Recorder."})
         bridge.start_progress()
         failure = None
         phase = "finished"
@@ -104,6 +107,13 @@ def run_tracking(
             visual_force = s.range_center + feedback_gain * (force - s.range_center)
             compensated_error = target_force - visual_force
             trial_errors.append(abs(compensated_error))
+            s.logger.log_row(
+                timestamp=round(tracking_t, 4), frame=s.frame_count,
+                force_n=round(force, 4), target_force=round(target_force, 4),
+                error=round(target_force - force, 4),
+                compensated_error=round(compensated_error, 4), phase="tracking",
+                condition=condition_name, trial_num=trial_num, feedback_gain=feedback_gain,
+            )
 
         dot_y = _force_to_dot_y(target_force, s.y_min, s.y_max, trace_bottom, trace_top)
         target_dot.pos = (trace_right + cfg.dot.x_offset, dot_y)
@@ -156,16 +166,10 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
     """
     if markers is None:
         markers = MarkerOutlet()
-    if bridge is None:
-        markers.wait_for_recorder()
-    else:
-        bridge.send({"phase": "waiting_recorder", "run_id": markers.run_id,
-                     "message": "Respyra-Events (Markers) is available. Refresh the LSL recorder, select it together with VernierRaw, and start recording. Waiting for a marker subscriber…"})
-        markers.wait_for_recorder(timeout=None, cancel_check=bridge.check_cancel)
-    markers.emit("run.recorder_connected")
     belt = None
     win = None
     state = None
+    logger = self_assessment_logger = None
     hooks = ExitStack()
     abort_reason = None
     completed_trials = 0
@@ -199,6 +203,20 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         session = exp_info["session"]
         markers.emit("participant.dialog.submitted", participant=participant, session=session)
 
+        if exp_info.get("save_csv", False):
+            from pathlib import Path
+            from respyra.core.data_logger import DataLogger, create_session_file
+            # IDs become filename components in the original CSV format.
+            for value in (participant, session):
+                if not value or any(c in value for c in '<>:"/\\|?*') or any(ord(c) < 32 for c in value):
+                    raise ValueError("CSV participant/session IDs cannot contain filename characters")
+            filepath = create_session_file(participant, session, str(Path(cfg.output_dir).resolve()))
+            if Path(filepath).exists() or Path(filepath + "-self-assessment.csv").exists():
+                raise FileExistsError("A CSV already exists for this session timestamp; retry in a second")
+            logger = DataLogger(filepath, columns=cfg.data_columns)
+            self_assessment_logger = DataLogger(filepath + "-self-assessment.csv",
+                columns=["trial_num", "condition", "self_condition", "confidence", "self_accuracy"])
+
         if bridge is not None:
             bridge.check_cancel()
             bridge.source = belt
@@ -224,7 +242,7 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         state = ExperimentState(
             belt=belt,
             win=win,
-            logger=NullSampleLogger(),
+            logger=logger or NullSampleLogger(),
             clock=exp_clock,
             buffer=buffer,
             stimuli=stimuli,
@@ -465,6 +483,9 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                 abort_reason = "confidence_escape"
                 break
             markers.emit("assessment.confidence", value=confidence)
+            if self_assessment_logger is not None:
+                self_assessment_logger.log_row(trial_num=trial_num, condition=condition_name,
+                    self_condition=self_condition, confidence=confidence, self_accuracy=self_accuracy)
 
             markers.emit(
                 "assessment.completed", accuracy=self_accuracy,
@@ -532,6 +553,10 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                     cleanup_error = exc
 
         cleanup(hooks.close)
+        if logger is not None:
+            cleanup(logger.close)
+        if self_assessment_logger is not None:
+            cleanup(self_assessment_logger.close)
         if abort_reason is not None:
             cleanup(lambda: markers.emit("run.aborted", reason=abort_reason,
                                          trials_completed=completed_trials))

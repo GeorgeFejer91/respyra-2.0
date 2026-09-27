@@ -63,7 +63,8 @@ class Force:
 @pytest.mark.parametrize("scenario", [
     "complete", "ready_escape", "tracking_error", "no_force",
 ])
-def test_short_study_emits_complete_timeline(monkeypatch, scenario):
+@pytest.mark.parametrize("save_csv", [False, True])
+def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tmp_path):
     from psychopy import core, event
     from respyra.core import display, runner
     script_path = Path(__file__).resolve().parents[1] / "scripts" / "run_experiment.py"
@@ -117,7 +118,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario):
 
     monkeypatch.setattr(study, "MarkerOutlet", lambda: marker)
     monkeypatch.setattr(study, "run_source_setup", lambda _cfg, _markers: ({
-        "participant": "test", "session": "001",
+        "participant": "test", "session": "001", "save_csv": save_csv,
     }, force))
     monkeypatch.setattr(runner, "setup_display", lambda _cfg: (win, stimuli))
     monkeypatch.setattr(display, "show_text_and_wait", show)
@@ -133,6 +134,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario):
         monkeypatch.setattr(study, "run_tracking", fail_tracking)
 
     cfg = copy.deepcopy(CONFIG)
+    cfg.output_dir = str(tmp_path)
     cfg.trial.build_conditions = lambda _session: [
         ConditionDef("normal", [SegmentDef(0.1, 1)]),
     ]
@@ -183,3 +185,19 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario):
         assert names.index("tracking.started") < names.index("tracking.ended")
     assert [row["seq"] for row in payloads] == list(range(1, len(payloads) + 1))
     assert force.stopped and win.closed
+    files = list(tmp_path.glob("*.csv"))
+    if not save_csv:
+        assert not files
+    else:
+        import csv
+        assert len(files) == 2
+        samples = next(f for f in files if not f.name.endswith("-self-assessment.csv"))
+        ratings = next(f for f in files if f.name.endswith("-self-assessment.csv"))
+        with samples.open(newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        assert list(rows[0]) == list(cfg.data_columns) if rows else samples.read_text().splitlines()[0].split(',') == list(cfg.data_columns)
+        if scenario == "complete":
+            assert {row["phase"] for row in rows} >= {"range_cal", "baseline", "countdown", "tracking"}
+            with ratings.open(newline="", encoding="utf-8") as f:
+                answers = list(csv.DictReader(f))
+            assert answers == [{"trial_num":"1","condition":"normal","self_condition":"n","confidence":"1","self_accuracy":"1"}]

@@ -57,7 +57,12 @@ def test_progress_retains_only_latest_public_metadata_without_flip_io():
     bridge.note_marker({**payload, "seq": 100})
     assert bridge._progress == {"phase": "progress", "experiment_phase": "tracking",
                                **{key: value for key, value in payload.items()
-                                  if key in {"event", "lsl_time", "trial", "condition", "screen"}}, "seq": 100}
+                                   if key in {"event", "lsl_time", "trial", "condition", "screen"}}, "seq": 100,
+                               "recent": [{"event":"tracking.started","seq":n,"lsl_time":123.5} for n in (1,100)]}
+    for n in range(101,130): bridge.note_marker({**payload,"seq":n})
+    assert len(bridge._progress["recent"]) == 12
+    assert bridge._progress["recent"][0]["seq"] == 118
+    assert 'private' not in json.dumps(bridge._progress)
 
 
 def test_stop_waits_for_cleanup_receipt_without_closing_control_pipe():

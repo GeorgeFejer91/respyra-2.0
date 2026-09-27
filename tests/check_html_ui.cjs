@@ -21,13 +21,14 @@ const assert = require('node:assert/strict');
   page.on('pageerror', e => errors.push(String(e)));
   await page.addInitScript(() => {
     let listener;
-    const state = { phase:'setup', ui_seq:0, study_name:'Respyra breathing validation', values:{participant:'',session:'001'}, message:'No breathing input selected. Use Add LSL Stream.', busy:false, can_start:false, can_use:false, selected_row:null, streams:[], source:null };
+    const state = { phase:'setup', ui_seq:0, study_name:'Respyra breathing validation', values:{participant:'',session:'001'}, marker_name:'Respyra-Events',save_csv:false, message:'No breathing input selected.', busy:false, can_start:false, can_use:false, selected_row:null, streams:[], source:null };
     window.testActions = [];
     window.__TAURI__ = { event:{listen:async (_name, cb) => {listener=cb; return () => {}; }}, core:{invoke:async (command,args) => {
       if(command === 'launch_backend') return structuredClone(state);
       if(command === 'close_app') return;
       const a=args.action; window.testActions.push(a); state.ui_seq=a.ui_seq;
       if(a.action==='field_edit') state.values[a.field]=a.value;
+      if(a.action==='option') state.save_csv=a.enabled;
       if(a.action==='scan') {state.selected_row=null;state.can_use=false;state.streams=[{source_id:'processed',stream_name:'Normalized breathing',stream_type:'Respiration',compatible:false,reason:'Requires raw Force in N'}, {source_id:'polar-stream-vernier-raw-'+ 'device'.repeat(25), stream_name:'Synthetic Vernier Force',stream_type:'VernierRaw',compatible:true,reason:'Compatible: raw Force (N)',force_channel_index:1}];}
       if(a.action==='select') {state.selected_row=a.row; state.can_use=state.streams[a.row].compatible;}
       if(a.action==='use') {state.source={source_id:state.streams[state.selected_row].source_id,stream_name:state.streams[state.selected_row].stream_name};state.message='Ready for this experiment.';}
@@ -41,7 +42,10 @@ const assert = require('node:assert/strict');
   await page.locator('#participant').fill('synthetic participant');
   await page.locator('#participant').press('ArrowLeft');
   await page.locator('#session').fill('002');
+  await page.locator('#save_csv').check();
+  assert(await page.locator('#save_csv').isChecked());
   assert(await page.locator('#start').isDisabled());
+  await page.locator('#input-details summary').click();
   await page.locator('#scan').click();
   await page.locator('input[value="0"]').check();
   assert(await page.locator('#use').isDisabled());
@@ -49,6 +53,7 @@ const assert = require('node:assert/strict');
   await page.locator('#use').click();
   await page.waitForFunction(()=>!document.getElementById('start').disabled);
   assert.equal(await page.locator('#participant').inputValue(), 'synthetic participant');
+  await page.locator('#input-details summary').click();
   await page.locator('#scan').click();
   await page.waitForFunction(()=>![...document.querySelectorAll('#streams input')].some(r=>r.checked));
   await page.locator('input[value="1"]').check();

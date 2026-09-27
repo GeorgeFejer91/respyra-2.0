@@ -74,7 +74,7 @@ try:
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             assert 'run.failed' not in names,names
             for expected in ['participant.dialog.shown','participant.field.edited','participant.field.key','source.connected','source.connection.accepted','source.disconnected','run.aborted']:assert expected in names,(expected,names)
-            assert [m['seq'] for m in markers]==list(range(1,len(markers)+1))
+            assert [m['seq'] for m in markers]==list(range(markers[0]['seq'],markers[0]['seq']+len(markers)))
             if mode=='select':
                 assert 'source.memory.saved' in names and 'source.scan.completed' in names
                 assert 'participant.dialog.rejected' in names

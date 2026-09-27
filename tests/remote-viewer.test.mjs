@@ -19,6 +19,10 @@ test('invitation, state and commands have closed bounded contracts', () => {
   assert.equal(validateControllerState({ ...snapshot,message:'x'.repeat(8192) }),false);
   const start = { scope:RUN_SCOPE, action:'start', args:{ ui_seq:1,ui_time_ms:1 }, expectedRevision:2 };
   assert(validCommand(start));
+  const csv = {scope:SCOPES[1],action:'option',args:{ui_seq:2,ui_time_ms:2,field:'save_csv',enabled:true},expectedRevision:2};
+  assert(validCommand(csv));
+  assert(!validCommand({...csv,args:{...csv.args,enabled:'true'}}));
+  assert(!validCommand({...csv,args:{...csv.args,field:'recording'}}));
   for (const command of [{ ...start,scope:OBSERVE_SCOPE }, { ...start,action:'shell' },
     { ...start,args:{ ...start.args,path:'x' } }, { ...start,expectedRevision:null }]) assert(!validCommand(command));
 });

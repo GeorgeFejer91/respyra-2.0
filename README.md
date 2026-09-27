@@ -28,17 +28,18 @@ Rebuild after moving the checkout. It is not a standalone installer.
 
 Running the experiment requires Vernier Stream Mini from
 [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream) publishing
-its **Separate Streams** raw Vernier LSL outlet, an LSL recorder subscribed to
-both `VernierRaw` and `Respyra-Events`, and a working PsychoPy display.
+its **Separate Streams** raw Vernier LSL outlet and a working PsychoPy display.
+To record the continuous signal and events, use an external LSL recorder.
 Launch Respyra; its **Respyra-Events** outlet (type **Markers**) is advertised
 at Python-engine startup, before breathing-input selection or PsychoPy initialization.
 In LabRecorder, refresh the stream list, select **Respyra-Events** and the
-streamer's **VernierRaw** outlet, then start recording. Respyra waits for a marker
-subscriber without a 30-second deadline; participant controls remain disabled
-until one connects. Keep both streams recording through the final **Close**.
+streamer's **VernierRaw** outlet, then start recording. Recording readiness is
+the experimenter's responsibility in that app. Respyra does not wait for or
+control the recorder. Keep both streams recording through the final **Close**.
 The first window is
-the participant/session form with breathing-input setup. Click **Add LSL
-Stream**, select a compatible result, then **Use Selected Stream**. The scan
+the **Experiment control** panel with participant/session and breathing-input setup.
+Expand **LSL input / marker name**, select **Scan streams**, choose a compatible result,
+then **Use stream**. The scan
 lists visible streams and reasons for rejecting incompatible inputs. It
 requires the Vernier Stream Mini raw outlet, its metadata-identified Force
 channel in **N**, floating-point samples, and a unique stable source ID. Live
@@ -70,15 +71,18 @@ run in one Python setup worker; experiment input keeps the existing nonblocking
 LSL read path. Qt is not used by this wrapper, although the installed PsychoPy
 and respyra distributions still include Qt dependencies.
 
-Respyra does **not** write session or self-assessment CSVs. The recorder owns
-the continuous breathing data and the event timeline. The one-channel
+**Save original CSV files locally** is off by default. Enabling it restores the
+original sample columns and the companion `-self-assessment.csv` file in ignored
+`data/`, using the existing respyra logger. CSV writes flush each row and may add
+disk latency. The external LSL recorder owns the continuous raw input and event
+recording. The one-channel
 `Respyra-Events` stream sends named JSON markers documented in
 [`src/mpi/event_markers/catalog.json`](src/mpi/event_markers/catalog.json).
-The experiment waits for a marker-stream subscriber before accepting participant
-input. The recorder must also select the Vernier raw stream; marker subscription
-alone cannot prove that the force stream is being saved. Marker publication
-fails if the subscriber disconnects; inspect the recorded file before using
-the run for analysis.
+Marker output is independent of recorder connection. Setup events sent before
+recording may be absent from the recorder's file. Select both streams and inspect
+the recording before analysis; an online marker outlet does not prove persistence.
+The marker outlet's default name is **Respyra-Events**; change it under
+**LSL input / marker name** before any recorder subscribes or the experiment starts.
 The HTML participant form marks each field key press and text edit, Start/Cancel
 button clicks, accept/reject, and final field values. LSL selection, scan
 results, connection outcomes, saved-source actions, and source loss also send
@@ -100,8 +104,7 @@ pnpm check:ui
 `web/` owns the shared setup/monitor/controller UI; `src-tauri/` supervises its Python process through
 closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
-helpers. `scripts/plot_session.py` remains for older local CSV sessions; the new
-experiment does not produce its input. `notebooks/` contains signal exploration,
+helpers. `scripts/plot_session.py` reads local CSV sessions. `notebooks/` contains signal exploration,
 and `tests/` covers source and marker contracts.
 
 Older session CSVs and generated plots remain in the ignored local `data/`
@@ -112,17 +115,20 @@ Agent instructions start at [`AGENTS.md`](./AGENTS.md).
 The Qt checkpoint before this migration is the Git tag
 `qt-wrapper-checkpoint-2026-09-27`.
 
-## Remote LSL Recorder panel
+## QR phone controller
 
 **Enable phone control** creates a private link and QR. Scan it, then select
 **Connect** in the phone browser. The phone can edit participant/session,
 scan/select/use LSL input, Start, Cancel, Stop experiment and Close the final
 screen. Both controllers show phase/trial progress and LSL Force freshness.
-The current stream provides no battery telemetry, so battery reads **Not reported**.
+The named marker outlet, sent-event count and latest event stay visible; recent
+12 markers, identities and battery status expand under details. The current
+stream provides no battery telemetry, so battery reads **Not reported**.
 **Disable phone control** revokes the session; phone disconnect does not stop an
 ongoing study. The link needs Internet signaling and must stay private.
 You can also paste it into Recorder's **+** tab; approved Recorder phones receive
 the same tab. The permanent descriptor is
 [`companion/panel.json`](companion/panel.json). See
 [remote-viewer.md](docs/remote-viewer.md) for pairing, one-controller lifecycle,
-hosting, privacy, checks and qualification limits.
+hosting, privacy, checks and qualification limits. The static phone interface is
+hosted at [Respyra phone controller](https://georgefejer91.github.io/respyra-2.0/).

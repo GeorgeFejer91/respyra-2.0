@@ -10,14 +10,16 @@ import math
 import os
 import queue
 import threading
+from collections import deque
 
 
 PREFIX = "RESPYRA/1 "
-FIELDS = {"participant", "session"}
+FIELDS = {"participant", "session", "marker_name"}
 ACTION_FIELDS = {
     "shown": set(), "field_key": {"field", "key"},
     "field_edit": {"field", "value"}, "scan": set(), "select": {"row"},
     "use": set(), "start": set(), "cancel": set(), "abort": set(),
+    "option": {"field", "enabled"},
 }
 
 
@@ -59,8 +61,10 @@ def validate_action(action):
     timestamp = action["ui_time_ms"]
     if type(timestamp) not in (int, float) or not math.isfinite(timestamp) or timestamp < 0:
         raise ValueError("Invalid UI timestamp")
-    if "field" in action and action["field"] not in FIELDS:
+    if "field" in action and action["field"] not in ({"save_csv"} if action["action"] == "option" else FIELDS):
         raise ValueError("Unknown participant field")
+    if "enabled" in action and type(action["enabled"]) is not bool:
+        raise ValueError("Invalid recording option")
     for key in ("key", "value"):
         if key in action and (not isinstance(action[key], str) or len(action[key]) > 128):
             raise ValueError("Invalid participant input")
@@ -80,6 +84,8 @@ class DesktopBridge:
         self.close_marked = False
         self._write_lock = threading.Lock()
         self._progress = None
+        self.markers = None
+        self.recent = deque(maxlen=12)
         self.source = None
         self.experiment = False
         self.stop_action = None
@@ -166,15 +172,16 @@ class DesktopBridge:
             key: payload[key] for key in
             ("event", "seq", "lsl_time", "trial", "condition", "screen")
         }
-        latest.update(phase="progress", experiment_phase=payload["phase"])
+        self.recent.append({key: payload[key] for key in ("event", "seq", "lsl_time")})
+        latest.update(phase="progress", experiment_phase=payload["phase"], recent=list(self.recent))
         self._progress = latest
 
     def start_progress(self):
         def publish():
             while not self.closed.wait(0.25):
-                if self._progress is None:
-                    continue  # Preserve the recorder readiness gate.
-                latest = dict(self._progress)
+                latest = dict(self._progress or {"phase": "progress"})
+                if self.markers is not None:
+                    latest["markers"] = self.markers.health_snapshot()
                 latest["health"] = (self.source.health_snapshot() if self.source else
                                     {"signal": "not_selected", "sample_age_ms": None,
                                      "battery_percent": None})

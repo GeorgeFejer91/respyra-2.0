@@ -20,12 +20,13 @@ class SourceSetup:
     def __init__(self, cfg, markers):
         self.cfg, self.markers = cfg, markers
         self.values = {"participant": "", "session": "001"}
+        self.save_csv = False
         self.source = self.pending = None
         self.candidates = []
         self.row = None
         self.sequence = 0
         self.shown = self.done = self.accepted = False
-        self.message = "No breathing input selected. Use Add LSL Stream."
+        self.message = "Select a live Force input."
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="respyra-lsl-setup")
 
     def restore(self):
@@ -56,6 +57,7 @@ class SourceSetup:
     def snapshot(self):
         selected = self.candidates[self.row] if self.row is not None else None
         return {"phase": "setup", "ui_seq": self.sequence, "study_name": self.cfg.name, "values": self.values.copy(),
+                "marker_name": self.markers.name, "save_csv": self.save_csv,
                 "message": self.message, "busy": self.pending is not None,
                 "can_start": bool(self.source and not self.pending and
                                   all(v.strip() for v in self.values.values())),
@@ -83,8 +85,17 @@ class SourceSetup:
         elif kind == "field_key":
             emit("participant.field.key", field=action["field"], key=action["key"], **ui)
         elif kind == "field_edit":
-            self.values[action["field"]] = action["value"]
+            if action["field"] == "marker_name":
+                try:
+                    self.markers.rename(action["value"])
+                except ValueError as exc:
+                    raise SetupRejected(str(exc)) from exc
+            else:
+                self.values[action["field"]] = action["value"]
             emit("participant.field.edited", field=action["field"], value=action["value"], **ui)
+        elif kind == "option":
+            setattr(self, action["field"], action["enabled"])
+            emit("recording.option.changed", field=action["field"], enabled=action["enabled"], **ui)
         elif kind == "scan":
             if self.pending:
                 raise SetupRejected("Source operation is already in progress")
@@ -113,6 +124,7 @@ class SourceSetup:
             self.poll()
             if not self.snapshot()["can_start"]:
                 raise SetupRejected("Participant, session and live Force input are required")
+            self.markers.name_locked = True
             emit("participant.dialog.accepted")
             emit("participant.dialog.hidden")
             self.accepted = True
@@ -140,7 +152,7 @@ class SourceSetup:
                 source.stop()
                 emit("source.lost", message=str(exc))
                 emit("source.disconnected")
-                self.message = f"{exc}\nUse Add LSL Stream to reconnect."
+                self.message = f"{exc}\nExpand LSL input / marker name to reconnect."
         if self.pending is None or not self.pending[0].done():
             return
         future, kind, identity = self.pending
@@ -154,7 +166,7 @@ class SourceSetup:
                     result.stop()
                     raise
         except Exception as exc:
-            self.message = f"{exc}\nUse Add LSL Stream to scan or retry."
+            self.message = f"{exc}\nExpand LSL input / marker name to scan or retry."
             if kind == "scan":
                 emit("source.scan.failed", message=str(exc))
             else:
@@ -235,7 +247,7 @@ def run_source_setup(cfg, markers, bridge=None):
                 else:
                     bridge.send(setup.snapshot())
                     bridge.reply(action)
-        return (setup.values, setup.source) if setup.accepted else (None, None)
+        return ({**setup.values, "save_csv": setup.save_csv}, setup.source) if setup.accepted else (None, None)
     except DesktopCancelled:
         setup.reject()
         raise

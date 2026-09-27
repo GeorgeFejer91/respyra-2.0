@@ -39,7 +39,7 @@ class MarkerOutlet:
     """Publish catalogued JSON events on one LSL string marker channel."""
 
     def __init__(self) -> None:
-        from pylsl import StreamInfo, StreamOutlet, cf_string, local_clock
+        from pylsl import local_clock
 
         self._clock = local_clock
         self.run_id = str(uuid4())
@@ -51,8 +51,15 @@ class MarkerOutlet:
         self.state = None
         self.observer = None
         self.calibration_attempt_open = False
+        self.name = "Respyra-Events"
+        self.name_locked = False
+        self._create_outlet()
+
+    def _create_outlet(self, name=None):
+        from pylsl import StreamInfo, StreamOutlet, cf_string
+        name = name or self.name
         info = StreamInfo(
-            "Respyra-Events", "Markers", 1, 0.0, cf_string,
+            name, "Markers", 1, 0.0, cf_string,
             f"respyra-events-{self.run_id}",
         )
         desc = info.desc()
@@ -60,22 +67,22 @@ class MarkerOutlet:
         desc.append_child_value("payload_format", "json")
         desc.append_child_value("application", "Respyra 2.0")
         self._outlet = StreamOutlet(info)
+        self.name = name
+        self.online = True
 
-    def wait_for_recorder(self, timeout: float | None = 30.0, cancel_check=None) -> None:
-        """Keep the advertised outlet alive; None waits until subscription or cancellation."""
-        if cancel_check is None and timeout is not None:
-            connected = self._outlet.wait_for_consumers(timeout)
-        else:
-            deadline = float("inf") if timeout is None else time.monotonic() + timeout
-            connected = False
-            while time.monotonic() < deadline:
-                if cancel_check is not None:
-                    cancel_check()
-                if self._outlet.wait_for_consumers(min(0.1, deadline - time.monotonic())):
-                    connected = True
-                    break
-        if not connected:
-            raise RuntimeError("No LSL recorder subscribed to Respyra-Events")
+    def rename(self, name):
+        name = name.strip()
+        if not name or len(name) > 128 or any(ord(c) < 32 for c in name):
+            raise ValueError("Use a nonempty marker stream name, up to 128 characters")
+        if self.name_locked or self._outlet.have_consumers():
+            raise ValueError("Marker name is locked once a recorder subscribes")
+        if name != self.name:
+            self._create_outlet(name)
+
+    def health_snapshot(self):
+        return {"name": self.name, "source_id": "respyra-events-" + self.run_id,
+                "online": self.online,
+                "emitted": self.sequence}
 
     def start_calibration_attempt(self) -> None:
         self.emit("calibration.attempt.started")
@@ -95,21 +102,24 @@ class MarkerOutlet:
         missing = set(CATALOG["events"][name]["fields"]) - fields.keys()
         if missing:
             raise ValueError(f"{name} is missing marker fields: {sorted(missing)}")
-        if not self._outlet.have_consumers():
-            raise RuntimeError("Respyra-Events has no LSL recorder subscriber")
-        self.sequence += 1
         timestamp = self._clock()
         payload = {
             "schema": CATALOG["schema"], "event": name,
-            "run_id": self.run_id, "seq": self.sequence,
+            "run_id": self.run_id, "seq": self.sequence + 1,
             "lsl_time": timestamp, "trial": self.trial_num,
             "condition": self.condition, "phase": self.phase,
             "screen": self.screen, **fields,
         }
-        self._outlet.push_sample(
-            [json.dumps(payload, separators=(",", ":"), allow_nan=False)],
-            timestamp=timestamp,
-        )
+        try:
+            self._outlet.push_sample(
+                [json.dumps(payload, separators=(",", ":"), allow_nan=False)],
+                timestamp=timestamp,
+            )
+        except Exception:
+            self.online = False
+            raise
+        self.sequence += 1
+        self.online = True
         if self.observer is not None:
             self.observer(payload)
 

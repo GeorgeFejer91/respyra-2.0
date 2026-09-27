@@ -1,13 +1,16 @@
 # Respyra experiment control and phone panel
 
 The HTML window is the experimenter controller: participant/session setup,
-LSL discovery and selection, Start/Cancel, live monitoring, Stop experiment,
+LSL discovery and selection, optional CSV saving, marker stream naming,
+Start/Cancel, live monitoring, Stop experiment,
 and the final Close. PsychoPy still owns participant instructions, calibration,
 stimuli, keyboard responses, assessments and display-flip markers.
 
 ## Use it
 
-1. Launch Respyra and keep the LSL recorder running.
+1. Launch Respyra and select live Force input. In the recorder app, record the
+   VernierRaw and named Respyra marker streams; Respyra does not gate Start on
+   recorder readiness. Optional local CSV output is off unless enabled.
 2. Select **Enable phone control** in Experiment control. Scan the QR code or
    open its private link in a phone browser.
 3. Select **Connect** on the phone. One phone controls the same setup and run.
@@ -23,11 +26,14 @@ A second display or the phone lets the experimenter monitor without moving
 focus away from the participant window. On a single display the control
 window may sit behind PsychoPy's full-screen window.
 
-Both controllers show run status, trial/condition, phase/screen, latest marker,
+Both controllers show run status, trial/condition, phase/screen, sent-event count, latest marker,
 and the age of received finite LSL Force samples. “Live” confirms LSL reception,
 not correct belt placement or physiological signal quality. The current
 VernierRaw Force contract has no battery telemetry, so battery is **Not reported**.
-No raw waveform or assessment responses are sent to the phone.
+The recent-marker list retains only 12 event names/sequences, with no assessment
+payloads. Marker output reports successful pushes to the local LSL outlet,
+not recorder persistence. Name changes are refused after subscription or Start
+to avoid disrupting the selected stream. No raw waveform or assessment responses are sent to the phone.
 
 ## Connection and authority
 
@@ -38,7 +44,8 @@ and neither invitations nor participant fields are saved in browser storage.
 
 BRSP/1 negotiates:
 - experiment.observe: bounded latest state and lease renewal.
-- experiment.setup: participant/session key/edit, scan/select/use, Cancel.
+- experiment.setup: participant/session key/edit, marker name, CSV option,
+  scan/select/use, Cancel.
 - experiment.run: Start, Stop, final Close.
 
 Python remains the sole study/source/LSL-clock authority. Rust serializes local
@@ -69,11 +76,11 @@ code/native IPC is outside that boundary. Arbitrary invoke, shell, DOM/keyboard
 injection, remote intent and protocol-variable edits are not exposed.
 
 The host sends complete latest state at four updates per second. Python's
-worker publishes latest marker metadata and source freshness without
+worker publishes latest/recent marker metadata and source freshness without
 pipe/network I/O on display flips. Blocking participant prompt waits drain the
 accepted inlet; active study phases retain their existing acquisition path.
-Intermediate monitor events may be skipped; the LSL recorder retains the
-complete event timeline. Progress traffic does not advance the control revision.
+Intermediate monitor events may be skipped; only a correctly operated recorder
+can retain the complete event timeline. Progress traffic does not advance the control revision.
 
 The phone disables mutations after two seconds without fresh state.
 Disconnect/hidden phone pages end ownership; native expiry also fences a
@@ -109,9 +116,9 @@ disables only its unavailable optional cache hooks.
 After committing validated source, run scripts/publish-phone.ps1. It prepares
 the locked assets and publishes only companion/ to an isolated gh-pages
 worktree. First-time site enablement uses GitHub Pages' branch source setting.
-GitHub Pages needs an eligible account plan for a private source repository;
-pushing the static branch does not activate hosting. Site activation must
-succeed before the generated QR link can open the controller on a phone.
+The user authorized this repository to be public. Session data remain ignored;
+the Pages branch deploys only static controller assets. Pushing a static branch
+alone does not prove site activation or a completed deployment.
 Confirm the Pages build and public source.json/index/module bytes before
 claiming the updated phone controller is live.
 

@@ -6,7 +6,7 @@
     "channel_count": 1,
     "channel_format": "string",
     "sampling_rate": "irregular",
-    "lifecycle": "Advertised when the desktop Python engine starts, before study/PsychoPy initialization, breathing-input selection or participant interaction. The desktop waits without a subscription deadline and retains this same outlet through final Close. No marker samples are sent before a subscriber connects.",
+    "lifecycle": "Advertised at desktop Python startup and retained through final Close. The default name may change during setup before subscription. Events are sent independently of recorder readiness; recording and persistence belong to the external recorder. Setup events sent before recording may be absent from its file.",
     "sample": "One compact JSON object per LSL sample. The LSL sample timestamp equals payload.lsl_time. Record this stream together with Vernier Stream Mini's VernierRaw stream."
   },
   "common_fields": {
@@ -21,6 +21,7 @@
     "screen": "Active HTML startup form or blocking PsychoPy screen identity, otherwise null."
   },
   "event_field_definitions": {
+    "enabled": "Boolean local CSV recording option.",
     "accepted": "Boolean: whether this key was allowed in its current input context; false also covers keys discarded at a screen transition.",
     "accuracy": "Accepted 1–5 performance rating for this trial.",
     "amplitude_n": "Calculated breathing range half amplitude in Newtons.",
@@ -36,7 +37,7 @@
     "escaped": "Boolean: tracking stopped through Escape; null if tracking raised an exception.",
     "feedback_enabled": "Boolean: whether this condition displays error-dependent dot feedback.",
     "feedback_gain": "Gain applied to force about the calibrated center for this condition.",
-    "field": "HTML participant-form field identifier: participant or session.",
+    "field": "Setup field: participant, session, marker_name or save_csv.",
     "force_channel_index": "Zero-based channel index selected in the raw Vernier outlet.",
     "key": "PsychoPy key name returned/discarded during the experiment; KeyboardEvent.key for HTML participant fields.",
     "mean_abs_compensated_error_n": "Mean absolute target-minus-displayed-force error in Newtons; null if no tracking samples were read.",
@@ -74,7 +75,8 @@
   },
   "timing_contract": "Experiment screen *.shown and phase *.started markers run on the first PsychoPy display flip, directly in Python without desktop IPC. A *.dismissed marker follows the accepted key; a *.ended marker follows the phase function return. Experiment key markers are published when PsychoPy reports the key. HTML setup actions capture ui_seq/ui_time_ms before IPC and are published serially when Python consumes the action; their LSL timestamp describes backend receipt, not an exact browser paint or click timestamp. Setup shown/hidden describe form readiness and the backend accept/reject transition. Worker completion markers describe Python observing the result. No marker is emitted for every animation frame or force sample; record VernierRaw for the continuous signal. Native wrapper closure is observed at the next control/input checkpoint; forced process termination cannot finalize markers.",
   "events": {
-    "run.recorder_connected": {"when": "A marker-stream consumer is present before participant interaction begins.", "fields": []},
+    "recording.option.changed": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "Python observes the local or remote CSV checkbox change."},
+    "run.recorder_connected": {"when": "Legacy event from the former subscriber gate; no longer emitted. Recording belongs to the external recorder.", "fields": []},
     "run.configured": {"when": "Study timing and feedback settings are fixed before the first screen.", "fields": ["study_name", "range_cal_s", "baseline_s", "countdown_s", "tracking_s", "dot_feedback_mode", "range_percentiles", "range_scale"]},
     "run.started": {"when": "Instructions are accepted and the experiment begins.", "fields": ["participant", "session"]},
     "run.completed": {"when": "The final screen is dismissed after all trials.", "fields": ["trials_completed"]},
