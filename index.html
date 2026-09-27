@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src wss://wss.vdo.ninja https://turn.vdo.ninja; img-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Respyra experiment control</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./vendor/vdoninja-sdk.min.js" defer></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body><main>
+  <header><h1 data-measure>Experiment control</h1><p data-measure>Respyra 2.0 · phone controller</p></header>
+  <p id="connection-status" role="status" aria-live="polite" data-measure>Disconnected. Enable phone control in Respyra for a fresh invitation.</p>
+  <form id="pairing" autocomplete="off">
+    <label id="invitation-field"><span data-measure>Private Respyra control link</span><input id="invitation" type="url" maxlength="4096" spellcheck="false" required></label>
+    <div class="actions"><button id="connect" type="submit" data-measure>Connect</button><button id="disconnect" type="button" disabled data-measure>Disconnect</button></div>
+  </form>
+  <p data-measure>Connecting shares setup fields with this phone and enables experiment control. Participant displays remain on the local PsychoPy window. Disconnecting leaves an ongoing experiment running.</p>
+  <div id="controller" hidden></div>
+  <p id="route" data-measure></p>
+</main></body></html>
