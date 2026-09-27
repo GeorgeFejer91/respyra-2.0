@@ -95,14 +95,21 @@ def test_recorder_wait_without_deadline_remains_cancellable(marker, monkeypatch)
         marker.wait_for_recorder(timeout=None, cancel_check=cancel)
 
 
-def test_prompt_identity_and_key_timing(marker):
+@pytest.mark.parametrize("cancel_only", [False, True])
+def test_prompt_identity_and_key_timing(marker, cancel_only):
     assert prompt_name("Breathing Range Calibration\nPress SPACE") == "calibration_ready"
     with pytest.raises(ValueError, match="Undocumented experiment screen"):
         prompt_name("Unexpected prompt")
 
     event = types.ModuleType("psychopy.event")
     waits = iter([[('x', 1.0)], [('space', 2.0)]])
-    event.waitKeys = lambda **_kwargs: next(waits)
+    bounded_waits = []
+    def wait(**kwargs):
+        if cancel_only:
+            assert kwargs["maxWait"] <= 0.1
+            bounded_waits.append(kwargs["maxWait"])
+        return next(waits)
+    event.waitKeys = wait
     event.clearEvents = lambda *_args, **_kwargs: None
     event.getKeys = lambda **_kwargs: []
     display = types.ModuleType("respyra.core.display")
@@ -128,7 +135,7 @@ def test_prompt_identity_and_key_timing(marker):
     }):
         win = Window()
         original = display.show_text_and_wait
-        with marker.observe_inputs_and_screens() as observed_show:
+        with marker.observe_inputs_and_screens(cancel_check=(lambda: None) if cancel_only else None) as observed_show:
             result = observed_show(
                 win, "Breathing Range Calibration\nPress SPACE",
                 key_list=["space"], prepare_flip=lambda _win: None, key_clock=object(),
@@ -136,6 +143,8 @@ def test_prompt_identity_and_key_timing(marker):
             assert result == ("space", 2.0)
             win.flip()  # first calibration frame
         assert display.show_text_and_wait is original
+    if cancel_only:
+        assert len(bounded_waits) == 2
 
     names = [sample[0]["event"] for sample in marker._outlet.samples]
     assert names == [
@@ -183,7 +192,7 @@ def test_catalog_has_pairs_and_logger_has_no_output():
         if name.startswith("ui.") and name.endswith(".shown"):
             assert name[:-5] + "dismissed" in events
     required = {field for event in events.values() for field in event["fields"]}
-    assert set(CATALOG["event_field_definitions"]) - required == {"ui_seq", "ui_time_ms"}
+    assert set(CATALOG["event_field_definitions"]) - required == {"ui_origin", "ui_client_seq"}
     logger = NullSampleLogger()
     logger.log_row(force_n=10)
     logger.flush()

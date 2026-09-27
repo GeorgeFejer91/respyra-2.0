@@ -43,15 +43,23 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   no-op sample logger to those phases and writes no session files.
 - `web/` is plain HTML/CSS/JS with locally bundled Pretext/fonts. `src-tauri/`
   supervises one Python child through closed commands (`launch_backend`,
-  `setup_action`, `close_app`) and private bounded JSON pipes. Python is the
+  `setup_action`, `close_app`, `viewer_action`) and private bounded JSON pipes. Python is the
   sole LSL source/experiment/marker authority; Rust validates the native command
-  surface and process lifecycle. There is no web server. The opt-in read-only
-  observer is defined in `docs/remote-viewer.md`. Rust owns expiring grants and
-  sanitized projections; Python publishes latest-only marker progress through
-  a worker without viewer I/O on display flips. BRSP/VDO grants only
-  `experiment.observe`, no study mutations. `companion/` supplies Remote
-  Panel/1 assets hosted under the Recorder's `panels/respyra/` path.
-  The shell hides during PsychoPy and returns for the final result/Close.
+  surface and process lifecycle. There is no web server. The opt-in phone
+  controller is defined in `docs/remote-viewer.md`. Rust owns expiring grants,
+  one peer/epoch-bound owner, a six-second lease, scopes, command deduplication
+  and control revisions. Bundled BRSP JS owns mutual proof; remote pages have no
+  IPC capability. Local and phone setup/Start/Stop use the same Python action
+  path and receive backend acknowledgments. Python publishes latest marker
+  progress and source freshness through a worker without network I/O on flips.
+  BRSP/VDO grants `experiment.observe`, `experiment.setup`, `experiment.run`;
+  enabling the private link explicitly shares setup fields. `companion/` supplies Remote
+  Panel/1 assets hosted on Respyra's own GitHub Pages site at
+  `https://georgefejer91.github.io/respyra-2.0/`. Only static companion files
+  and source provenance are published on gh-pages; Python/data/grants stay local.
+  The experiment control window remains available during PsychoPy, without
+  taking participant focus. A second display or phone avoids focus changes.
+  Stop cleans up the study; phone loss revokes control but leaves a run active.
   The workspace executable requires the checkout's `.venv`; standalone
   PsychoPy packaging is outside this migration. App identity is
   `dev.georgefejer.respyra2`.
@@ -105,7 +113,9 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   subscriber disconnects, but only inspection of the recorder output verifies
   persistence.
 - HTML actions capture `ui_seq` and `performance.now()` (`ui_time_ms`) before
-  serialized IPC. Python consumes them in order and publishes field keys/edits,
+  serialized IPC. Rust assigns global pipe `ui_seq` and retains browser sequence
+  as `ui_client_seq` with `ui_origin` local/remote. Each browser has its own clock.
+  Python consumes them in order and publishes field keys/edits,
   buttons, selections and accept/reject decisions on the same marker outlet.
   Their LSL timestamps describe backend observation; browser time is a separate
   clock. Worker completions describe Python observing the result. Experiment
@@ -115,6 +125,10 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   Continuous
   waveform/animation frames are represented by the Vernier stream plus phase,
   condition, and target-parameter markers.
+- Monitoring reports actual finite Force-sample reception age, not physical
+  belt contact or physiological quality. Blocking instruction/assessment waits
+  drain the accepted inlet; active study phases keep their existing reads.
+  The current raw Force contract provides no battery telemetry; do not invent it.
 
 ## Current verified state
 

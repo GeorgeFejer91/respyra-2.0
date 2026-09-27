@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, PREFIX, validate_action
+from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, ExperimentStopped, PREFIX, validate_action
 
 
 def action(seq=1, **fields):
@@ -58,3 +58,20 @@ def test_progress_retains_only_latest_public_metadata_without_flip_io():
     assert bridge._progress == {"phase": "progress", "experiment_phase": "tracking",
                                **{key: value for key, value in payload.items()
                                   if key in {"event", "lsl_time", "trial", "condition", "screen"}}, "seq": 100}
+
+
+def test_stop_waits_for_cleanup_receipt_without_closing_control_pipe():
+    writer = io.StringIO()
+    bridge = DesktopBridge(io.StringIO(""), writer)
+    assert bridge.closed.wait(1)
+    bridge.closed.clear()  # Simulate an open reader without a blocking test thread.
+    bridge.experiment = True
+    bridge.actions.put({"action":"abort","ui_seq":1,"ui_time_ms":42.0,
+                        "ui_origin":"remote","ui_client_seq":3})
+    with pytest.raises(ExperimentStopped):
+        bridge.check_cancel()
+    assert writer.getvalue() == ""  # Request receipt is not completed cleanup.
+    bridge.finish_stop()
+    reply = json.loads(writer.getvalue().removeprefix(PREFIX))
+    assert reply["ok"] and reply["ui_seq"] == 1
+    assert not bridge.closed.is_set() and not bridge.experiment

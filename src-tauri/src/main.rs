@@ -3,12 +3,14 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
+    collections::HashMap,
     io::{BufRead, BufReader, Read, Write},
     path::Path,
     process::{Child, ChildStdin, Command, Stdio},
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
+        mpsc,
     },
     thread,
     time::{Duration, Instant},
@@ -72,6 +74,10 @@ enum Action {
         ui_seq: u64,
         ui_time_ms: f64,
     },
+    Abort {
+        ui_seq: u64,
+        ui_time_ms: f64,
+    },
 }
 
 fn encode_action(action: &Action) -> Result<Vec<u8>, String> {
@@ -101,6 +107,10 @@ struct Engine {
     launched: bool,
     progress: Value,
     revision: u64,
+    control_revision: u64,
+    sequence: u64,
+    local_sequence: u64,
+    pending: HashMap<u64, mpsc::Sender<Value>>,
     viewer: Option<viewer::ViewerSession>,
 }
 
@@ -119,6 +129,10 @@ impl Default for Desktop {
                 launched: false,
                 progress: Value::Null,
                 revision: 0,
+                control_revision: 0,
+                sequence: 0,
+                local_sequence: 0,
+                pending: HashMap::new(),
                 viewer: None,
             })),
             closing: Arc::new(AtomicBool::new(false)),
@@ -127,23 +141,39 @@ impl Default for Desktop {
 }
 
 fn publish(app: &tauri::AppHandle, engine: &Arc<Mutex<Engine>>, snapshot: Value) {
+    let mut display = snapshot.clone();
     if let Ok(mut state) = engine.lock() {
-        state.revision += 1;
-        if snapshot["phase"] == "progress" {
-            state.progress = snapshot;
+        if snapshot["phase"] == "action_result" {
+            if let Some(sequence) = snapshot["ui_seq"].as_u64()
+                && let Some(reply) = state.pending.remove(&sequence)
+            {
+                let _ = reply.send(
+                    json!({"ok":snapshot["ok"], "revision":state.control_revision,
+                    "message":snapshot["message"]}),
+                );
+            }
             return;
         }
-        state.snapshot = snapshot.clone();
-    }
-    if let Some(window) = app.get_webview_window("main") {
-        if snapshot["phase"] == "experiment" {
-            let _ = window.hide();
-        } else if snapshot["phase"] == "finished" || snapshot["phase"] == "error" {
-            let _ = window.show();
-            let _ = window.set_focus();
+        state.revision += 1;
+        if snapshot["phase"] == "progress" {
+            state.progress = snapshot.clone();
+            display = state.snapshot.clone();
+        } else {
+            if state.snapshot != snapshot {
+                state.control_revision += 1;
+            }
+            state.snapshot = snapshot.clone();
         }
+        display["progress"] = state.progress.clone();
+        display["revision"] = json!(state.control_revision);
     }
-    let _ = app.emit("setup-state", snapshot);
+    if let Some(window) = app.get_webview_window("main")
+        && (snapshot["phase"] == "finished" || snapshot["phase"] == "error")
+    {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+    let _ = app.emit("setup-state", display);
 }
 
 fn decode_frame(line: &str) -> Result<Option<Value>, String> {
@@ -153,7 +183,15 @@ fn decode_frame(line: &str) -> Result<Option<Value>, String> {
     let value: Value = serde_json::from_str(payload).map_err(|e| e.to_string())?;
     if !matches!(
         value["phase"].as_str(),
-        Some("waiting_recorder" | "setup" | "experiment" | "finished" | "error" | "progress")
+        Some(
+            "waiting_recorder"
+                | "setup"
+                | "experiment"
+                | "finished"
+                | "error"
+                | "progress"
+                | "action_result"
+        )
     ) {
         return Err("Invalid engine state".into());
     }
@@ -254,19 +292,42 @@ fn launch_backend(
     Ok(initial)
 }
 
-#[tauri::command]
-fn setup_action(action: Action, desktop: tauri::State<'_, Desktop>) -> Result<(), String> {
-    if desktop.closing.load(Ordering::Acquire) {
-        return Err("Desktop is closing".into());
+fn queue_action(
+    state: &mut Engine,
+    action: Action,
+    origin: &str,
+) -> Result<Result<(u64, mpsc::Receiver<Value>), Value>, String> {
+    encode_action(&action)?;
+    let mut value = serde_json::to_value(action).map_err(|e| e.to_string())?;
+    let client_sequence = value["ui_seq"].as_u64().ok_or("Invalid client sequence")?;
+    if origin == "local" {
+        if client_sequence != state.local_sequence + 1 {
+            return Err("Local actions arrived out of order".into());
+        }
+        state.local_sequence = client_sequence;
     }
-    let bytes = encode_action(&action)?;
-    let mut state = desktop
-        .engine
-        .lock()
-        .map_err(|_| "Desktop state lock failed")?;
-    if state.snapshot["phase"] != "setup" {
-        return Err("Setup is not available".into());
+    let permitted = if value["action"] == "abort" {
+        state.snapshot["phase"] == "experiment"
+    } else {
+        state.snapshot["phase"] == "setup"
+    };
+    if !permitted {
+        return Ok(Err(
+            json!({"ok":false,"revision":state.control_revision,"message":"Control is unavailable in this phase"}),
+        ));
     }
+    if state.pending.len() >= 128 {
+        return Err("Engine action queue is full".into());
+    }
+    state.sequence += 1;
+    let sequence = state.sequence;
+    value["ui_seq"] = json!(sequence);
+    value["ui_client_seq"] = json!(client_sequence);
+    value["ui_origin"] = json!(origin);
+    let mut bytes = serde_json::to_vec(&value).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    let (sender, receiver) = mpsc::channel();
+    state.pending.insert(sequence, sender);
     let input = state
         .input
         .as_mut()
@@ -274,40 +335,150 @@ fn setup_action(action: Action, desktop: tauri::State<'_, Desktop>) -> Result<()
     input
         .write_all(&bytes)
         .and_then(|_| input.flush())
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    Ok(Ok((sequence, receiver)))
+}
+
+fn wait_action(queued: Result<(u64, mpsc::Receiver<Value>), Value>) -> Result<Value, String> {
+    match queued {
+        Err(rejected) => Ok(rejected),
+        Ok((_sequence, receiver)) => receiver.recv_timeout(Duration::from_secs(12)).map_err(|_| {
+            "Command outcome unknown; check the local controller before trying again".into()
+        }),
+    }
 }
 
 #[tauri::command]
-fn viewer_action(
+async fn setup_action(action: Action, desktop: tauri::State<'_, Desktop>) -> Result<Value, String> {
+    if desktop.closing.load(Ordering::Acquire) {
+        return Err("Desktop is closing".into());
+    }
+    let engine = Arc::clone(&desktop.engine);
+    tauri::async_runtime::spawn_blocking(move || {
+        let queued = queue_action(
+            &mut *engine.lock().map_err(|_| "Desktop state lock failed")?,
+            action,
+            "local",
+        )?;
+        wait_action(queued)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn viewer_action(
+    app: tauri::AppHandle,
     action: viewer::ViewerAction,
     desktop: tauri::State<'_, Desktop>,
 ) -> Result<Value, String> {
     if desktop.closing.load(Ordering::Acquire) {
         return Err("Desktop is closing".into());
     }
-    let mut state = desktop
-        .engine
-        .lock()
-        .map_err(|_| "Desktop state lock failed")?;
+    let engine = Arc::clone(&desktop.engine);
+    tauri::async_runtime::spawn_blocking(move || handle_viewer(app, &engine, action))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+fn handle_viewer(
+    app: tauri::AppHandle,
+    engine: &Arc<Mutex<Engine>>,
+    action: viewer::ViewerAction,
+) -> Result<Value, String> {
+    let mut state = engine.lock().map_err(|_| "Desktop state lock failed")?;
     match action {
         viewer::ViewerAction::Start {} => {
             let (session, invitation) = viewer::ViewerSession::start()?;
             state.viewer = Some(session);
             Ok(invitation)
         }
-        viewer::ViewerAction::Snapshot { token } => {
-            if !state
-                .viewer
-                .as_ref()
-                .is_some_and(|session| session.permits(&token))
-            {
-                return Err("Viewer session ended; create a fresh link".into());
-            }
+        viewer::ViewerAction::Claim {
+            token,
+            peer_id,
+            epoch,
+            scopes,
+        } => state
+            .viewer
+            .as_mut()
+            .ok_or("Remote control disabled")?
+            .claim(&token, peer_id, epoch, scopes),
+        viewer::ViewerAction::Snapshot { token, owner } => {
+            let session = state.viewer.as_ref().ok_or("Remote control disabled")?;
+            session.read(&token, &owner)?;
             Ok(viewer::projection(
                 &state.snapshot,
                 &state.progress,
+                state.control_revision,
                 state.revision,
+                session.has_scope(viewer::SCOPES[1]),
             ))
+        }
+        viewer::ViewerAction::Dispatch {
+            token,
+            owner,
+            peer_id,
+            epoch,
+            sequence,
+            command,
+        } => {
+            let session = state.viewer.as_mut().ok_or("Remote control disabled")?;
+            session.authorize(&token, &owner, &peer_id, epoch, sequence, &command.scope)?;
+            if command.scope == viewer::SCOPES[0]
+                && command.action == "renew"
+                && command.args == json!({})
+                && command.expected_revision.is_none()
+            {
+                return Ok(
+                    json!({"ok":true,"revision":state.control_revision,"result":null,"error":null}),
+                );
+            }
+            if let Some(cached) = session.begin_command(&command)? {
+                return Ok(cached);
+            }
+            let command_id = command.command_id.clone();
+            let outcome = if command.expected_revision != Some(state.control_revision) {
+                Err("State changed; review the current controls".to_string())
+            } else if command.scope == viewer::SCOPES[2]
+                && command.action == "close"
+                && command.args == json!({})
+                && matches!(state.snapshot["phase"].as_str(), Some("finished" | "error"))
+            {
+                let outcome =
+                    json!({"ok":true,"revision":state.control_revision,"result":null,"error":null});
+                state
+                    .viewer
+                    .as_mut()
+                    .unwrap()
+                    .complete(&command_id, outcome.clone());
+                drop(state);
+                // The reliable acceptance reply precedes shutdown; this is not
+                // a claim that the final LSL marker has already been persisted.
+                thread::spawn(move || {
+                    thread::sleep(Duration::from_millis(800));
+                    request_close(app, "close_button");
+                });
+                return Ok(outcome);
+            } else {
+                remote_action(&command)
+                    .and_then(|action| queue_action(&mut state, action, "remote"))
+            };
+            let revision = state.control_revision;
+            drop(state);
+            let receipt = match outcome {
+                Ok(queued) => wait_action(queued),
+                Err(error) => Err(error),
+            };
+            let mut state = engine.lock().map_err(|_| "Desktop state lock failed")?;
+            let outcome = match receipt {
+                Ok(value) => json!({"ok":value["ok"],"revision":value["revision"],
+                    "result":null,"error":if value["ok"] == true { Value::Null } else { value["message"].clone() }}),
+                Err(error) => json!({"ok":false,"revision":revision,"result":null,"error":error}),
+            };
+            if let Some(session) = state.viewer.as_mut().filter(|s| s.permits(&token)) {
+                session.complete(&command_id, outcome.clone());
+            }
+            Ok(outcome)
         }
         viewer::ViewerAction::Stop { token } => {
             if state
@@ -320,6 +491,33 @@ fn viewer_action(
             Ok(Value::Null)
         }
     }
+}
+
+fn remote_action(command: &viewer::RemoteCommand) -> Result<Action, String> {
+    let permitted = match command.scope.as_str() {
+        "experiment.setup" => matches!(
+            command.action.as_str(),
+            "field_key" | "field_edit" | "scan" | "select" | "use" | "cancel"
+        ),
+        "experiment.run" => matches!(command.action.as_str(), "start" | "abort"),
+        _ => false,
+    };
+    if !permitted {
+        return Err("Unsupported remote action or scope".into());
+    }
+    let mut payload = command
+        .args
+        .as_object()
+        .cloned()
+        .ok_or("Invalid remote arguments")?;
+    if payload.contains_key("action") {
+        return Err("Unexpected remote action field".into());
+    }
+    payload.insert("action".into(), json!(command.action));
+    let action: Action = serde_json::from_value(Value::Object(payload))
+        .map_err(|_| "Invalid remote action fields")?;
+    encode_action(&action)?;
+    Ok(action)
 }
 
 fn shutdown(engine: &Arc<Mutex<Engine>>, reason: &str) -> bool {

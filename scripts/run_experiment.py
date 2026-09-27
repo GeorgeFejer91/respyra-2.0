@@ -6,7 +6,7 @@ import sys
 from typing import Any, TYPE_CHECKING
 
 from mpi.event_markers import MarkerOutlet, NullSampleLogger
-from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, isolate_control_input
+from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, ExperimentStopped, isolate_control_input
 from mpi.lsl_force import LSLForceError
 from mpi.lsl_setup import run_source_setup
 if TYPE_CHECKING:
@@ -44,6 +44,10 @@ def main():
         # Retain the one outlet through the final screen and desktop closure.
         # A consumer is not proof of persisted data; keep the recorder running.
         if not bridge.closed.is_set():
+            if bridge.stop_action is not None:
+                bridge.finish_stop(failure)
+            if bridge.stopped and failure is None:
+                message = "Experiment stopped. Check the LSL recording before closing."
             if markers.sequence:
                 markers.emit("ui.wrapper.result.requested", outcome=phase, message=message)
             bridge.send({"phase": phase, "message": message})
@@ -197,6 +201,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
 
         if bridge is not None:
             bridge.check_cancel()
+            bridge.source = belt
+            bridge.experiment = True
             bridge.send({"phase": "experiment", "message": "Experiment running in PsychoPy."})
 
         win, stimuli = setup_display(cfg)
@@ -226,7 +232,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             y_max=cfg.trace.y_range[1],
         )
         markers.state = state
-        observer = (markers.observe_inputs_and_screens(cancel_check=bridge.check_cancel)
+        observer = (markers.observe_inputs_and_screens(cancel_check=bridge.check_cancel,
+                                                       idle_check=belt.get_all)
                     if bridge is not None else markers.observe_inputs_and_screens())
         show_text_and_wait = hooks.enter_context(observer)
 
@@ -497,6 +504,12 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             )
             markers.emit("run.completed", trials_completed=completed_trials)
 
+    except ExperimentStopped:
+        abort_reason = "experimenter_stop"
+        action = bridge.stop_action
+        markers.emit("ui.experiment.stop.requested", **{
+            key: action[key] for key in
+            ("ui_seq", "ui_time_ms", "ui_origin", "ui_client_seq") if key in action})
     except DesktopCancelled:
         abort_reason = "desktop_closed"
         bridge.mark_close(markers)
@@ -536,6 +549,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             cleanup(lambda: markers.emit("display.closed"))
         if cleanup_error is not None and not error_occurred:
             raise cleanup_error
+        if bridge is not None:
+            bridge.finish_stop(cleanup_error)
         if not error_occurred and win is not None:
             core.quit()
 

@@ -3,50 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Respyra 2.0</title>
+  <meta name="referrer" content="no-referrer">
+  <title>Respyra experiment control</title>
   <link rel="stylesheet" href="./style.css">
-  <script type="module" src="./app.js"></script>
   <script src="./vendor/vdoninja-sdk.min.js" defer></script>
+  <script type="module" src="./app.js"></script>
 </head>
 <body>
   <main>
-    <header><h1 data-measure>Respyra 2.0</h1><p id="study" data-measure>Breathing experiment setup</p></header>
-    <p id="status" role="status" aria-live="polite" data-measure>Starting the experiment engine…</p>
-    <form id="setup" autocomplete="off">
-      <fieldset id="controls" disabled>
-        <legend class="sr-only">Experiment setup</legend>
-        <div class="fields">
-          <label><span data-measure>Participant</span><input id="participant" name="participant" maxlength="128" required spellcheck="false"></label>
-          <label><span data-measure>Session</span><input id="session" name="session" maxlength="128" value="001" required spellcheck="false"></label>
-        </div>
-        <section aria-labelledby="source-heading">
-          <h2 id="source-heading" data-measure>Breathing input</h2>
-          <p data-measure>Use Vernier Stream Mini’s raw Force (N) stream. The last accepted input reconnects automatically.</p>
-          <p id="accepted" data-measure>No input accepted.</p>
-          <div class="actions">
-            <button id="scan" type="button" data-measure>Add LSL Stream…</button>
-            <button id="use" type="button" disabled data-measure>Use Selected Stream</button>
-          </div>
-          <div id="streams" role="radiogroup" aria-label="Available LSL streams"></div>
-        </section>
-        <p class="recording-note" data-measure>Keep the LSL recorder running for breathing and event markers throughout the experiment.</p>
-        <div class="actions final-actions">
-          <button id="start" type="submit" disabled data-measure>Start Experiment</button>
-          <button id="cancel" type="button" data-measure>Cancel</button>
-        </div>
-      </fieldset>
-    </form>
-    <button id="close" type="button" hidden data-measure>Close</button>
-    <section class="viewer-setup" aria-labelledby="viewer-heading">
-      <h2 id="viewer-heading" data-measure>Remote experiment viewer</h2>
-      <p data-measure>Enable read-only monitoring in a Recorder tab or phone. The private link grants progress viewing for this session, for up to four hours.</p>
-      <div class="actions"><button id="viewer-start" type="button" data-measure>Start viewer</button><button id="viewer-stop" type="button" disabled data-measure>Stop viewer</button></div>
-      <p id="viewer-status" role="status" data-measure>Viewer inactive.</p>
+    <header><h1 data-measure>Experiment control</h1><p id="study" data-measure>Respyra 2.0</p></header>
+    <div id="controller"></div>
+    <section class="viewer-setup" aria-label="Phone remote control">
+      <h2 data-measure>Phone remote control</h2>
+      <p data-measure>Enable a private link, scan the QR code, then select Connect on your phone. The connected phone can edit setup, select LSL input, start or stop the experiment, and view its status.</p>
+      <p data-measure>This shares participant and session fields with the connected phone. Keep the link private. Internet access is required; the invitation expires after four hours.</p>
+      <div class="actions">
+        <button id="viewer-start" type="button" data-measure>Enable phone control</button>
+        <button id="viewer-stop" type="button" disabled data-measure>Disable phone control</button>
+      </div>
+      <p id="viewer-status" role="status" aria-live="polite" data-measure>Phone control disabled.</p>
       <div id="viewer-invitation" hidden>
-        <label><span data-measure>Private viewer link</span><input id="viewer-link" readonly spellcheck="false"></label>
-        <button id="viewer-copy" type="button" data-measure>Copy viewer link</button>
+        <label><span data-measure>Private control link</span><input id="viewer-link" type="text" readonly spellcheck="false"></label>
+        <button id="viewer-copy" type="button" data-measure>Copy link</button>
         <div id="viewer-qr"></div>
-        <p data-measure>Paste this link into the Recorder’s + tab. Approved Recorder phones receive the same tab; select Connect inside Respyra. Stop viewer revokes the invitation.</p>
+        <p data-measure>You can also load this link in the Recorder’s Add external page tab. Disable phone control to revoke the link. Disconnecting the phone leaves an ongoing experiment running.</p>
       </div>
     </section>
   </main>

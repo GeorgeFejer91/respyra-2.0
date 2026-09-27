@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-HTML/Tauri desktop setup for a Python breathing-belt validation study. The PsychoPy task asks
+HTML/Tauri experiment controller for a Python breathing-belt validation study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
 amplified, attenuated, or absent. Vernier Stream Mini publishes the raw belt
 signal through LSL; Respyra publishes a separate event-marker LSL stream.
@@ -59,10 +59,13 @@ identity/name, never breathing samples or participant details.
 `RESPYRA_LSL_SOURCE_ID`, when set, overrides
 the saved identity on launch; remove it to use remembered UI selections.
 
-The first window is a local HTML form in Tauri's WebView. After Start Experiment,
-the setup window hides and PsychoPy presents the original instructions,
-calibration, trials, and assessments. The form returns after the run with its
-result; keep the recorder running until **Close**. Discovery and connection
+The first window is the experimenter-facing HTML control window in Tauri's
+WebView. After Start Experiment, PsychoPy presents the original instructions,
+calibration, trials, and assessments in its separate participant window.
+Experiment control remains available for monitoring and **Stop experiment**;
+on one display it may sit behind PsychoPy's full-screen window. Use a second
+display or the phone controller to monitor without taking participant focus.
+Keep the recorder running until the final **Close**. Discovery and connection
 run in one Python setup worker; experiment input keeps the existing nonblocking
 LSL read path. Qt is not used by this wrapper, although the installed PsychoPy
 and respyra distributions still include Qt dependencies.
@@ -80,8 +83,8 @@ The HTML participant form marks each field key press and text edit, Start/Cancel
 button clicks, accept/reject, and final field values. LSL selection, scan
 results, connection outcomes, saved-source actions, and source loss also send
 named markers. The final Close button and native closure also have markers.
-Python publishes the single marker stream in order. Setup actions include
-`ui_seq` and browser `ui_time_ms`; their LSL timestamp describes Python observing
+Python publishes the single marker stream in order. Controller actions include
+global `ui_seq`, `ui_origin`, browser `ui_client_seq` and `ui_time_ms`; their LSL timestamp describes Python observing
 the action after IPC. Browser time is a separate clock and must not be aligned
 directly with breathing samples. Experiment screen/phase onset markers remain
 on PsychoPy display flips, without desktop IPC. Animation frames are not
@@ -94,7 +97,7 @@ pnpm test:web
 pnpm check:ui
 ```
 
-`web/` owns the setup form; `src-tauri/` supervises its Python process through
+`web/` owns the shared setup/monitor/controller UI; `src-tauri/` supervises its Python process through
 closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
 helpers. `scripts/plot_session.py` remains for older local CSV sessions; the new
@@ -111,9 +114,15 @@ The Qt checkpoint before this migration is the Git tag
 
 ## Remote LSL Recorder panel
 
-**Start viewer** creates a private link and QR for read-only progress.
-Paste it into Recorder's **+** tab and select **Connect** inside the panel.
-Approved Recorder phones receive the same tab. The permanent descriptor is
+**Enable phone control** creates a private link and QR. Scan it, then select
+**Connect** in the phone browser. The phone can edit participant/session,
+scan/select/use LSL input, Start, Cancel, Stop experiment and Close the final
+screen. Both controllers show phase/trial progress and LSL Force freshness.
+The current stream provides no battery telemetry, so battery reads **Not reported**.
+**Disable phone control** revokes the session; phone disconnect does not stop an
+ongoing study. The link needs Internet signaling and must stay private.
+You can also paste it into Recorder's **+** tab; approved Recorder phones receive
+the same tab. The permanent descriptor is
 [`companion/panel.json`](companion/panel.json). See
-[remote-viewer.md](docs/remote-viewer.md) for pairing, one-observer lifecycle,
+[remote-viewer.md](docs/remote-viewer.md) for pairing, one-controller lifecycle,
 hosting, privacy, checks and qualification limits.

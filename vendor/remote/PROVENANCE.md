@@ -1,4 +1,4 @@
-# Pinned observer transport
+# Pinned controller transport
 
 Copied from Remote LSL Recorder's reviewed integration. SHA-256:
 

@@ -91,6 +91,21 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
             connect_force_source(source_id="polar-stream-vernier-raw-missing")
 
 
+def test_monitoring_uses_received_sample_freshness_and_never_invents_battery():
+    from mpi.lsl_force import LSLForceSource
+    inlet = types.SimpleNamespace(pull_chunk=lambda **_kwargs: ([[5.0]], [1.0]),
+                                  close_stream=lambda: None)
+    with patch("mpi.lsl_force.time.monotonic", return_value=10.0):
+        source = LSLForceSource(inlet, 0)
+        source.get_all()
+    for now, expected in [(10.1, "live"), (12, "stale"), (14, "lost")]:
+        with patch("mpi.lsl_force.time.monotonic", return_value=now):
+            assert source.health_snapshot() == {"signal": expected,
+                "sample_age_ms": round((now-10)*1000), "battery_percent": None}
+    source.stop()
+    assert source.health_snapshot()["signal"] == "disconnected"
+
+
 def test_scan_displays_rejected_units_and_rejects_duplicate_identities():
     class Info:
         def __init__(self, name, xml=XML, kind="VernierRaw", identity=None, fmt=1):

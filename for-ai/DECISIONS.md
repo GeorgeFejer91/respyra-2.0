@@ -115,3 +115,30 @@ decision and link both entries.
   library subprocesses to avoid Windows inherited-pipe hangs.
 - Supersedes: Qt-specific ownership in D-0003/D-0004; preserves their signal,
   units, no-CSV, recorder and remembered-identity decisions.
+
+## D-0006 — Experiment control window and opt-in phone controller
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user designated HTML as the experimenter controller and requested
+  QR-paired phone control of setup plus monitoring, while retaining PsychoPy.
+- Decision: Reuse the existing BRSP/VDO transport with explicit local enable,
+  phone Connect, and observe/setup/run scopes. Rust fences one owner by private
+  grant, peer, epoch, native expiry/lease, sequence and control revision. Bundled
+  JS retains mutual proof; external pages have no native capability. Reuse one
+  HTML controller module and one Python action path with backend receipts.
+  Global pipe sequencing retains the originating browser's sequence and clock.
+  Keep the local control window available while PsychoPy owns participant
+  screens. Add deliberate Stop with source/display cleanup and final markers;
+  disconnecting a phone leaves the ongoing study running.
+- Consequences: The enabled private invitation grants access to participant,
+  session and LSL selection metadata. Monitoring uses received Force freshness
+  and latest phase/trial markers, without raw waveform or flip-time network I/O.
+  The user requested Respyra's own GitHub Pages hosting: publish static phone
+  assets/provenance on gh-pages, and point QR/panel descriptors to that site.
+  Keep the private repository's backend and session data off the Pages branch.
+  Battery stays unavailable under the existing producer contract. Internet
+  signaling is required; responsive browser evidence is not physical-phone,
+  Raspberry Pi or scientific timing qualification.
+- Supersedes: Startup-only HTML visibility in D-0005 and the read-only observer
+  contract; retains Python/PsychoPy, recorder, no-CSV and source ownership.

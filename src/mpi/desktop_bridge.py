@@ -17,12 +17,16 @@ FIELDS = {"participant", "session"}
 ACTION_FIELDS = {
     "shown": set(), "field_key": {"field", "key"},
     "field_edit": {"field", "value"}, "scan": set(), "select": {"row"},
-    "use": set(), "start": set(), "cancel": set(),
+    "use": set(), "start": set(), "cancel": set(), "abort": set(),
 }
 
 
 class DesktopCancelled(Exception):
     """The owning desktop window closed or its control pipe disappeared."""
+
+
+class ExperimentStopped(DesktopCancelled):
+    """An experimenter requested cleanup without closing the control window."""
 
 
 def isolate_control_input(reader):
@@ -42,8 +46,14 @@ def validate_action(action):
     if not isinstance(action, dict) or action.get("action") not in ACTION_FIELDS:
         raise ValueError("Unknown desktop action")
     expected = ACTION_FIELDS[action["action"]] | {"action", "ui_seq", "ui_time_ms"}
-    if action.keys() != expected:
+    metadata = {"ui_origin", "ui_client_seq"}
+    if action.keys() not in (expected, expected | metadata):
         raise ValueError("Unexpected desktop action fields")
+    if "ui_origin" in action and (
+        action["ui_origin"] not in {"local", "remote"}
+        or type(action["ui_client_seq"]) is not int or action["ui_client_seq"] < 1
+    ):
+        raise ValueError("Invalid UI origin")
     if type(action["ui_seq"]) is not int or action["ui_seq"] < 1:
         raise ValueError("Invalid UI sequence")
     timestamp = action["ui_time_ms"]
@@ -70,6 +80,10 @@ class DesktopBridge:
         self.close_marked = False
         self._write_lock = threading.Lock()
         self._progress = None
+        self.source = None
+        self.experiment = False
+        self.stop_action = None
+        self.stopped = False
         threading.Thread(target=self._read, args=(reader,), daemon=True,
                          name="respyra-desktop-control").start()
 
@@ -100,6 +114,22 @@ class DesktopBridge:
             raise RuntimeError("Desktop control protocol failed") from self.error
         if self.closed.is_set():
             raise DesktopCancelled("Desktop window closed")
+        if self.experiment:
+            try:
+                action = self.actions.get_nowait()
+            except queue.Empty:
+                return
+            self._accept_sequence(action)
+            if action["action"] == "abort":
+                self.stop_action = action
+                self.stopped = True
+                raise ExperimentStopped("Stopped by experimenter")
+            self.reply(action, False, "Setup is no longer available")
+
+    def _accept_sequence(self, action):
+        if action["ui_seq"] != self.sequence + 1:
+            raise ValueError("Desktop actions arrived out of order")
+        self.sequence = action["ui_seq"]
 
     def receive(self, timeout=0.025):
         if self.error is not None:
@@ -109,10 +139,18 @@ class DesktopBridge:
         except queue.Empty:
             self.check_cancel()
             return None
-        if action["ui_seq"] != self.sequence + 1:
-            raise ValueError("Desktop actions arrived out of order")
-        self.sequence = action["ui_seq"]
+        self._accept_sequence(action)
         return action
+
+    def reply(self, action, ok=True, message=None):
+        self.send({"phase": "action_result", "ui_seq": action["ui_seq"],
+                   "ok": ok, "message": message})
+
+    def finish_stop(self, error=None):
+        self.experiment = False
+        if self.stop_action is not None:
+            action, self.stop_action = self.stop_action, None
+            self.reply(action, error is None, str(error) if error else None)
 
     def send(self, snapshot):
         line = json.dumps(snapshot, separators=(",", ":"), allow_nan=False)
@@ -133,14 +171,15 @@ class DesktopBridge:
 
     def start_progress(self):
         def publish():
-            previous = None
             while not self.closed.wait(0.25):
-                latest = self._progress
-                if latest is None or latest is previous:
-                    continue
+                if self._progress is None:
+                    continue  # Preserve the recorder readiness gate.
+                latest = dict(self._progress)
+                latest["health"] = (self.source.health_snapshot() if self.source else
+                                    {"signal": "not_selected", "sample_age_ms": None,
+                                     "battery_percent": None})
                 try:
                     self.send(latest)
-                    previous = latest
                 except Exception as exc:
                     self.error = exc
                     self.closed.set()

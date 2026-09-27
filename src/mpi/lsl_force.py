@@ -140,6 +140,14 @@ class LSLForceSource:
         self.source_id = source_id
         self.stream_name = stream_name
         self.last_force_at = time.monotonic()
+        self.stopped = False
+
+    def health_snapshot(self):
+        """Only actual inlet freshness; the raw Force contract has no battery field."""
+        age = max(0, time.monotonic() - self.last_force_at)
+        return {"signal": ("disconnected" if self.stopped else
+                           "live" if age <= 1 else "stale" if age <= 3 else "lost"),
+                "sample_age_ms": round(age * 1000), "battery_percent": None}
 
     def get_all(self) -> list[tuple[float, float]]:
         try:
@@ -158,6 +166,7 @@ class LSLForceSource:
         return forces
 
     def stop(self) -> None:
+        self.stopped = True
         self.inlet.close_stream()
 
 

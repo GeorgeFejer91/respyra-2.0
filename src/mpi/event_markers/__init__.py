@@ -114,7 +114,7 @@ class MarkerOutlet:
             self.observer(payload)
 
     @contextmanager
-    def observe_inputs_and_screens(self, cancel_check=None):
+    def observe_inputs_and_screens(self, cancel_check=None, idle_check=None):
         """Mark accepted/rejected keys and every known respyra text screen."""
         from psychopy import event
         from respyra.core import display, events
@@ -137,6 +137,9 @@ class MarkerOutlet:
             while True:
                 if cancel_check is not None:
                     cancel_check()
+                if idle_check is not None:
+                    idle_check()
+                if cancel_check is not None or idle_check is not None:
                     kwargs["maxWait"] = min(0.1, max(0, deadline - time.monotonic()))
                 keys = original_wait(*args, keyList=None, **kwargs)
                 if cancel_check is not None:

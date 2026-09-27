@@ -12,6 +12,9 @@ from mpi.lsl_force import (
     open_force_source, save_force_selection, scan_force_streams,
 )
 
+class SetupRejected(ValueError):
+    """A valid command no longer meets the current setup preconditions."""
+
 
 class SourceSetup:
     def __init__(self, cfg, markers):
@@ -67,15 +70,16 @@ class SourceSetup:
             raise ValueError("Invalid setup action sequence")
         self.sequence = action["ui_seq"]
         kind = action["action"]
-        ui = {"ui_seq": action["ui_seq"], "ui_time_ms": action["ui_time_ms"]}
+        ui = {key: action[key] for key in
+              ("ui_seq", "ui_time_ms", "ui_origin", "ui_client_seq") if key in action}
         emit = self.markers.emit
         if kind == "shown":
             if self.shown:
-                raise ValueError("Startup form was already shown")
+                raise SetupRejected("Startup form was already shown")
             self.shown = True
             emit("participant.dialog.shown", **ui)
         elif not self.shown:
-            raise ValueError("Setup input preceded the startup form")
+            raise SetupRejected("Setup input preceded the startup form")
         elif kind == "field_key":
             emit("participant.field.key", field=action["field"], key=action["key"], **ui)
         elif kind == "field_edit":
@@ -83,21 +87,21 @@ class SourceSetup:
             emit("participant.field.edited", field=action["field"], value=action["value"], **ui)
         elif kind == "scan":
             if self.pending:
-                raise ValueError("Source operation is already in progress")
+                raise SetupRejected("Source operation is already in progress")
             emit("source.ui.add.clicked", **ui)
             emit("source.scan.started")
             self.message = "Scanning available LSL streams…"
             self._submit("scan", scan_force_streams)
         elif kind == "select":
             if self.pending or action["row"] >= len(self.candidates):
-                raise ValueError("Stream row is unavailable")
+                raise SetupRejected("Stream row is unavailable")
             self.row = action["row"]
             candidate = self.candidates[self.row]
             emit("source.ui.selection.changed", source_id=candidate.info.source_id(),
                  stream_name=candidate.info.name(), compatible=candidate.force_index is not None, **ui)
         elif kind == "use":
             if not self.snapshot()["can_use"]:
-                raise ValueError("No compatible stream selected")
+                raise SetupRejected("No compatible stream selected")
             candidate = self.candidates[self.row]
             identity = candidate.info.source_id()
             emit("source.ui.use.clicked", source_id=identity, stream_name=candidate.info.name(), **ui)
@@ -108,7 +112,7 @@ class SourceSetup:
             emit("participant.button.ok.clicked", **ui)
             self.poll()
             if not self.snapshot()["can_start"]:
-                raise ValueError("Participant, session and live Force input are required")
+                raise SetupRejected("Participant, session and live Force input are required")
             emit("participant.dialog.accepted")
             emit("participant.dialog.hidden")
             self.accepted = True
@@ -116,6 +120,8 @@ class SourceSetup:
         elif kind == "cancel":
             emit("participant.button.cancel.clicked", **ui)
             self.reject()
+        else:
+            raise SetupRejected("Stop is only available during the experiment")
 
     def reject(self):
         if not self.done:
@@ -212,13 +218,23 @@ def run_source_setup(cfg, markers, bridge=None):
         setup.restore()
         while not setup.done:
             setup.poll()
+            bridge.source = setup.source
             snapshot = setup.snapshot()
             if snapshot != previous:
                 bridge.send(snapshot)
                 previous = snapshot
             action = bridge.receive()
             if action is not None:
-                setup.command(action)
+                # A stale local/remote precondition is a rejected command, not
+                # a failed study. Malformed pipe input still fails closed.
+                try:
+                    setup.command(action)
+                except SetupRejected as exc:
+                    bridge.send(setup.snapshot())
+                    bridge.reply(action, False, str(exc))
+                else:
+                    bridge.send(setup.snapshot())
+                    bridge.reply(action)
         return (setup.values, setup.source) if setup.accepted else (None, None)
     except DesktopCancelled:
         setup.reject()

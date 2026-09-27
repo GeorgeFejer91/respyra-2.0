@@ -41,7 +41,8 @@ env['RESPYRA_UI_TEST_READY_PATH']=str(root/'.for-ai-local'/('instructions-'+uuid
 exe=root/'src-tauri/target/debug/respyra-desktop.exe'
 results=[]
 try:
-    for mode in ['select','memory']:
+    for mode in ['select','memory','remote']:
+        Path(env['RESPYRA_UI_TEST_READY_PATH']).unlink(missing_ok=True)
         stderr=open(root/f'.for-ai-local/native-{mode}.log','w',encoding='utf-8')
         process=subprocess.Popen([str(exe)],cwd=root,env=env,stdout=stderr,stderr=stderr)
         inlet=None
@@ -52,7 +53,7 @@ try:
             inlet.open_stream(timeout=5)
             ui=subprocess.Popen(['node',str(root/'tests/check_native_ui.cjs'),mode],cwd=root,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
             markers=[]
-            deadline=time.monotonic()+50
+            deadline=time.monotonic()+120
             while process.poll() is None and time.monotonic()<deadline:
                 try: sample,ts=inlet.pull_sample(timeout=.1)
                 except LostError: sample=None;time.sleep(.05)
@@ -83,6 +84,10 @@ try:
                 assert 'participant.dialog.accepted' in names and 'display.opened' in names
                 assert 'ui.instructions.shown' in names and 'ui.wrapper.closed' in names
                 assert 'display.closed' in names
+                assert 'ui.experiment.stop.requested' in names
+                stopped=next(m for m in markers if m['event']=='ui.experiment.stop.requested')
+                assert stopped['ui_origin']==('remote' if mode=='remote' else 'local')
+                assert next(m for m in markers if m['event']=='run.aborted')['reason']=='experimenter_stop'
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             print(out.strip(),flush=True)
             results.append({'mode':mode,'markers':len(markers),'first':names[0],'last':names[-1]})

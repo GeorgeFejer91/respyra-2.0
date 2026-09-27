@@ -12,7 +12,7 @@ export function actionQueue(invoke, onFailure, clock = () => performance.now()) 
     const payload = { action, ...fields, ui_seq: ++sequence, ui_time_ms: clock() };
     pending += 1;
     tail = tail.then(async () => {
-      if (!failed) await invoke('setup_action', { action: payload });
+      if (!failed) return await invoke('setup_action', { action: payload });
     }).catch(error => {
       failed = true;
       onFailure(error);

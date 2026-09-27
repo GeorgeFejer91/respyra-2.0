@@ -104,11 +104,17 @@ retain this isolation and verify the real process after startup/import changes.
 
 ## Gate 3: integrated readiness
 
-For the observer panel, run `pnpm test:web`, `pnpm check:ui` and
+For the controller panel, run `pnpm test:web`, `pnpm check:ui` and
 `pnpm check:remote` with `RECORDER_COMPANION` pointing to Recorder's companion.
 Run Rust tests/clippy and Python desktop/marker/study tests. Qualify live VDO
 separately with `RESPYRA_REAL_VDO=1`; browser checks still mock native IPC.
-Report packaged WebView, physical phone/belt and XDF evidence separately.
+`check_native_lsl.py` also pairs an actual packaged WebView target with a Chrome
+controller over public VDO and observes remote edits/Start/Stop/Close in Python,
+with synthetic LSL input and real PsychoPy instruction flips. The static phone
+assets are locally routed for this check; qualify published byte parity separately.
+Check no state before claim, wrong owner/epoch/scope/sequence, expiry/revocation,
+stale revisions, unknown actions and duplicate IDs without repeated effects.
+Report physical phone/belt, Raspberry Pi and XDF evidence separately.
 See `docs/remote-viewer.md` for the ownership contract.
 
 Run proportionate build, test, lint, type, runtime, visual, device, security,
