@@ -6,6 +6,7 @@
     "channel_count": 1,
     "channel_format": "string",
     "sampling_rate": "irregular",
+    "lifecycle": "Advertised when the desktop Python engine starts, before study/PsychoPy initialization, breathing-input selection or participant interaction. The desktop waits without a subscription deadline and retains this same outlet through final Close. No marker samples are sent before a subscriber connects.",
     "sample": "One compact JSON object per LSL sample. The LSL sample timestamp equals payload.lsl_time. Record this stream together with Vernier Stream Mini's VernierRaw stream."
   },
   "common_fields": {

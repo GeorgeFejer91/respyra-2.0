@@ -8,10 +8,15 @@ import time
 import uuid
 from pathlib import Path
 
+root = Path(__file__).resolve().parents[1]
+# Configure before importing liblsl; keep test streams out of live lab sessions.
+config = root / '.for-ai-local' / ('native-lsl-' + uuid.uuid4().hex + '.cfg')
+config.parent.mkdir(exist_ok=True)
+config.write_text('[lab]\nSessionID = respyra-native-' + uuid.uuid4().hex + '\n', encoding='utf-8')
+os.environ['LSLAPICFG'] = str(config)
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, cf_float32, local_clock, resolve_byprop
 from pylsl.util import LostError
 
-root = Path(__file__).resolve().parents[1]
 identity = 'polar-stream-vernier-raw-native-' + uuid.uuid4().hex
 raw = StreamInfo('Synthetic raw Force', 'VernierRaw', 2, 20, cf_float32, identity)
 desc = raw.desc()
@@ -89,3 +94,4 @@ try:
     print(json.dumps({'result':'passed','runs':results}),flush=True)
 finally:
     stop.set();thread.join()
+    config.unlink()

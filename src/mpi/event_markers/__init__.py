@@ -60,14 +60,16 @@ class MarkerOutlet:
         desc.append_child_value("application", "Respyra 2.0")
         self._outlet = StreamOutlet(info)
 
-    def wait_for_recorder(self, timeout: float = 30.0, cancel_check=None) -> None:
-        if cancel_check is None:
+    def wait_for_recorder(self, timeout: float | None = 30.0, cancel_check=None) -> None:
+        """Keep the advertised outlet alive; None waits until subscription or cancellation."""
+        if cancel_check is None and timeout is not None:
             connected = self._outlet.wait_for_consumers(timeout)
         else:
-            deadline = time.monotonic() + timeout
+            deadline = float("inf") if timeout is None else time.monotonic() + timeout
             connected = False
             while time.monotonic() < deadline:
-                cancel_check()
+                if cancel_check is not None:
+                    cancel_check()
                 if self._outlet.wait_for_consumers(min(0.1, deadline - time.monotonic())):
                     connected = True
                     break

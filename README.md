@@ -30,7 +30,13 @@ Running the experiment requires Vernier Stream Mini from
 [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream) publishing
 its **Separate Streams** raw Vernier LSL outlet, an LSL recorder subscribed to
 both `VernierRaw` and `Respyra-Events`, and a working PsychoPy display.
-Start the streamer and recorder before the experiment. The first window is
+Launch Respyra; its **Respyra-Events** outlet (type **Markers**) is advertised
+at Python-engine startup, before breathing-input selection or PsychoPy initialization.
+In LabRecorder, refresh the stream list, select **Respyra-Events** and the
+streamer's **VernierRaw** outlet, then start recording. Respyra waits for a marker
+subscriber without a 30-second deadline; participant controls remain disabled
+until one connects. Keep both streams recording through the final **Close**.
+The first window is
 the participant/session form with breathing-input setup. Click **Add LSL
 Stream**, select a compatible result, then **Use Selected Stream**. The scan
 lists visible streams and reasons for rejecting incompatible inputs. It

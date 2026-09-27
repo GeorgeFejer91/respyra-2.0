@@ -65,7 +65,7 @@ class Force:
 ])
 def test_short_study_emits_complete_timeline(monkeypatch, scenario):
     from psychopy import core, event
-    from respyra.core import display
+    from respyra.core import display, runner
     script_path = Path(__file__).resolve().parents[1] / "scripts" / "run_experiment.py"
     spec = importlib.util.spec_from_file_location("study_run_experiment", script_path)
     study = importlib.util.module_from_spec(spec)
@@ -118,7 +118,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario):
     monkeypatch.setattr(study, "run_source_setup", lambda _cfg, _markers: ({
         "participant": "test", "session": "001",
     }, force))
-    monkeypatch.setattr(study, "setup_display", lambda _cfg: (win, stimuli))
+    monkeypatch.setattr(runner, "setup_display", lambda _cfg: (win, stimuli))
     monkeypatch.setattr(display, "show_text_and_wait", show)
     monkeypatch.setattr(event, "waitKeys", lambda **_kwargs: [key])
     monkeypatch.setattr(event, "clearEvents", lambda *_args, **_kwargs: None)

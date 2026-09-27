@@ -3,30 +3,19 @@ from __future__ import annotations
 from collections import deque
 from contextlib import ExitStack, redirect_stdout
 import sys
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from mpi.event_markers import MarkerOutlet, NullSampleLogger
 from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, isolate_control_input
 from mpi.lsl_force import LSLForceError
 from mpi.lsl_setup import run_source_setup
-from respyra.configs.experiment_config import ExperimentConfig
-from respyra.core.target_generator import TargetGenerator, calibrate_from_baseline
-from respyra.core.runner import (
-    setup_display,
-    apply_gain,
-    _compute_dot_color,
-    _force_to_dot_y,
-    run_countdown,
-    run_baseline,
-    run_range_calibration,
-    #  run_tracking,
-    ExperimentState,
-    show_trial_feedback,
-)
+if TYPE_CHECKING:
+    from respyra.configs.experiment_config import ExperimentConfig
+    from respyra.core.target_generator import TargetGenerator
+    from respyra.core.runner import ExperimentState
 
 
 def main():
-    from mpi.validation_study_jenny import CONFIG as _cfg
     if sys.argv[1:] != ["--desktop"]:
         raise SystemExit("Start the HTML desktop wrapper with: pnpm tauri dev")
     writer = sys.stdout
@@ -38,6 +27,9 @@ def main():
         phase = "finished"
         message = "Experiment ended. Check the LSL recording before closing."
         try:
+            # Advertise the outlet before importing the study or PsychoPy.
+            from mpi.validation_study_jenny import CONFIG as _cfg
+
             run_experiment(_cfg, bridge, markers)
         except DesktopCancelled:
             pass
@@ -78,6 +70,7 @@ def run_tracking(
     escaped : bool
     """
     from respyra.core.events import check_keys
+    from respyra.core.runner import apply_gain, _compute_dot_color, _force_to_dot_y
 
     s = state
     escape = cfg.escape_key
@@ -155,19 +148,14 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         Experiment configuration.  If ``None``, uses a default
         :class:`ExperimentConfig`.
     """
-    if cfg is None:
-        from respyra.configs.breath_tracking import CONFIG as _default_cfg
-
-        cfg = _default_cfg
-
     if markers is None:
         markers = MarkerOutlet()
     if bridge is None:
         markers.wait_for_recorder()
     else:
         bridge.send({"phase": "waiting_recorder", "run_id": markers.run_id,
-                     "message": "Start an LSL recorder and subscribe to Respyra-Events. Waiting up to 30 seconds…"})
-        markers.wait_for_recorder(cancel_check=bridge.check_cancel)
+                     "message": "Respyra-Events (Markers) is available. Refresh the LSL recorder, select it together with VernierRaw, and start recording. Waiting for a marker subscriber…"})
+        markers.wait_for_recorder(timeout=None, cancel_check=bridge.check_cancel)
     markers.emit("run.recorder_connected")
     belt = None
     win = None
@@ -178,7 +166,16 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
     error_occurred = False
 
     try:
+        if cfg is None:
+            from respyra.configs.breath_tracking import CONFIG as _default_cfg
+
+            cfg = _default_cfg
         from psychopy import core, data
+        from respyra.core.target_generator import TargetGenerator, calibrate_from_baseline
+        from respyra.core.runner import (
+            setup_display, run_countdown, run_baseline, run_range_calibration,
+            ExperimentState, show_trial_feedback,
+        )
 
         markers.emit("participant.dialog.opened")
         markers.screen = "participant_dialog"

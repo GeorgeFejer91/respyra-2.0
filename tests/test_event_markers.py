@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from mpi.event_markers import CATALOG, MarkerOutlet, NullSampleLogger, prompt_name
+from mpi.desktop_bridge import DesktopCancelled
 
 
 class Window:
@@ -74,6 +75,21 @@ def test_marker_payload_and_recorder_failure(marker):
     with pytest.raises(RuntimeError, match="no LSL recorder"):
         marker.emit("run.completed", trials_completed=1)
     assert len(marker._outlet.samples) == 1
+
+
+def test_recorder_wait_without_deadline_remains_cancellable(marker, monkeypatch):
+    checks = []
+    attempts = iter([False, False, True])
+    monkeypatch.setattr(marker._outlet, "wait_for_consumers", lambda _timeout: next(attempts))
+    monkeypatch.setattr("mpi.event_markers.time.monotonic", lambda: 1000.0 * len(checks))
+    marker.wait_for_recorder(timeout=None, cancel_check=lambda: checks.append(True))
+    assert len(checks) == 3 and marker.sequence == 0
+
+    def cancel():
+        raise DesktopCancelled()
+
+    with pytest.raises(DesktopCancelled):
+        marker.wait_for_recorder(timeout=None, cancel_check=cancel)
 
 
 def test_prompt_identity_and_key_timing(marker):

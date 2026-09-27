@@ -87,7 +87,11 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   stale channel metadata. Settings are identity memory, not a persisted signal
   buffer.
 - The recorder owns persisted samples. Respyra's marker stream uses one JSON
-  string per event, a shared run UUID, monotonic sequence, LSL timestamp, and
+  string per event. Its outlet is advertised at desktop Python-engine startup,
+  before study/PsychoPy imports or Force selection, and waits cancellably without
+  a subscription deadline. No marker samples or participant interaction occur
+  before subscription. Keep the same outlet through final Close. Markers use a
+  shared run UUID, monotonic sequence, LSL timestamp, and
   trial/condition/phase/screen context. The catalog is the authority for every
   emitted marker name and its timing meaning. Record both LSL streams from
   before participant interaction through final cleanup. The force inlet

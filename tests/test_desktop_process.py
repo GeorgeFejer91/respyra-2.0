@@ -7,14 +7,35 @@ import subprocess
 import sys
 import threading
 import time
-
-from pylsl import StreamInlet, resolve_byprop
-from pylsl.util import LostError
+import uuid
 
 from mpi.desktop_bridge import PREFIX
 
 
+def test_importing_launcher_does_not_load_study_or_psychopy():
+    root = Path(__file__).resolve().parents[1]
+    result = subprocess.run([sys.executable, "-c", (
+        "import runpy, sys; runpy.run_path('scripts/run_experiment.py'); "
+        "assert not {'psychopy', 'respyra', 'numpy'} & sys.modules.keys()"
+    )], cwd=root, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stderr
+
+
 def test_engine_enables_form_and_keeps_markers_alive_through_close(tmp_path):
+    # Load liblsl in a fresh process with a private logical session so an
+    # already-running recorder cannot subscribe before this test's inlet.
+    config = tmp_path / "lsl_api.cfg"
+    config.write_text(f"[lab]\nSessionID = respyra-test-{uuid.uuid4().hex}\n", encoding="utf-8")
+    result = subprocess.run([sys.executable, __file__, str(tmp_path)],
+                            env={**os.environ, "LSLAPICFG": str(config)},
+                            capture_output=True, text=True, timeout=90)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def check_engine_lifecycle(tmp_path):
+    from pylsl import StreamInlet, cf_string, resolve_byprop
+    from pylsl.util import LostError
+
     root = Path(__file__).resolve().parents[1]
     env = {**os.environ, "LOCALAPPDATA": str(tmp_path)}
     env.pop("RESPYRA_LSL_SOURCE_ID", None)
@@ -34,6 +55,17 @@ def test_engine_enables_form_and_keeps_markers_alive_through_close(tmp_path):
             assert waiting["phase"] == "waiting_recorder"
             streams = resolve_byprop("source_id", "respyra-events-" + waiting["run_id"], timeout=5)
             assert len(streams) == 1
+            info = streams[0]
+            assert (info.name(), info.type(), info.channel_count(), info.nominal_srate()) == (
+                "Respyra-Events", "Markers", 1, 0.0,
+            )
+            assert info.channel_format() == cf_string
+            # The recorder may be opened after the old 30-second startup deadline.
+            # No belt outlet or marker inlet exists yet: discovery is independent.
+            time.sleep(31)
+            assert child.poll() is None and states.empty(), list(states.queue)
+            rediscovered = resolve_byprop("source_id", info.source_id(), timeout=5)
+            assert len(rediscovered) == 1 and rediscovered[0].uid() == info.uid()
             inlet = StreamInlet(streams[0], recover=False)
             inlet.open_stream(timeout=5)
             setup = states.get(timeout=8)
@@ -81,3 +113,7 @@ def test_engine_enables_form_and_keeps_markers_alive_through_close(tmp_path):
             if inlet is not None: inlet.close_stream()
             reader.join(timeout=1)
             child.stdout.close()
+
+
+if __name__ == "__main__":
+    check_engine_lifecycle(Path(sys.argv[1]))

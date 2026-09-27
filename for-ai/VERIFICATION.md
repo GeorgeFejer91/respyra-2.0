@@ -52,7 +52,11 @@ and `uv run pytest tests/test_experiment_flow.py` against the installed
 version). For HTML control/pipe changes, run
 `uv run --frozen pytest tests/test_desktop_bridge.py tests/test_desktop_process.py`
 and `pnpm test:web`. The real process check must receive setup state after a
-real marker subscription and keep the outlet alive through final Close.
+real marker subscription and keep the outlet alive through final Close. Verify
+the launcher imports no study/PsychoPy modules, the startup outlet is discoverable
+without any belt, and a subscriber joining after 30 seconds still enables setup
+on the same outlet identity. Run the lifecycle helper in its private LSL
+SessionID so an existing recorder cannot satisfy its subscription gate.
 For startup discovery and remembered selection, also run
 `uv run pytest tests/test_lsl_setup.py`: exercise the Python form controller, reject
 incompatible results, verify saved-source reconnect and loss, prevent Start
@@ -83,13 +87,14 @@ uv run --frozen python tests/check_native_lsl.py
 It checks controls, action order, long identities, 320/820/1440 CSS px, doubled
 text and text-spacing overrides. The native check requires Windows/WebView2,
 the built debug executable and port 9227 free. It opens real windows, uses
-synthetic Force/normalized outlets, isolated settings and a live marker inlet;
+synthetic Force/normalized outlets, isolated settings, a private LSL SessionID
+and a live marker inlet;
 checks selection, automatic reconnect, PsychoPy instruction flip, abort/cleanup
 and marker sequence, plus native WebView reflow at 320/1440 CSS px and doubled
 text. The Rust lifecycle test covers normal, failed and deliberately hung Python
 children, including the bounded process-tree termination fallback on Windows.
 Keep diagnostic output in ignored `.for-ai-local/`.
-Run this separately from other live LSL sessions. Neither check verifies a
+The private SessionID keeps test streams out of live recordings. Neither check verifies a
 physical belt or persistence to an XDF file.
 
 Do not let Python library subprocesses inherit the control pipe. Windows Git
