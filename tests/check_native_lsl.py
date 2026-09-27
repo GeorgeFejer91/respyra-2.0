@@ -1,5 +1,6 @@
 """Native setup + real LSL, isolated identity settings; no physical belt."""
 import json
+import csv
 import math
 import os
 import subprocess
@@ -41,6 +42,8 @@ env['RESPYRA_UI_TEST_READY_PATH']=str(root/'.for-ai-local'/('instructions-'+uuid
 exe=Path(os.environ['RESPIRA_INSTALLED_EXE']) if os.environ.get('RESPIRA_INSTALLED_EXE') else root/'src-tauri/target/debug/respyra-desktop.exe'
 work=root/'.for-ai-local/packaging/run elsewhere' if os.environ.get('RESPIRA_INSTALLED_EXE') else root
 work.mkdir(parents=True,exist_ok=True)
+if os.environ.get('RESPIRA_INSTALLED_EXE'):
+    env['RESPIRA_TEST_PARTICIPANT']='packaging-test-'+uuid.uuid4().hex[:12]
 results=[]
 try:
     for mode in ['select','memory','remote']:
@@ -98,6 +101,24 @@ try:
             if inlet: inlet.close_stream()
             stderr.close()
         time.sleep(2)
+    if os.environ.get('RESPIRA_INSTALLED_EXE'):
+        # Rust uses Windows' known local-data folder, not the isolated Python
+        # identity-memory override. Only inspect/remove this test's unique IDs.
+        output=Path(os.environ['LOCALAPPDATA'])/'Respira/data'
+        files=sorted(output.glob('*'+env['RESPIRA_TEST_PARTICIPANT']+'*'))
+        assert len(files)==2,files  # one CSV-on run; the other two create none
+        from mpi.validation_study_jenny import CONFIG
+        for file in files:
+            with file.open(newline='',encoding='utf-8') as handle:
+                header=next(csv.reader(handle))
+            expected=(['trial_num','condition','self_condition','confidence','self_accuracy']
+                      if file.name.endswith('-self-assessment.csv') else list(CONFIG.data_columns))
+            assert header==expected,(file.name,header,expected)
+            evidence=root/'.for-ai-local/packaging/csv'
+            evidence.mkdir(parents=True,exist_ok=True)
+            (evidence/file.name).write_bytes(file.read_bytes())
+            file.unlink()  # proves logger handles are closed; never touch other IDs
+        print(json.dumps({'installed_csv':'passed','files':2,'original_headers':True}),flush=True)
     print(json.dumps({'result':'passed','runs':results}),flush=True)
 finally:
     stop.set();thread.join()

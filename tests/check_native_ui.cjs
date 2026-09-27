@@ -83,8 +83,9 @@ const assert = require('node:assert/strict');
     try {await ui.waitForFunction(()=>!document.getElementById('controls').disabled,{},{timeout:45000});}
     catch(error){console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent()});throw error;}
   }
-  await ui.locator('#participant').fill('synthetic-native');
+  await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
+  if(process.env.RESPIRA_INSTALLED_EXE && mode==='memory') await ui.locator('#save_csv').check();
   if(mode==='remote') {
     await ui.locator('#save_csv').check();
     await page.waitForFunction(()=>document.getElementById('save_csv').checked);
