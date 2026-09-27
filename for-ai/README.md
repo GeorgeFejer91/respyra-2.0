@@ -28,6 +28,7 @@ the easiest interpretation.
 | Which installed skills apply and in what order | [`SKILLS.md`](./SKILLS.md) |
 | Acceptance criteria, commands, gates, evidence limits | [`VERIFICATION.md`](./VERIFICATION.md) |
 | Session loop, updates, Git publication, handoff | [`WORKFLOW.md`](./WORKFLOW.md) |
+| Standalone Windows installer, runtime inputs, installation and release gates | [`PACKAGING.md`](./PACKAGING.md) |
 | Why a durable choice was made or superseded | [`DECISIONS.md`](./DECISIONS.md) |
 
 Do not read every file by default. Read this router, then only what the current

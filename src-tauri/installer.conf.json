@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "shortDescription": "Respira experiment controller",
+    "longDescription": "Experiment control with PsychoPy participant display, raw Force LSL input, event markers and opt-in QR phone control.",
+    "resources": {"../.for-ai-local/packaging/engine/": "engine/"},
+    "windows": {
+      "webviewInstallMode": {"type": "offlineInstaller"},
+      "nsis": {
+        "installMode": "currentUser",
+        "startMenuFolder": "Respira",
+        "installerIcon": "icons/icon.ico",
+        "compression": "lzma"
+      }
+    }
+  }
+}

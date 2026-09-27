@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Read, Write},
-    path::Path,
+    path::{Path, PathBuf},
     process::{Child, ChildStdin, Command, Stdio},
     sync::{
         Arc, Mutex,
@@ -19,6 +19,33 @@ use tauri::{Emitter, Manager};
 
 const PREFIX: &str = "RESPYRA/1 ";
 mod viewer;
+
+fn engine_paths(
+    resources: &Path,
+    workspace: &Path,
+    development: bool,
+) -> Result<(PathBuf, PathBuf), String> {
+    let engine = resources.join("engine");
+    let python = engine.join("python/python.exe");
+    let entry = engine.join("scripts/run_experiment.py");
+    if python.is_file() && entry.is_file() {
+        return Ok((python, entry));
+    }
+    if development {
+        let python = workspace.join(if cfg!(windows) {
+            ".venv/Scripts/python.exe"
+        } else {
+            ".venv/bin/python"
+        });
+        if python.is_file() {
+            return Ok((python, workspace.join("scripts/run_experiment.py")));
+        }
+        return Err(
+            "Python environment missing. Run uv sync --frozen in the checkout first.".into(),
+        );
+    }
+    Err("The bundled experiment engine is missing. Reinstall Respira.".into())
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -226,26 +253,42 @@ fn launch_backend(
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .ok_or("Missing workspace root")?;
-    let python = root.join(if cfg!(windows) {
-        ".venv/Scripts/python.exe"
+    let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
+    let (python, entry) = engine_paths(&resources, root, cfg!(debug_assertions))?;
+    let packaged = entry.starts_with(resources.join("engine"));
+    let working_dir = if packaged {
+        let directory = app
+            .path()
+            .local_data_dir()
+            .map_err(|e| e.to_string())?
+            .join("Respira");
+        std::fs::create_dir_all(&directory)
+            .map_err(|e| format!("Cannot create Respira data folder: {e}"))?;
+        directory
     } else {
-        ".venv/bin/python"
-    });
-    if !python.is_file() {
-        return Err(
-            "Python environment missing. Run uv sync --frozen in the checkout first.".into(),
-        );
-    }
+        root.to_path_buf()
+    };
     let mut command = Command::new(python);
+    if packaged {
+        command.args(["-I", "-B", "-X", "utf8"]); // Isolate imports; keep JSON pipes UTF-8.
+    }
     command
         .arg("-u")
-        .arg(root.join("scripts/run_experiment.py"))
+        .arg(entry)
         .arg("--desktop")
-        .current_dir(root)
+        .current_dir(&working_dir)
         .env("PYTHONIOENCODING", "utf-8")
+        .env("PYTHONDONTWRITEBYTECODE", "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit());
+    if packaged {
+        let log = std::fs::File::create(working_dir.join("engine.log"))
+            .map_err(|e| format!("Cannot open Respira engine diagnostics: {e}"))?;
+        command
+            .env("RESPIRA_DATA_DIR", working_dir.join("data"))
+            .stderr(Stdio::from(log));
+    }
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -637,6 +680,26 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn release_engine_is_bundled_and_never_falls_back_to_checkout() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let scratch =
+            std::env::temp_dir().join(format!("respira-paths-{}", getrandom::u64().unwrap()));
+        let resources = scratch.join("Respira Ü with spaces");
+        assert!(engine_paths(&resources, root, false).is_err());
+        assert!(engine_paths(&resources, root, true).is_ok());
+        let python = resources.join("engine/python/python.exe");
+        let entry = resources.join("engine/scripts/run_experiment.py");
+        std::fs::create_dir_all(python.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(entry.parent().unwrap()).unwrap();
+        std::fs::write(&python, "test").unwrap();
+        std::fs::write(&entry, "test").unwrap();
+        assert_eq!(
+            engine_paths(&resources, root, false).unwrap(),
+            (python, entry)
+        );
+        std::fs::remove_dir_all(scratch).unwrap();
+    }
     #[test]
     fn shutdown_reaps_normal_failed_and_hung_engines() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();

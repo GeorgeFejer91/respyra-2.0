@@ -1,10 +1,11 @@
 {
   "name": "respyra-desktop",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "tauri": "tauri",
+    "package:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-windows.ps1",
     "prepare:web": "node scripts/prepare-web.mjs",
     "test:web": "node --test tests/*.test.mjs",
     "check:ui": "pnpm prepare:web && node tests/check_html_ui.cjs",

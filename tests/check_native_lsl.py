@@ -38,13 +38,15 @@ env.pop('RESPYRA_LSL_SOURCE_ID',None)
 env['LOCALAPPDATA']=str(root/'.for-ai-local'/('native-settings-'+uuid.uuid4().hex))
 env['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS']='--remote-debugging-port=9227'
 env['RESPYRA_UI_TEST_READY_PATH']=str(root/'.for-ai-local'/('instructions-'+uuid.uuid4().hex))
-exe=root/'src-tauri/target/debug/respyra-desktop.exe'
+exe=Path(os.environ['RESPIRA_INSTALLED_EXE']) if os.environ.get('RESPIRA_INSTALLED_EXE') else root/'src-tauri/target/debug/respyra-desktop.exe'
+work=root/'.for-ai-local/packaging/run elsewhere' if os.environ.get('RESPIRA_INSTALLED_EXE') else root
+work.mkdir(parents=True,exist_ok=True)
 results=[]
 try:
     for mode in ['select','memory','remote']:
         Path(env['RESPYRA_UI_TEST_READY_PATH']).unlink(missing_ok=True)
         stderr=open(root/f'.for-ai-local/native-{mode}.log','w',encoding='utf-8')
-        process=subprocess.Popen([str(exe)],cwd=root,env=env,stdout=stderr,stderr=stderr)
+        process=subprocess.Popen([str(exe)],cwd=work,env=env,stdout=stderr,stderr=stderr)
         inlet=None
         try:
             streams=resolve_byprop('name','Respyra-Events',timeout=20)

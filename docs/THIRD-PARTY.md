@@ -1,0 +1,24 @@
+# Included third-party software
+
+The standalone Respira distribution retains the original licensed dependencies
+listed in `engine/notices/python-packages.json`, their metadata, original
+license files, DLL/data files, and the resolved `uv.lock`. The private CPython
+runtime includes its own `LICENSE.txt`. These components keep their own licenses.
+PsychoPy and PyQt6 are GPL-licensed; no commercial Qt license is claimed.
+
+The original Respyra package and transparent logo are by Micah Allen,
+[embodied-computation-group/respyra](https://github.com/embodied-computation-group/respyra).
+Its MIT copyright/license is retained. The logo provenance is in `ARTWORK.md`.
+The study/controller source and packaging scripts are available in
+[respyra-2.0](https://github.com/GeorgeFejer91/respyra-2.0).
+
+Bundled Noto Sans, Pretext, QR code generator, BRSP and VDO.Ninja SDK licenses
+and pinned provenance are retained with the static frontend assets. See
+`vendor/remote/PROVENANCE.md` in the source repository. Microsoft WebView2 is
+distributed through its official offline installer and retains Microsoft's
+terms; it is not application source code.
+
+Public release review must cover corresponding-source availability for
+copyleft components and any native libraries contained inside wheels. Keeping
+license notices alone does not establish that gate. Do not sign or promote a
+release until its distribution review and installed runtime checks pass.

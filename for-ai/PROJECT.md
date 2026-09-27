@@ -61,8 +61,10 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   The experiment control window remains available during PsychoPy, without
   taking participant focus. A second display or phone avoids focus changes.
   Stop cleans up the study; phone loss revokes control but leaves a run active.
-  The workspace executable requires the checkout's `.venv`; standalone
-  PsychoPy packaging is outside this migration. App identity is
+  Debug workspace builds use the checkout's `.venv`. The user-requested Respira
+  Windows installer bundles the locked engine with isolated CPython; release
+  builds never fall back to a checkout. Optional installed CSVs use the writable
+  user folder. Packaging/release gates are in `PACKAGING.md`. App identity is
   `dev.georgefejer.respyra2`.
 - `scripts/plot_session.py` remains a reader for historical local CSVs.
   `tests/test_lsl_force.py`, `tests/test_event_markers.py`,

@@ -138,6 +138,11 @@ recorder persisted the recording.
 
 ## Gate 4: publication
 
+Standalone installer work additionally follows `PACKAGING.md`. A workspace
+build is not an installed-runtime check. Use `pnpm package:windows`, the staged
+embedded import/resource check and the installed native/LSL/QR check via
+`RESPIRA_INSTALLED_EXE`; retain exact installer hashes and release evidence.
+
 1. Review status and diff; preserve unrelated changes.
 2. Confirm only intended paths are staged.
 3. Confirm all required gates passed or are honestly reported.

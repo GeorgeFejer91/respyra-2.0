@@ -1,4 +1,4 @@
-# Respyra 2.0
+# Respira (Respyra 2.0)
 
 HTML/Tauri experiment controller for a Python breathing-belt validation study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -6,6 +6,14 @@ amplified, attenuated, or absent. Vernier Stream Mini publishes the raw belt
 signal through LSL; Respyra publishes a separate event-marker LSL stream.
 
 The importable Python package keeps its original name, `mpi`.
+
+## Windows program
+
+The standalone **Respira** installer includes the locked Python/PsychoPy engine
+and offline WebView2 delivery. It allows choosing the installation folder and
+creates a Start menu shortcut. See [Windows installation](docs/windows-install.md)
+for build/download checks, writable CSV location and qualification limits.
+The attributed original [Respyra logo](assets/branding/README.md) is included.
 
 ## Setup
 
@@ -21,10 +29,10 @@ $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 pnpm tauri dev
 ```
 
-To build the workspace executable, run `pnpm tauri build --no-bundle`
-(`--debug` builds faster). This version requires the checkout and its `.venv`:
-the native shell uses the fixed Python environment in the build's workspace.
-Rebuild after moving the checkout. It is not a standalone installer.
+To build a development executable, run `pnpm tauri build --debug --no-bundle`;
+it uses the checkout's `.venv`. For the standalone release installer, run
+`pnpm package:windows`. Release builds require the packaged engine and never
+fall back to development Python.
 
 Running the experiment requires Vernier Stream Mini from
 [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream) publishing

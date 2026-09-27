@@ -168,3 +168,22 @@ decision and link both entries.
 - Supersedes: Recorder gates and no-CSV in D-0003/D-0005/D-0006, private source
   visibility in D-0002/D-0006. Raw source, Python/PsychoPy, scoped control and
   local-data boundaries remain.
+
+## D-0008 — Standalone Respira Windows installer
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user requested a program named Respira with a selectable-folder
+  Windows installer, upstream logo research and focused packaging protocols.
+- Decision: Bundle the existing Python/PsychoPy authority using official pinned
+  embedded CPython plus a fresh non-editable locked runtime. Retain the native
+  private pipe and all study/LSL/remote semantics. Release locates only bundled
+  files, isolates Python imports and writes optional original CSVs to user data.
+  Use ordinary NSIS per-user destination selection and offline WebView2. Reuse
+  Micah Allen's existing MIT-licensed transparent logo with provenance.
+- Consequences: Users need no checkout/Python/toolchain. The installer is larger
+  because existing dependencies are preserved. Windows packaging requires its
+  own installed proof; distribution/signing/source-license gates remain explicit.
+  User recordings/settings survive uninstall. `PACKAGING.md` is the task route.
+- Supersedes: Checkout-dependent release/non-goal packaging in D-0005; debug
+  development behavior and existing experiment/recorder ownership remain.
