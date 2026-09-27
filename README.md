@@ -9,7 +9,7 @@ The importable Python package keeps its original name, `mpi`.
 
 ## Windows program
 
-The standalone **Respira** installer includes the native LSL/XDF recorder, locked Python/PsychoPy engine
+The standalone **Respira** installer includes **respyrecorder**, the native LSL/XDF recorder, locked Python/PsychoPy engine
 and offline WebView2 delivery. It allows choosing the installation folder and
 creates a Start menu shortcut. See [Windows installation](docs/windows-install.md)
 for build/download checks, writable CSV location and qualification limits.
@@ -40,7 +40,7 @@ Running the experiment requires Vernier Stream Mini from
 its **Separate Streams** raw Vernier LSL outlet and a working PsychoPy display.
 Launch Respyra; its **Respyra-Events** outlet (type **Markers**) is advertised
 at Python-engine startup, before breathing-input selection or PsychoPy initialization.
-**Start Experiment** starts the bundled native recorder and requires raw Force
+**Start Experiment** starts the bundled **respyrecorder** and requires raw Force
 samples plus both Force and marker subscriptions before opening PsychoPy.
 Recording includes calibration and study cleanup. Additional LSL streams join
 when discovered, including streams started later. No separate recorder is required.

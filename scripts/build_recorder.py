@@ -99,7 +99,9 @@ static std::string hex_text(const std::string &value) {
                     f"-DRECORDER_SOURCE={patched.as_posix()}", f"-DCMAKE_PREFIX_PATH={sdk.as_posix()}"], check=True)
     subprocess.run(["cmake", "--build", str(STAGE / "build"), "--config", "Release"], check=True)
     OUTPUT.mkdir(exist_ok=True)
-    shutil.copy2(STAGE / "build/Release/RespiraRecorder.exe", OUTPUT)
+    shutil.copy2(STAGE / "build/Release/respyrecorder.exe", OUTPUT)
+    # Drop the previous executable name from cached runtime bundles.
+    (OUTPUT / "RespiraRecorder.exe").unlink(missing_ok=True)
     shutil.copy2(sdk / "bin/lsl.dll", OUTPUT)
     shutil.copy2(SOURCE / "upstream/LICENSE", OUTPUT / "LABRECORDER-LICENSE")
     shutil.copy2(SOURCE / "LIBLSL-LICENSE", OUTPUT / "LIBLSL-LICENSE")

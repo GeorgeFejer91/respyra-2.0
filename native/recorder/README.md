@@ -1,6 +1,6 @@
-# Native LSL/XDF recorder
+# respyrecorder
 
-`RespiraRecorder.exe` is a thin CLI over LabRecorder's native recording/XDF
+`respyrecorder.exe` is the bundled thin CLI over LabRecorder's native recording/XDF
 engine. It follows Remote-LSL-Recorder's native-process approach; its standalone
 recorder application and private settings are not copied into Respira.
 

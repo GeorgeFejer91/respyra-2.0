@@ -8,7 +8,7 @@ folder on the destination page if desired.
 
 Python 3.10.11, the locked PsychoPy/Respyra/LSL and analysis dependencies, app-local
 MSVC runtime DLLs from the locked Qt wheel, fonts,
-native LSL/XDF recorder, HTML controller and an offline WebView2 installer are included. Users do not
+**respyrecorder** native LSL/XDF recorder, HTML controller and an offline WebView2 installer are included. Users do not
 need Python, Git, Node, Rust, a source checkout or package downloads to launch.
 The Windows Universal C Runtime supplied by Windows 10/11 is required.
 QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and

@@ -146,7 +146,7 @@ class NativeRecording:
         self.phase, self.error, self.streams, self.summary = "preparing", None, {}, []
         self.data_sources = set()
         try:
-            executable = self.runtime / "RespiraRecorder.exe"
+            executable = self.runtime / "respyrecorder.exe"
             if not executable.is_file() or not (self.runtime / "lsl.dll").is_file():
                 raise RecordingError("Native recorder is missing. Reinstall Respira or run pnpm prepare:recorder.")
             self.output.mkdir(parents=True, exist_ok=True)
@@ -156,7 +156,7 @@ class NativeRecording:
             self.process = subprocess.Popen([str(executable), str(self.path.resolve())],
                 cwd=self.runtime, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
-            self._reader = threading.Thread(target=self._read, daemon=True, name="respyra-native-recorder")
+            self._reader = threading.Thread(target=self._read, daemon=True, name="respyrecorder")
             self._reader.start()
             deadline = time.monotonic() + 8
             while True:

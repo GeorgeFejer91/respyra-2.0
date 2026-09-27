@@ -2,7 +2,8 @@
 
 Read for recorder, Start, calibration/stream lifecycle, XDF or remote-data work.
 The user superseded external-recorder-only operation with recording bundled into
-the standard experiment. Source/provenance is in `native/recorder/README.md`.
+the standard experiment as **respyrecorder** (`respyrecorder.exe` on Windows).
+Source/provenance is in `native/recorder/README.md`.
 
 - Rust launches one fixed Python engine with its packaged recorder path.
   `mpi.recording.NativeRecording` owns the native child's private pipes, output,
