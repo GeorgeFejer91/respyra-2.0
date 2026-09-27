@@ -62,6 +62,20 @@ def stage_runtime() -> None:
     scripts.mkdir()
     shutil.copy2(ROOT / "scripts/run_experiment.py", scripts)
     shutil.copy2(ROOT / "scripts/check_packaged_engine.py", scripts)
+    recorder = ROOT / ".for-ai-local/recorder/runtime"
+    recorder_manifest = json.loads((recorder / "manifest.json").read_text())
+    if recorder_manifest["patches"] != digest(ROOT / "scripts/build_recorder.py"):
+        raise RuntimeError("Native recorder was built with a different adapter patch script")
+    for name, expected in recorder_manifest["adapter"].items():
+        if digest(ROOT / "native/recorder" / name) != expected:
+            raise RuntimeError(f"Native recorder adapter is stale: {name}")
+    target = ENGINE / "recorder"
+    target.mkdir()
+    for name, expected in recorder_manifest["files"].items():
+        if Path(name).name != name or digest(recorder / name) != expected:
+            raise RuntimeError(f"Native recorder bundle hash mismatch: {name}")
+        shutil.copy2(recorder / name, target / name)
+    shutil.copy2(recorder / "manifest.json", target)
     notices = ENGINE / "notices"
     notices.mkdir()
     shutil.copy2(ROOT / "assets/branding/LICENSE.upstream.txt", notices)

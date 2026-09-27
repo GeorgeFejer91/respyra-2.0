@@ -18,6 +18,14 @@ and pinned provenance are retained with the static frontend assets. See
 distributed through its official offline installer and retains Microsoft's
 terms; it is not application source code.
 
+The native recorder uses the MIT-licensed
+[LabRecorder recording/XDF engine](https://github.com/labstreaminglayer/App-LabRecorder/tree/ce74750748c784774d07b6938b482c4e0608071b)
+and [liblsl 1.18.0.b5](https://github.com/sccn/liblsl/tree/v1.18.0.b5).
+Exact source/SDK hashes and reviewed adapter patches are in `native/recorder/`
+and `scripts/build_recorder.py`. Their original notices are retained in
+`engine/recorder/LABRECORDER-LICENSE` and `LIBLSL-LICENSE`; the runtime manifest
+identifies the adapter and packaged binaries. No Qt LabRecorder UI is bundled.
+
 Public release review must cover corresponding-source availability for
 copyleft components and any native libraries contained inside wheels. Keeping
 license notices alone does not establish that gate. Do not sign or promote a

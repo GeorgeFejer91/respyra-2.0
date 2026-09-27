@@ -90,6 +90,7 @@ class DesktopBridge:
         self.experiment = False
         self.stop_action = None
         self.stopped = False
+        self.recorder = None
         threading.Thread(target=self._read, args=(reader,), daemon=True,
                          name="respyra-desktop-control").start()
 
@@ -120,6 +121,8 @@ class DesktopBridge:
             raise RuntimeError("Desktop control protocol failed") from self.error
         if self.closed.is_set():
             raise DesktopCancelled("Desktop window closed")
+        if self.recorder is not None and self.recorder.process is not None and self.recorder.phase in {"recording", "preparing", "error"}:
+            self.recorder.check_health()
         if self.experiment:
             try:
                 action = self.actions.get_nowait()
@@ -182,6 +185,8 @@ class DesktopBridge:
                 latest = dict(self._progress or {"phase": "progress"})
                 if self.markers is not None:
                     latest["markers"] = self.markers.health_snapshot()
+                if self.recorder is not None:
+                    latest["recording"] = self.recorder.snapshot()
                 latest["health"] = (self.source.health_snapshot() if self.source else
                                     {"signal": "not_selected", "sample_age_ms": None,
                                      "battery_percent": None})

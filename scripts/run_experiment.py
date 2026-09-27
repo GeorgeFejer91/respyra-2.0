@@ -9,6 +9,7 @@ from mpi.event_markers import MarkerOutlet, NullSampleLogger
 from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, ExperimentStopped, isolate_control_input
 from mpi.lsl_force import LSLForceError
 from mpi.lsl_setup import run_source_setup
+from mpi.recording import NativeRecording, RecordingError
 if TYPE_CHECKING:
     from respyra.configs.experiment_config import ExperimentConfig
     from respyra.core.target_generator import TargetGenerator
@@ -22,15 +23,21 @@ def main():
     control_input = isolate_control_input(sys.stdin)
     with redirect_stdout(sys.stderr):
         bridge = DesktopBridge(control_input, writer)
+        import os
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        bridge.recorder = NativeRecording(
+            os.environ.get("RESPIRA_RECORDER_DIR", root / ".for-ai-local/recorder/runtime"),
+            os.environ.get("RESPIRA_DATA_DIR", root / "data"))
         markers = MarkerOutlet()
         markers.observer = bridge.note_marker
         bridge.markers = markers
         bridge.send({"phase": "starting", "run_id": markers.run_id,
-                     "message": "Marker outlet online. Select live Force input; recording belongs to LSL Recorder."})
+                     "message": "Select live Force input. Start records XDF before calibration."})
         bridge.start_progress()
         failure = None
         phase = "finished"
-        message = "Experiment ended. Check the LSL recording before closing."
+        message = "Experiment ended."
         try:
             # Advertise the outlet before importing the study or PsychoPy.
             from mpi.validation_study_jenny import CONFIG as _cfg
@@ -47,17 +54,27 @@ def main():
             pass
         except SystemExit as exc:
             if exc.code not in (None, 0):
-                raise
+                phase, message = "error", f"Experiment exited with code {exc.code}"
+                failure = RuntimeError(message)
         except Exception as exc:
             phase, message = "error", str(exc)
             failure = exc
-        # Retain the one outlet through the final screen and desktop closure.
-        # A consumer is not proof of persisted data; keep the recorder running.
+        # Native recording includes study cleanup; the final screen reports the file.
+        if bridge.recorder.process is not None:
+            markers.emit("recording.finalizing")
+            if not bridge.closed.is_set():
+                bridge.send({"phase": "experiment", "message": "Finalizing XDF recording…"})
+            try:
+                bridge.recorder.stop()
+            except RecordingError as exc:
+                phase, message, failure = "error", str(exc), exc
+            else:
+                message = "XDF saved. Experiment ended." if failure is None else f"{message}\nXDF saved."
         if not bridge.closed.is_set():
             if bridge.stop_action is not None:
                 bridge.finish_stop(failure)
             if bridge.stopped and failure is None:
-                message = "Experiment stopped. Check the LSL recording before closing."
+                message = "XDF saved. Experiment stopped."
             if markers.sequence:
                 markers.emit("ui.wrapper.result.requested", outcome=phase, message=message)
             bridge.send({"phase": phase, "message": message})
@@ -525,7 +542,7 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                 text=(
                     "Experiment complete!\n\n"
                     f"Overall mean tracking error: {mean_text}\n\n"
-                    "The LSL recorder manages the breathing and event recording.\n\n"
+                    "Your breathing and event data are being recorded automatically.\n\n"
                     "Press SPACE to exit."
                 ),
                 key_list=["space", cfg.escape_key],

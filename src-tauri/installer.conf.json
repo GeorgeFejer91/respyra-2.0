@@ -4,7 +4,7 @@
     "active": true,
     "targets": ["nsis"],
     "shortDescription": "Respira experiment controller",
-    "longDescription": "Experiment control with PsychoPy participant display, raw Force LSL input, event markers and opt-in QR phone control.",
+    "longDescription": "Experiment control with automatic native LSL-to-XDF recording, PsychoPy participant display, raw Force input, event markers and opt-in QR phone control.",
     "resources": {"../.for-ai-local/packaging/engine/": "engine/"},
     "windows": {
       "webviewInstallMode": {"type": "offlineInstaller"},

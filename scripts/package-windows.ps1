@@ -18,6 +18,8 @@ if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant
     throw 'Embedded Python checksum mismatch; no installer was built.'
 }
 $buildPython = Join-Path $stagingRoot 'venv/Scripts/python.exe'
+& $buildPython scripts/build_recorder.py
+if ($LASTEXITCODE -ne 0) { throw 'Pinned native recorder build failed.' }
 if ($GenerateIcons) {
     & $buildPython scripts/package_runtime.py --icons
     if ($LASTEXITCODE -ne 0) { throw 'Icon preparation failed.' }

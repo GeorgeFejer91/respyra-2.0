@@ -1,7 +1,9 @@
 // Shared presentation and intents. Python decides whether an action is valid.
+import { MONITOR_HTML, mountLslMonitor } from './lsl-monitor.js';
 export const CONTROL_HTML = `
   <p id="status" role="status" aria-live="polite" data-measure>Waiting for the experiment engine…</p>
   <p id="command-status" role="status" aria-live="polite" data-measure></p>
+  ${MONITOR_HTML}
   <form id="setup" autocomplete="off">
     <fieldset id="controls" disabled>
       <legend class="sr-only">Experiment setup</legend>
@@ -27,7 +29,7 @@ export const CONTROL_HTML = `
         </details>
       </section>
       <label class="check-option"><input id="save_csv" type="checkbox"><span data-measure>Save original CSV files locally</span></label>
-      <p class="recording-note" data-measure>In LSL Recorder, record VernierRaw and the marker stream. Keep recording through Close.</p>
+      <p class="recording-note" data-measure>Start automatically records all LSL streams to XDF before calibration, including streams that appear later.</p>
       <div class="actions final-actions">
         <button id="start" type="submit" disabled data-measure>Start Experiment</button>
         <button id="cancel" type="button" data-measure>Cancel</button>
@@ -37,6 +39,7 @@ export const CONTROL_HTML = `
   <section id="observation" aria-label="Experiment monitoring">
     <h2 data-measure>Experiment status</h2>
     <dl class="progress">
+      <dt data-measure>XDF recording</dt><dd id="xdf-state" data-measure>Ready</dd>
       <dt data-measure>Progress</dt><dd><span id="phase" data-measure>Starting</span> <span id="trial-summary" data-measure></span><span id="phase-summary" data-measure></span></dd>
       <dt data-measure>Force signal</dt><dd id="signal-state" data-measure>Not selected</dd>
       <dt data-measure>Markers</dt><dd id="marker-state" data-measure>Starting</dd>
@@ -65,6 +68,7 @@ const phases = { starting: 'Starting', setup: 'Setup',
 export function mountController(root, send, onReady) {
   root.innerHTML = CONTROL_HTML;
   const byId = id => root.querySelector('#' + id);
+  const monitor = mountLslMonitor(root);
   let state = { phase: 'starting' }, progress = {}, enabled = true, ready = false;
   let operation = 0, streamSignature = '', recentSignature = '';
   const edits = new Map();
@@ -77,9 +81,9 @@ export function mountController(root, send, onReady) {
     byId('use').disabled = !state.can_use;
     byId('start').disabled = !state.can_start;
     byId('abort').hidden = state.phase !== 'experiment';
-    byId('abort').disabled = !enabled || operation > 0;
+    byId('abort').disabled = !enabled || operation > 0 || progress.recording?.phase === 'finalizing';
     byId('close').hidden = !['finished', 'error'].includes(state.phase);
-    byId('close').disabled = !enabled || operation > 0;
+    byId('close').disabled = !enabled || operation > 0 || ['preparing','recording','finalizing'].includes(progress.recording?.phase);
     for (const radio of byId('streams').querySelectorAll('input')) radio.disabled = !!state.busy;
   }
 
@@ -104,12 +108,15 @@ export function mountController(root, send, onReady) {
 
   function render(snapshot) {
     state = snapshot;
+    root.dataset.phase = snapshot.phase;
     progress = snapshot.progress || progress;
     byId('status').textContent = snapshot.message === 'Ready for this experiment.' ? '' : snapshot.message || '';
     byId('phase').textContent = phases[snapshot.phase] || 'Needs attention';
     byId('trial-summary').textContent = [progress.trial == null ? null : ' · Trial ' + progress.trial, progress.condition].filter(v => v !== null && v !== undefined).join(' · ');
     byId('phase-summary').textContent = [progress.experiment_phase, progress.screen].filter(Boolean).join(' · ') || '—';
     const health = progress.health;
+    monitor.render(progress, enabled);
+    byId('xdf-state').textContent = {idle:'Ready',preparing:'Preparing',recording:'Recording',finalizing:'Finalizing',complete:'Saved',error:'Failed'}[progress.recording?.phase] || 'Ready';
     byId('signal-state').textContent = { not_selected:'Not selected', live:'Live', stale:'Waiting for samples',
       lost:'Signal lost', disconnected:'Disconnected' }[health?.signal] || 'Not reported';
     byId('sample-age').textContent = health?.sample_age_ms == null ? '—' : (health.sample_age_ms / 1000).toFixed(1) + ' s ago';
@@ -186,6 +193,7 @@ export function mountController(root, send, onReady) {
     if (event.key === 'Escape' && !byId('controls').disabled) void request('cancel');
   });
   availability();
-  return { render, setEnabled(value) { enabled = value; availability(); },
-    fail(message) { enabled = false; byId('command-status').textContent = message; availability(); } };
+  return { render, setEnabled(value) { enabled = value; monitor.render(progress, enabled); availability(); },
+    clearMonitor() { monitor.clear(); },
+    fail(message) { enabled = false; monitor.render(progress, false); byId('command-status').textContent = message; availability(); } };
 }

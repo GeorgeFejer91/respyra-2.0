@@ -86,8 +86,10 @@ details > label { display: block; }
 .desktop #status { padding-block: 4px; }
 .desktop .viewer-setup, .desktop #observation { margin: 0; padding: 0; border: 0; }
 .desktop:not([data-view=phone]) .viewer-setup,
+.desktop:not([data-view=data]) #lsl-monitor,
+.desktop:not([data-view=recording]) #recording-panel,
 .desktop:not([data-view=status]) #observation,
-.desktop:is([data-view=phone], [data-view=status]) #setup,
+.desktop:is([data-view=phone], [data-view=status], [data-view=recording], [data-view=data]) #setup,
 .desktop:not([data-view=setup]) .fields,
 .desktop:not([data-view=setup]) .check-option,
 .desktop:not([data-view=setup]) .recording-note,
@@ -109,6 +111,21 @@ details > label { display: block; }
 .desktop #viewer-qr { grid-column: 2; grid-row: 2 / 4; }
 .desktop #viewer-qr img { width: 180px; margin: 0; }
 .desktop #viewer-copy { margin: 0; }
+.desktop #recorded-streams { padding-left: 20px; }
+.desktop #recorded-streams li { white-space: pre-wrap; }
+.desktop #recording-file:empty { display: none; }
+#lsl-monitor select { font: inherit; width: 100%; min-height: 44px; border: 1px solid #8c959f; border-radius: 4px; background: #fff; color: inherit; padding: 8px; }
+#monitor-trace { width: 100%; height: 140px; display: block; }
+.trace-grid { fill: none; stroke: #d0d7de; }
+.trace-line { fill: none; stroke: #0969da; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.trace-markers { fill: none; stroke: #8c959f; stroke-width: 1; stroke-dasharray: 3 3; }
+.trace-scale { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: .875rem; color: #57606a; }
+#monitor-markers { padding-left: 24px; margin-block: 8px; }
+.remote:not([data-view=data]) #lsl-monitor, .remote[data-view=data] #setup,
+.remote[data-view=data] .diagnostics, .remote[data-view=data] #observation h2,
+.remote[data-view=data] #observation .progress > :nth-child(n+5) { display: none; }
+.remote[data-view=controls] #controller[data-phase=setup] #observation { display: none; }
+.remote #lsl-monitor > h2:first-child { display: none; }
 @media (max-width: 520px) {
   .desktop main { padding: 8px 12px; }
   .desktop header #study { display: none; }

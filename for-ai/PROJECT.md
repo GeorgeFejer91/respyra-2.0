@@ -6,9 +6,10 @@ A Python workspace for researchers to run and analyze a PsychoPy breathing-belt 
 
 ## Primary goal
 
-Run the configured breathing target-tracking study while an external LSL
-recorder captures Vernier raw force and Respyra's complete discrete-event
-marker timeline. Preserve the study protocol, calibration, and visual feedback.
+Run the configured breathing target-tracking study with its own bundled native
+LSL/XDF recorder, capturing raw Force and markers before calibration and through
+cleanup, and discovering later streams. Optimize the remote view for LSL channel
+data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
 
 ## Non-goals
 
@@ -22,7 +23,7 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
 
 ## Product/control-plane boundary
 
-- Product source: `src/mpi/`, `web/`, `src-tauri/`, `scripts/`, `notebooks/`, and `tests/`.
+- Product source: `src/mpi/`, `native/`, `web/`, `src-tauri/`, `scripts/`, `notebooks/`, and `tests/`.
 - Local session output: `data/` (ignored by Git).
 - Agent orchestration and durable project memory: `for-ai/`.
 - Local generated diagnostics and scratch evidence: `.for-ai-local/` (ignored).
@@ -36,7 +37,9 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
 - `src/mpi/lsl_force.py` discovers and validates the Vernier Stream Mini raw
   Force (N) LSL outlet and stores accepted source identity. `src/mpi/lsl_setup.py`
   owns discovery/selection for the HTML participant/session form,
-  reconnects saved input, and gates Start Experiment on a live accepted source.
+  reconnects saved input, and gates Start on a live accepted source plus native
+  recording readiness. `src/mpi/recording.py` supervises the pinned LabRecorder
+  adapter under `native/recorder/` and verifies XDF completion.
   `src/mpi/event_markers/` owns the LSL marker publisher
   and exhaustive `catalog.json`. `scripts/run_experiment.py` runs the PsychoPy
   task using that source and `respyra`'s existing study phases; it passes a
@@ -73,7 +76,7 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   `tests/test_lsl_setup.py`, and
   `tests/test_signal.py` cover the local logic and a short simulated study run.
   Vernier Stream Mini in
-  **Separate Streams** mode, an LSL recorder, and a display are needed to
+  **Separate Streams** mode and a display are needed to
   verify the full experiment.
 
 ## Signal boundary
@@ -88,7 +91,7 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   gain, performance error, and discrete event markers. Keep target/error units
   in N; do not silently replace raw Force with the normalized 0–1 outlet.
 - The first UI is Experiment control, with compact participant/session setup.
-  Input selection, marker naming, monitoring and phone pairing use separate
+  Input selection, marker naming, XDF recording, LSL monitoring and phone pairing use separate
   desktop views of the same viewport; stream/event lists paginate. See
   `HTML-UI.md` for the no-scroll and explicit no-fit contract.
   Discovery lists visible outlets with compatibility
@@ -105,16 +108,16 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   run. Disable automatic inlet recovery so an outlet restart cannot reuse
   stale channel metadata. Settings are identity memory, not a persisted signal
   buffer.
-- The recorder owns persisted samples. Respyra's marker stream uses one JSON
+- The bundled native recorder owns persisted samples. Respyra's marker stream uses one JSON
   string per event. Its outlet is advertised at desktop Python-engine startup,
-  before study/PsychoPy imports or Force selection. Neither setup nor Start waits
-  for recorder readiness; the experimenter operates recording in the other app.
+  before study/PsychoPy imports or Force selection. Setup needs no external
+  subscriber; Start requires native subscription and raw-data readiness.
   Marker pushes do not require a subscriber. Keep the run's outlet through final
   Close; its default name may change during setup before subscription or Start. Markers use a
   shared run UUID, monotonic sequence, LSL timestamp, and
   trial/condition/phase/screen context. The catalog is the authority for every
   emitted marker name and its timing meaning. Record both LSL streams from
-  before participant interaction through final cleanup. The force inlet
+  before calibration through final cleanup. The force inlet
   enables LSL clock synchronization so source and marker timestamps can be
   compared in the local LSL clock domain. Setup events sent before recording may
   be absent from the file. Only inspection of the recorder output verifies persistence.
@@ -127,7 +130,7 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   clock. Worker completions describe Python observing the result. Experiment
   onset markers stay on PsychoPy flips without IPC. The outlet survives the final
   HTML screen through Close, including its button/closure markers. A disconnected
-  recorder still fails publication; forced termination cannot finalize markers.
+  recorder fails the run; forced termination cannot finalize markers or XDF.
   Continuous
   waveform/animation frames are represented by the Vernier stream plus phase,
   condition, and target-parameter markers.
@@ -139,7 +142,9 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   background during PsychoPy. Its QR pairs one phone to the same controls over
   VDO.Ninja/BRSP from the public GitHub Pages site. Show compact run/input/output
   status, actual sent-event count, latest event and an expandable last-12 list.
-  Online output is not a recorder-readiness check. Recordings never go to Pages.
+  Native recording status reflects subscribed sources and verified file completion.
+  The phone defaults to raw-channel data and recent markers, with compact run
+  controls. It shares a bounded live preview, while recordings stay local.
 
 ## Current verified state
 
@@ -158,7 +163,9 @@ marker timeline. Preserve the study protocol, calibration, and visual feedback.
   form passed Chromium layout checks; Windows WebView2 passed real LSL selection,
   identity reconnect, input markers, PsychoPy instruction-window handoff and
   graceful closure checks with synthetic data. The physical belt, scientific
-  display timing and persisted recorder file remain unverified.
+  display timing remain unverified. Standalone native XDF round-trip checks now
+  cover required data, calibration markers, late streams and closed footers;
+  installed-runtime evidence follows `PACKAGING.md`.
 
 Git and runnable checks are the authority for branch, revision, and behavior.
 Do not turn this section into a second status ledger.

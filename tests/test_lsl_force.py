@@ -75,6 +75,8 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
     with patch.dict(sys.modules, {"pylsl": module}):
         source = connect_force_source()
     assert source.get_all() == [(3.0, 11.0)]
+    assert [c['value'] for c in source.health_snapshot()['preview']['channels']] == [4.0, 11.0]
+    assert source.health_snapshot()['preview']['channels'][1]['unit'] == 'N'
     source.last_force_at -= 4.0
     with pytest.raises(LSLForceError, match="no Force samples"):
         source.get_all()
@@ -100,8 +102,10 @@ def test_monitoring_uses_received_sample_freshness_and_never_invents_battery():
         source.get_all()
     for now, expected in [(10.1, "live"), (12, "stale"), (14, "lost")]:
         with patch("mpi.lsl_force.time.monotonic", return_value=now):
-            assert source.health_snapshot() == {"signal": expected,
-                "sample_age_ms": round((now-10)*1000), "battery_percent": None}
+            health = source.health_snapshot()
+            assert health['signal'] == expected and health['sample_age_ms'] == round((now-10)*1000)
+            assert health['battery_percent'] is None
+            assert health['preview']['lsl_time'] == 1.0 and health['preview']['channels'][0]['value'] == 5.0
     source.stop()
     assert source.health_snapshot()["signal"] == "disconnected"
 

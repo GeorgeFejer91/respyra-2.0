@@ -8,16 +8,16 @@ stimuli, keyboard responses, assessments and display-flip markers.
 
 ## Use it
 
-1. Launch Respyra and select live Force input. In the recorder app, record the
-   VernierRaw and named Respyra marker streams; Respyra does not gate Start on
-   recorder readiness. Optional local CSV output is off unless enabled.
+1. Launch Respyra and select live Force input. Start automatically records XDF
+   with the bundled native recorder before calibration. Optional CSV output is separate.
 2. Select **Enable phone control** in Experiment control. Scan the QR code or
    open its private link in a phone browser.
 3. Select **Connect** on the phone. One phone controls the same setup and run.
    The enabled invitation explicitly shares participant/session fields and
-   LSL source metadata with that phone. Keep it private.
+   live raw-channel readings, marker names and LSL metadata with that phone. Keep it private.
 4. **Stop experiment** ends the study and cleans up its source/display, while
-   the controller and marker outlet stay open. Keep recording through **Close**.
+   the native recorder finalizes XDF after cleanup; the controller and marker
+   outlet stay open. Wait for **Saved**, then **Close**.
 5. **Disable phone control**, app closure, phone disconnect or ownership expiry
    revokes remote control. Enable again for a fresh link. Phone loss leaves an
    ongoing study running; participant inputs remain local to PsychoPy.
@@ -26,6 +26,15 @@ A second display or the phone lets the experimenter monitor without moving
 focus away from the participant window. On a single display the control
 window may sit behind PsychoPy's full-screen window.
 
+The phone opens **LSL data & markers**. Select a channel from the accepted raw
+Vernier stream to view its value/unit, a ten-second trace and timestamped marker
+ticks. Four recent markers stay visible; the full last-12 list is under details
+in **Experiment controls**, which contains participant/source setup. Stop/Close
+and recording status remain available beside the monitor. The trace uses coalesced
+four-Hz snapshots of the existing clock-synchronized inlet, holds through loss,
+and breaks across gaps. It is a live preview, not an analysis waveform; XDF
+contains full-rate data and late streams. No extra LSL inlet or processing is added.
+
 Both controllers show run status, trial/condition, phase/screen, sent-event count, latest marker,
 and the age of received finite LSL Force samples. “Live” confirms LSL reception,
 not correct belt placement or physiological signal quality. The current
@@ -33,7 +42,8 @@ VernierRaw Force contract has no battery telemetry, so battery is **Not reported
 The recent-marker list retains only 12 event names/sequences, with no assessment
 payloads. Marker output reports successful pushes to the local LSL outlet,
 not recorder persistence. Name changes are refused after subscription or Start
-to avoid disrupting the selected stream. No raw waveform or assessment responses are sent to the phone.
+to avoid disrupting the selected stream. The private invitation shares the bounded
+raw-channel preview; assessment payloads, native paths and files stay local.
 
 ## Connection and authority
 

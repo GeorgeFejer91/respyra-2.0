@@ -48,7 +48,7 @@ if (@(RunGit $publishRoot @('status', '--porcelain')).Count) {
     throw 'The publication worktree has changes; review them before publishing.'
 }
 $files = @('index.html', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js',
-           'controller-ui.js', 'action-queue.js', 'panel.json', 'vendor')
+           'controller-ui.js', 'action-queue.js', 'lsl-monitor.js', 'panel.json', 'vendor')
 foreach ($name in $files) {
     Copy-Item -LiteralPath (Join-Path $sourceRoot "companion/$name") -Destination $publishRoot -Recurse -Force
 }

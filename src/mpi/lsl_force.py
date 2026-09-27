@@ -134,31 +134,41 @@ def save_force_selection(source, path: Path | None = None) -> None:
 class LSLForceSource:
     """Small adapter for respyra's ``get_all`` / ``stop`` phase calls."""
 
-    def __init__(self, inlet, force_index: int, source_id: str = "", stream_name: str = "") -> None:
+    def __init__(self, inlet, force_index: int, source_id: str = "", stream_name: str = "", channels=()) -> None:
         self.inlet = inlet
         self.force_index = force_index
         self.source_id = source_id
         self.stream_name = stream_name
         self.last_force_at = time.monotonic()
         self.stopped = False
+        self.channels = list(channels) or [{"index": force_index, "label": "Force", "unit": "N"}]
+        self.latest_sample = None
 
     def health_snapshot(self):
         """Only actual inlet freshness; the raw Force contract has no battery field."""
         age = max(0, time.monotonic() - self.last_force_at)
+        preview = None
+        if self.latest_sample:
+            timestamp, sample = self.latest_sample
+            preview = {"source_id": self.source_id, "name": self.stream_name,
+                       "lsl_time": timestamp, "force_index": self.force_index,
+                       "channels": [{**c, "value": float(sample[c["index"]])
+                                     if c["index"] < len(sample) and math.isfinite(sample[c["index"]]) else None}
+                                    for c in self.channels]}
         return {"signal": ("disconnected" if self.stopped else
                            "live" if age <= 1 else "stale" if age <= 3 else "lost"),
-                "sample_age_ms": round(age * 1000), "battery_percent": None}
+                "sample_age_ms": round(age * 1000), "battery_percent": None, "preview": preview}
 
     def get_all(self) -> list[tuple[float, float]]:
         try:
             samples, timestamps = self.inlet.pull_chunk(timeout=0.0, max_samples=1024)
         except Exception as exc:
             raise LSLForceError(f"Vernier LSL stream read failed: {exc}") from exc
-        forces = [
-            (timestamp, float(sample[self.force_index]))
-            for sample, timestamp in zip(samples, timestamps, strict=True)
-            if len(sample) > self.force_index and math.isfinite(sample[self.force_index])
-        ]
+        forces = []
+        for sample, timestamp in zip(samples, timestamps, strict=True):
+            if len(sample) > self.force_index and math.isfinite(sample[self.force_index]):
+                forces.append((timestamp, float(sample[self.force_index])))
+                self.latest_sample = (timestamp, list(sample))
         if forces:
             self.last_force_at = time.monotonic()
         elif time.monotonic() - self.last_force_at > 3.0:
@@ -202,7 +212,13 @@ def open_force_source(resolved, timeout: float = 5.0) -> LSLForceSource:
         if info.source_id() != resolved.source_id():
             raise LSLForceError("Selected stream identity changed during connection")
         index = validate_force_info(info)
-        source = LSLForceSource(inlet, index, info.source_id(), info.name())
+        channels = []
+        metadata = ElementTree.fromstring(info.as_xml()).findall("./desc/channels/channel")
+        for number in range(min(info.channel_count(), 32)):
+            channel = metadata[number]
+            channels.append({"index": number, "label": channel.findtext("label") or f"Channel {number + 1}",
+                             "unit": channel.findtext("unit", "")})
+        source = LSLForceSource(inlet, index, info.source_id(), info.name(), channels)
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             samples, _ = inlet.pull_chunk(timeout=min(0.5, deadline - time.monotonic()))

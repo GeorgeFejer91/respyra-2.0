@@ -17,6 +17,17 @@ test('invitation, state and commands have closed bounded contracts', () => {
   assert.equal(validateControllerState({ ...snapshot,participant:'private' }),false);
   assert.equal(validateControllerState({ ...snapshot,progress:{ ...snapshot.progress,lsl_time:NaN } }),false);
   assert.equal(validateControllerState({ ...snapshot,message:'x'.repeat(8192) }),false);
+  const monitoring = {...snapshot,progress:{...snapshot.progress,
+    recording:{phase:'recording',error:null,bytes_written:1024},
+    health:{signal:'live',sample_age_ms:25,battery_percent:null,
+      preview:{name:'Raw Force',source_id:'synthetic',lsl_time:123.5,force_index:0,
+        channels:[{index:0,label:'Force',unit:'N',value:5}]}}}};
+  assert(validateControllerState(monitoring));
+  assert(!validateControllerState({...monitoring,progress:{...monitoring.progress,
+    recording:{...monitoring.progress.recording,output_file:'C:/private/test.xdf'}}}));
+  assert(!validateControllerState({...monitoring,progress:{...monitoring.progress,
+    health:{...monitoring.progress.health,preview:{...monitoring.progress.health.preview,
+      channels:[{index:0,label:'Force',unit:'N',value:NaN}]}}}}));
   const start = { scope:RUN_SCOPE, action:'start', args:{ ui_seq:1,ui_time_ms:1 }, expectedRevision:2 };
   assert(validCommand(start));
   const csv = {scope:SCOPES[1],action:'option',args:{ui_seq:2,ui_time_ms:2,field:'save_csv',enabled:true},expectedRevision:2};

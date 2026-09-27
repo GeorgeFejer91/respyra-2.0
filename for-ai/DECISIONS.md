@@ -187,3 +187,25 @@ decision and link both entries.
   User recordings/settings survive uninstall. `PACKAGING.md` is the task route.
 - Supersedes: Checkout-dependent release/non-goal packaging in D-0005; debug
   development behavior and existing experiment/recorder ownership remain.
+
+## D-0009 — Bundled native XDF capture and data-first remote monitor
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user made an independent recorder a standard part of Start and
+  asked to prioritize LSL channel data and markers in the remote view.
+- Decision: Reuse pinned LabRecorder native serialization through a small
+  continuous-discovery CLI. The existing Python engine supervises recording;
+  Start requires exact Force/marker subscriptions and raw samples before display
+  creation or calibration. Finalize after cleanup; only verified files become
+  `.xdf`, and failures retain partial files. Bundle the recorder in NSIS.
+  Default the phone to a bounded raw-channel trace/value and marker monitor,
+  with controls in a separate view; reuse the accepted inlet and full-rate XDF.
+- Consequences: No external recorder is needed. Setup-before-Start and final HTML
+  Close markers are outside the automatic recording boundary. Late streams join
+  after discovery, so first-sample guarantees require early producer advertisement.
+  The private phone invitation now shares bounded raw-channel readings; paths,
+  files and assessment payloads stay local. See `RECORDING.md` and `HTML-UI.md`.
+- Supersedes: External recording and no native-readiness gate in D-0007, and
+  external-only recorder ownership in earlier decisions. CSV stays opt-in;
+  study protocol, Force units, scoped control and local data retention remain.

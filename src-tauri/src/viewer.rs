@@ -227,13 +227,28 @@ pub fn projection(
     monitor_revision: u64,
     setup_scope: bool,
 ) -> Value {
+    let recording_failed = !progress["recording"]["error"].is_null();
+    let recording_error = json!("Recording failed. Check the local controller.");
     let mut result = json!({"profile":"respyra.controller/1", "revision":revision,
         "monitorRevision":monitor_revision, "phase":snapshot["phase"],
-        "message":if setup_scope { snapshot["message"].clone() }
+        "message":if recording_failed { recording_error.clone() }
+            else if setup_scope { snapshot["message"].clone() }
             else { json!("Observe-only connection. Use the local controller for details.") },
         "setup":null, "progress":progress});
+    // File paths stay on the experiment computer, including observe-only grants.
+    if let Some(recording) = result["progress"]["recording"].as_object_mut() {
+        recording.remove("output_file");
+        recording.remove("summary");
+        recording.remove("streams");
+        if !recording["error"].is_null() {
+            recording.insert("error".into(), recording_error.clone());
+        }
+    }
     if setup_scope && snapshot["phase"] == "setup" {
         let mut setup = snapshot.clone();
+        if recording_failed {
+            setup["message"] = recording_error;
+        }
         let rows = setup["streams"].as_array().cloned().unwrap_or_default();
         setup["streams"] = json!([]);
         result["setup"] = setup;
@@ -363,5 +378,28 @@ mod tests {
         let view = projection(&snapshot, &Value::Null, 1, 2, true);
         assert!(view.to_string().len() <= 8192);
         assert!(view["setup"]["omitted_streams"].as_u64().unwrap() > 0);
+    }
+
+    #[test]
+    fn recorder_paths_and_diagnostics_stay_local() {
+        let snapshot =
+            json!({"phase":"experiment", "message":"Cannot write C:/private/subject.xdf.partial"});
+        let progress = json!({"recording": {"phase":"error", "bytes_written":42,
+            "output_file":"C:/private/subject.xdf.partial", "summary":[{"name":"private"}],
+            "error":"Cannot write C:/private/subject.xdf.partial", "streams":[]}});
+        for setup_scope in [true, false] {
+            let view = projection(&snapshot, &progress, 1, 2, setup_scope);
+            assert!(!view.to_string().contains("private"));
+            assert_eq!(view["progress"]["recording"]["phase"], "error");
+            assert_eq!(view["progress"]["recording"]["bytes_written"], 42);
+            let setup = projection(
+                &json!({"phase":"setup","message":"C:/private/subject.xdf.partial","streams":[]}),
+                &progress,
+                1,
+                2,
+                setup_scope,
+            );
+            assert!(!setup.to_string().contains("private"));
+        }
     }
 }

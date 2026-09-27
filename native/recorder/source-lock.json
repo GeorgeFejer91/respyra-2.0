@@ -1,0 +1,16 @@
+{
+  "revision": "ce74750748c784774d07b6938b482c4e0608071b",
+  "repository": "https://github.com/labstreaminglayer/App-LabRecorder",
+  "liblsl": {
+    "url": "https://github.com/sccn/liblsl/releases/download/v1.18.0.b5/liblsl-1.18.0-Win_amd64.zip",
+    "sha256": "284ae61714eb1c3054eed425f6ad45cdbdcc1f0e38e9dcae7b51a3d135ae7b73"
+  },
+  "files": {
+    "xdfwriter/xdfwriter.h": "eb6a89bcc79e4511f2fd18079cd8745d500ea6a562426a9ae2b7cfb809b19b4c",
+    "xdfwriter/xdfwriter.cpp": "a6d797fe33c2155be4f20cd7216752e98152031bda5d03110e614865c9803516",
+    "LICENSE": "4ee06783a0d641898e875e71b501abd7b427e257a29dbbbceafe9d4c063e5da5",
+    "src/recording.cpp": "5f76b25ae4745c0b52318308ef391dea80b223b3d995622ebe06f35568779b57",
+    "src/recording.h": "dbabf71df133a48ab92efdcc118525043b6c4e5563e85f6b639e990f975608c4",
+    "xdfwriter/conversions.h": "04f6b3be579a5ea1960132b3def02c9507f01f2559911ed2ccf13581d8fb8e1b"
+  }
+}

@@ -23,6 +23,11 @@ const assert = require('node:assert/strict');
     let listener;
     const state = { phase:'setup', ui_seq:0, study_name:'Respyra breathing validation', values:{participant:'',session:'001'}, marker_name:'Respyra-Events',save_csv:false, message:'No breathing input selected.', busy:false, can_start:false, can_use:false, selected_row:null, streams:[], source:null };
     window.testActions = [];
+    window.testProgress = progress => {
+      state.progress = {...state.progress,...progress};
+      listener({payload:structuredClone(state)});
+    };
+    window.testRecording = recording => window.testProgress({...state.progress,phase:'progress',recording});
     window.__TAURI__ = { event:{listen:async (_name, cb) => {listener=cb; return () => {}; }}, core:{invoke:async (command,args) => {
       if(command === 'launch_backend') return structuredClone(state);
       if(command === 'close_app') return;
@@ -74,7 +79,14 @@ const assert = require('node:assert/strict');
   }
   await page.setViewportSize({width:820,height:1000});
   await page.evaluate(()=>{document.documentElement.style.fontSize='16px';document.querySelector('style')?.remove();});
-  for (const [view,width,height] of [['setup',360,480],['setup',820,760],['setup',1440,900],['input',820,760],['markers',360,480],['status',820,760],['phone',360,480]]) {
+  await page.evaluate(() => window.testRecording({phase:'recording',bytes_written:4096,
+    output_file:'C:/Respira/data/test.xdf.partial', streams:[
+      {name:'Raw Force',source_id:'force-proof'}, {name:'Late respiration',source_id:'late-'+'device'.repeat(30)}]}));
+  for(let i=0;i<3;i++) await page.evaluate(i=>window.testProgress({
+    phase:'progress',markers:{name:'Respyra-Events',emitted:19},recent:[{event:'tracking.started',seq:19,lsl_time:321.5}],
+    health:{signal:'live',sample_age_ms:100,battery_percent:null,preview:{source_id:'force-proof',name:'Raw Force',force_index:1,lsl_time:321+i*.25,
+      channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12},{index:1,label:'Force',unit:'N',value:5+i}]}}}),i);
+  for (const [view,width,height] of [['setup',360,480],['setup',820,760],['setup',1440,900],['input',820,760],['markers',360,480],['recording',360,480],['recording',820,760],['data',360,760],['data',820,760],['status',820,760],['phone',360,480]]) {
     await page.setViewportSize({width,height});
     await page.locator('#view').selectOption(view);
     await page.waitForTimeout(100);
@@ -86,6 +98,13 @@ const assert = require('node:assert/strict');
     assert(fit.width <= width + 1 && fit.height <= height + 1, JSON.stringify({view,width,height,fit}));
     assert.deepEqual(fit.clipped, [], JSON.stringify({view,width,height,fit}));
   }
+  await page.locator('#view').selectOption('recording');
+  await page.setViewportSize({width:820,height:760});
+  await page.locator('#recorded-streams + .page-actions button').last().click();
+  assert(await page.locator('#recorded-streams li').filter({hasText:'Late respiration'}).isVisible());
+  assert((await page.locator('#recording-status').textContent()).includes('4096 bytes'));
+  await page.waitForTimeout(100);
+  assert(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1 && document.documentElement.scrollWidth <= innerWidth + 1));
   await page.setViewportSize({width:320,height:480});
   await page.locator('#view').selectOption('input');
   await page.evaluate(() => { document.documentElement.style.fontSize = '32px'; });
@@ -105,8 +124,12 @@ const assert = require('node:assert/strict');
   assert(actions.some(a=>a.action==='field_key'&&a.key==='ArrowLeft'));
   assert(actions.some(a=>a.action==='field_edit'&&a.field==='session'&&a.value==='002'));
   assert.equal(actions.at(-1).action,'start');
+  await page.evaluate(() => window.testRecording({phase:'complete',bytes_written:8192,
+    output_file:'C:/Respira/data/test.xdf',streams:[{name:'Raw Force',source_id:'force-proof'}]}));
+  await page.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor();
+  assert.equal(await page.locator('#recording-file').textContent(),'C:/Respira/data/test.xdf');
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({result:'passed',actions:actions.length,reflowLayouts:5,viewportLayouts:7,noFitRecovery:true,clipping:0,pageErrors:0}));
+  console.log(JSON.stringify({result:'passed',actions:actions.length,reflowLayouts:5,viewportLayouts:11,recordingPagination:true,noFitRecovery:true,clipping:0,pageErrors:0}));
   await browser.close();
   await new Promise(resolve => server.close(resolve));
 })().catch(e=>{console.error(e);process.exit(1);});

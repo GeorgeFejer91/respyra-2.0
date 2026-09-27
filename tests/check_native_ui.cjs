@@ -75,7 +75,9 @@ const assert = require('node:assert/strict');
     await page.locator('#viewer-qr img').screenshot({path:'.for-ai-local/native-qr.png'});
     const {execFileSync}=require('node:child_process');
     execFileSync('.venv/Scripts/python.exe',['-c',
-      'import cv2,sys; image=cv2.imread(".for-ai-local/native-qr.png"); text,points,_=cv2.QRCodeDetector().detectAndDecode(image); assert text == sys.stdin.read(), "Displayed QR did not decode to the invitation"'],
+      // Decode the rendered pixels. OpenCV sometimes needs nearest-neighbor
+      // magnification at fractional Windows display scales; no QR data is added.
+      'import cv2,sys; image=cv2.imread(".for-ai-local/native-qr.png"); detector=cv2.QRCodeDetector(); decoded=[detector.detectAndDecode(cv2.resize(image,None,fx=scale,fy=scale,interpolation=cv2.INTER_NEAREST))[0] for scale in (1,2)]; assert sys.stdin.read() in decoded, "Displayed QR did not decode to the invitation"'],
       {input:link,timeout:15000});
     ui=await context.newPage();ui.on('pageerror',e=>errors.push(String(e)));
     await ui.setViewportSize({width:390,height:844});
@@ -83,6 +85,11 @@ const assert = require('node:assert/strict');
     await ui.locator('#connect').click();
     try {await ui.waitForFunction(()=>!document.getElementById('controls').disabled,{},{timeout:45000});}
     catch(error){console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent()});throw error;}
+  }
+  if(mode==='remote') {
+    await ui.locator('#remote-view').waitFor();
+    assert.equal(await ui.locator('#remote-view').inputValue(),'data');
+    await ui.locator('#remote-view').selectOption('controls');
   }
   await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
@@ -97,12 +104,20 @@ const assert = require('node:assert/strict');
     await page.locator('#view').selectOption('input');
     await page.locator('#scan').click();
     const choose = async name => {
+      await page.waitForFunction(()=>!document.getElementById('controls').disabled);
       const row = page.locator('.stream').filter({hasText:name});
       await row.waitFor({state:'attached',timeout:20000});
       const previous = page.locator('#streams + .page-actions button').first();
       while (await previous.isEnabled()) await previous.click();
-      for (let i=0; !(await row.isVisible()) && i<20; i++) await page.locator('#streams + .page-actions button').last().click();
+      for (let i=0; !(await row.isVisible()) && i<20; i++) {
+        const next=page.locator('#streams + .page-actions button').last();
+        assert(await next.isEnabled(),JSON.stringify(await page.evaluate(()=>({view:document.body.dataset.view,
+          mainHidden:document.querySelector('main').hidden,height:innerHeight,width:innerWidth,
+          text:document.querySelector('main').innerText,pager:document.querySelector('#streams + .page-actions')?.innerText}))));
+        await next.click();
+      }
       await row.locator('input').check();
+      await page.waitForFunction(()=>!document.getElementById('controls').disabled);
     };
     await choose('Synthetic raw Force');
     assert(await page.locator('.stream').filter({hasText:'Synthetic normalized'}).count());
@@ -140,11 +155,28 @@ const assert = require('node:assert/strict');
     const fs=require('node:fs');
     for(let i=0;i<250 && !fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH);i++) await new Promise(r=>setTimeout(r,100));
     assert(fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH),'PsychoPy instructions did not reach a display flip');
+    await ui.locator('#xdf-state').getByText('Recording', {exact:true}).waitFor({timeout:10000});
     await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
     assert.equal(await ui.locator('#battery').textContent(),'Not reported');
-    if(mode==='remote') await ui.screenshot({path:'.for-ai-local/native-remote-controller.png',fullPage:true});
+    if(mode==='remote') {
+      await ui.locator('#remote-view').selectOption('data');
+      await ui.waitForFunction(() => document.getElementById('monitor-value').textContent.includes('Live') && document.getElementById('trace-line').getAttribute('d')?.includes('L'));
+      assert.equal(await ui.locator('#monitor-channel option').count(),2);
+      await ui.locator('#monitor-channel').selectOption('0');
+      await ui.locator('#monitor-value').getByText('Live · 12.000 breaths/min', {exact:true}).waitFor();
+      await ui.locator('#monitor-channel').selectOption('1');
+      await ui.waitForFunction(()=>document.getElementById('trace-line').getAttribute('d')?.split('L').length>=5);
+      assert(await ui.locator('#monitor-markers li').count());
+      const monitorFit=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth,viewportWidth:innerWidth}));
+      assert(monitorFit.height<=monitorFit.viewport+1 && monitorFit.width<=monitorFit.viewportWidth+1,'Phone monitor needs scrolling: '+JSON.stringify(monitorFit));
+      await ui.screenshot({path:'.for-ai-local/native-remote-controller.png',fullPage:true});
+    }
     await ui.locator('#abort').click();
     await ui.locator('#close').waitFor({state:'visible',timeout:15000});
+    await ui.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor({timeout:20000});
+    assert((await page.locator('#recording-file').textContent()).endsWith('.xdf'));
+    const file=await page.locator('#recording-file').textContent();
+    require('node:fs').writeFileSync(`.for-ai-local/native-${mode}-xdf.json`, JSON.stringify({file}));
     await ui.locator('#close').click();
   }
   if(phoneBrowser) await phoneBrowser.close();

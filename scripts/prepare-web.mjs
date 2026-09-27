@@ -15,7 +15,7 @@ await cp(path.join(root, 'node_modules/@fontsource/noto-sans/LICENSE'), path.joi
 await cp(path.join(root, 'vendor/remote'), vendor, { recursive: true });
 await cp(path.join(root, 'node_modules/qrcode-generator/dist/qrcode.mjs'), path.join(vendor, 'qrcode.mjs'));
 const companion = path.join(root, 'companion');
-for (const file of ['style.css', 'text-fit.js', 'remote-profile.js', 'controller-ui.js', 'action-queue.js']) {
+for (const file of ['style.css', 'text-fit.js', 'remote-profile.js', 'controller-ui.js', 'action-queue.js', 'lsl-monitor.js']) {
   await cp(path.join(root, 'web', file), path.join(companion, file));
 }
 await cp(vendor, path.join(companion, 'vendor'), { recursive: true });

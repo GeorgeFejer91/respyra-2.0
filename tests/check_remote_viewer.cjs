@@ -7,6 +7,7 @@ const path = require('node:path');
 
 (async () => {
   const root = path.resolve(__dirname, '..');
+  const {validateControllerState} = await import('../web/remote-profile.js');
   const recorder = process.env.RECORDER_COMPANION;
   assert(recorder, 'Set RECORDER_COMPANION to the Recorder companion directory');
   const base = 'https://georgefejer91.github.io/Remote-LSL-Recorder/';
@@ -79,6 +80,8 @@ const path = require('node:path');
         if(command.action==='abort') {snapshot.phase='finished';snapshot.setup=null;}
         return {ok:true,revision:snapshot.revision,result:null,error:null};
       }
+      if(!validateControllerState(snapshot)) errors.push('Invalid synthetic controller projection: '+JSON.stringify(snapshot));
+      assert(validateControllerState(snapshot),'Invalid synthetic controller projection');
       return snapshot;
     }
     throw new Error(`Unexpected native mutation ${command}`);
@@ -134,14 +137,17 @@ const path = require('node:path');
     assert.equal(mutations,0);
     snapshot={...snapshot,phase:'setup',revision:2,monitorRevision:2,setup,
       progress:{phase:'progress',health:{signal:'not_selected',sample_age_ms:null,battery_percent:null}}};
+    await child.locator('#remote-view').selectOption('controls');
     await child.locator('#participant').fill('synthetic-phone');
     await child.locator('#participant').press('ArrowLeft');
     await child.locator('#session').fill('002');
     await child.locator('#input-details summary').click();
     await child.locator('#scan').click();
-    await child.locator('input[value="0"]').check();
+    await child.locator('input[value="0"]').click();
+    await child.waitForFunction(()=>document.querySelector('input[value="0"]').checked && !document.getElementById('controls').disabled);
     assert(await child.locator('#use').isDisabled());
-    await child.locator('input[value="1"]').check();
+    await child.locator('input[value="1"]').click();
+    await child.waitForFunction(()=>document.querySelector('input[value="1"]').checked && !document.getElementById('controls').disabled);
     await child.locator('#use').click();
     await child.waitForFunction(()=>!document.getElementById('start').disabled);
     assert.equal(setup.values.participant,'synthetic-phone');
@@ -164,13 +170,43 @@ const path = require('node:path');
       const clipped = await child.locator('[data-measure]').evaluateAll(nodes => nodes.filter(node => node.getClientRects().length && (node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1)).map(node => node.textContent));
       assert.deepEqual(clipped, [], `clipped at ${width}/${size}`);
     }
-    await child.addStyleTag({ url: panelBase + 'text-spacing.css' });
+    const spacingStyle=await child.addStyleTag({ url: panelBase + 'text-spacing.css' });
     assert(await child.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
     assert(!(await child.locator('body').innerText()).includes(nativeInvite.secret));
     assert(!(await viewer.evaluate(() => JSON.stringify({ ...localStorage }))).includes(nativeInvite.secret));
     const route = (await child.locator('#route').textContent()).match(/route: (direct|relay|unknown)/u)?.[1] || 'unknown';
     await fs.mkdir(path.join(root, '.for-ai-local'), { recursive: true });
     await child.locator('.diagnostics summary').click();
+    await child.locator('#remote-view').selectOption('data');
+    await spacingStyle.evaluate(element=>element.remove());
+    await child.evaluate(()=>{document.documentElement.style.fontSize='16px';window.scrollTo(0,0);});
+    await viewer.setViewportSize({width:390,height:844});
+    for (let i=0;i<3;i++) {
+      snapshot={...snapshot,monitorRevision:snapshot.monitorRevision+1,
+        progress:{...snapshot.progress,markers:{name:'Respyra-Events',source_id:'event-proof',online:true,emitted:19},
+          recent:[{event:'tracking.started',seq:19,lsl_time:321.5}],
+          health:{signal:'live',sample_age_ms:100,battery_percent:null,
+            preview:{source_id:'synthetic-force',name:'Synthetic raw Force',force_index:1,lsl_time:321+i*.25,
+              channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12}, {index:1,label:'Force',unit:'N',value:5+i}]}}}};
+      await new Promise(resolve=>setTimeout(resolve,300));
+    }
+    await child.waitForFunction(()=>document.getElementById('trace-line').getAttribute('d')?.includes('L'));
+    await child.locator('#monitor-channel').selectOption('0');
+    assert.equal(await child.locator('#monitor-value').textContent(),'Live · 12.000 breaths/min');
+    assert.equal(await child.locator('#monitor-markers li').textContent(),'19 · tracking.started');
+    assert((await child.locator('#trace-markers').getAttribute('d')).includes('V140'));
+    for (const [width,size,height=844] of [[320,16],[390,16],[844,16],[1280,16],[320,32],[844,16,390]]) {
+      await viewer.setViewportSize({width,height});
+      await child.evaluate(size=>{document.documentElement.style.fontSize=size+'px';},size);
+      await child.evaluate(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done))));
+      assert(await child.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`monitor overflow at ${width}/${size}`);
+      const clipped=await child.locator('[data-measure]').evaluateAll(nodes=>nodes.filter(node=>node.getClientRects().length && (node.scrollWidth>node.clientWidth+1 || node.scrollHeight>node.clientHeight+1)).map(node=>node.textContent));
+      assert.deepEqual(clipped,[],`monitor clipped at ${width}/${size}`);
+    }
+    await child.addStyleTag({url:panelBase+'text-spacing.css'});
+    assert(await child.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    await child.evaluate(()=>{document.documentElement.style.fontSize='16px';document.querySelector('link[href$="text-spacing.css"]')?.remove();window.scrollTo(0,0);});
+    await viewer.setViewportSize({width:390,height:844});
     await viewer.screenshot({ path: path.join(root, '.for-ai-local/recorder-respyra.png'), fullPage: true });
     await child.locator('#abort').click();
     await child.locator('#phase').getByText('Finished', {exact:true}).waitFor();
@@ -181,9 +217,12 @@ const path = require('node:path');
     assert.equal(granted, false);
     assert.equal(await target.locator('#viewer-link').inputValue(), '');
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({ result:'passed',transport:process.env.RESPYRA_REAL_VDO ? 'public VDO' : 'deterministic BRSP bridge',route,iframe:'opaque',layouts:6,native:'mocked ownership and backend',mutationCalls:mutations }));
+    console.log(JSON.stringify({ result:'passed',transport:process.env.RESPYRA_REAL_VDO ? 'public VDO' : 'deterministic BRSP bridge',route,iframe:'opaque',layouts:12,native:'mocked ownership and backend',mutationCalls:mutations }));
   } catch (error) {
-    console.error({ started: [...started], targetStatus: await target.locator('#viewer-status').textContent(), viewerStatus: await child?.locator('#connection-status').textContent(), errors });
+    console.error({ started: [...started], targetStatus: await target.locator('#viewer-status').textContent(), viewerStatus: await child?.locator('#connection-status').textContent(), errors,
+      layout:await target.evaluate(()=>({view:document.body.dataset.view,mainHidden:document.querySelector('main').hidden,
+        height:document.querySelector('main').getBoundingClientRect().height,viewport:innerHeight,notice:document.getElementById('viewport-notice').hidden})),
+      controls:await child?.evaluate(()=>({view:document.body.dataset.view,phase:document.getElementById('controller').dataset.phase,hidden:document.getElementById('controller').hidden})) });
     throw error;
   } finally { await context.close(); await browser.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

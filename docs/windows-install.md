@@ -1,6 +1,6 @@
 # Respira for Windows
 
-Run `Respira_0.2.0_x64-setup.exe` on Windows 10/11 x64. The installer lets you
+Run `Respira_0.3.0_x64-setup.exe` on Windows 10/11 x64. The installer lets you
 choose a destination folder, creates a Respira Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
@@ -8,18 +8,24 @@ folder on the destination page if desired.
 
 Python 3.10.11, the locked PsychoPy/Respyra/LSL and analysis dependencies, app-local
 MSVC runtime DLLs from the locked Qt wheel, fonts,
-HTML controller and an offline WebView2 installer are included. Users do not
+native LSL/XDF recorder, HTML controller and an offline WebView2 installer are included. Users do not
 need Python, Git, Node, Rust, a source checkout or package downloads to launch.
 The Windows Universal C Runtime supplied by Windows 10/11 is required.
 QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and
 therefore still needs Internet access. Hardware acquisition remains a separate
-Vernier Stream Mini program, and recording remains the experimenter's task in
-their LSL recorder.
+Vernier Stream Mini program. Respira owns recording; a separate LSL recorder is unnecessary.
 
 Open Respira to use **Experiment control**. Scan/select a live raw Force LSL
-stream, enter participant/session, start recording both streams in the recorder,
-then start the experiment. PsychoPy owns participant screens. The local panel
+stream, enter participant/session, then **Start Experiment**. It waits for native
+recording readiness before opening PsychoPy, records raw input and markers through
+calibration/cleanup, and discovers additional streams during the run. **XDF recording**
+shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
+
+XDFs are always saved in `%LOCALAPPDATA%\Respira\data`, with unique filenames.
+**Saved** means required stream data and closed XDF footers passed verification.
+Failures preserve `.xdf.partial` files. The phone opens a live LSL channel/marker
+monitor; select **Experiment controls** to set up the study.
 
 **Save original CSV files locally** stays off by default. When enabled, the
 original sample and assessment CSV schemas/filenames are saved in
@@ -43,8 +49,9 @@ pnpm package:windows
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-windows.ps1 -GenerateIcons
 ```
 
-`scripts/package_runtime.py` builds a private non-editable locked environment
-and stages the official embedded interpreter. Generated runtime and diagnostics
+The packaging command builds the pinned native recorder, syncs a private non-editable
+locked Python environment, stages the official embedded interpreter, and checks a
+synthetic native XDF round trip. Generated runtime and diagnostics
 stay in `.for-ai-local/packaging/`; the final installer/checksums are in `dist/`.
 There is no self-updater or background startup task. See the bundled notices and
 dependency inventory for licenses and original source links.

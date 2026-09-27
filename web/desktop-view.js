@@ -33,6 +33,24 @@ function show(view) {
 picker.addEventListener('change', () => show(picker.value));
 
 const pagers = new Map();
+export function renderRecording(recording = {}) {
+  const phase = {idle:'Ready to record', preparing:'Preparing recording', recording:'Recording',
+    finalizing:'Finalizing XDF', complete:'XDF saved', error:'Recording failed'}[recording.phase || 'idle'];
+  document.querySelector('#recording-status').textContent = recording.error || `${phase} · ${recording.bytes_written || 0} bytes`;
+  document.querySelector('#recording-file').textContent = recording.output_file || 'Start records all visible LSL streams, including streams that appear later.';
+  const list = document.querySelector('#recorded-streams');
+  const rows = recording.streams || [];
+  const signature = JSON.stringify(rows);
+  if (list.dataset.rows !== signature) {
+    list.dataset.rows = signature;
+    list.replaceChildren(...rows.map(stream => {
+      const row = document.createElement('li'); row.dataset.measure = '';
+      row.textContent = `${stream.name}\n${stream.source_id}`; return row;
+    }));
+  }
+  paginate('recorded-streams', 'Stream');
+  checkViewport();
+}
 document.querySelector('#controller').addEventListener('click', event => {
   if (event.target.id === 'use') show('setup');
   if (event.target.id === 'scan' && pagers.has('streams')) pagers.get('streams').index = 0;
@@ -60,6 +78,7 @@ function paginate(id, label) {
     pager.next.disabled = pager.index === rows.length - 1;
     const text = `${label} ${pager.index + 1} / ${rows.length}`;
     if (pager.count.textContent !== text) pager.count.textContent = text;
+    checkViewport();
   }
   update();
 }

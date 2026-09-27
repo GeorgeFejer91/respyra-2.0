@@ -55,8 +55,9 @@ and `pnpm test:web`. The real process check must receive setup state after a
 real marker subscription and keep the outlet alive through final Close. Verify
 the launcher imports no study/PsychoPy modules, the startup outlet is discoverable
 without any belt, setup edits work before any subscriber and markers remain
-available through Close. Verify pre-subscription renaming and no recorder
-readiness gate; only source/participant preconditions gate Start. Run the lifecycle helper in its private LSL
+available through Close. Verify pre-subscription renaming; setup requires no
+external subscriber, while Start requires native recording readiness and raw samples.
+Run the lifecycle helper in its private LSL
 SessionID so an existing recorder cannot satisfy its subscription gate.
 For startup discovery and remembered selection, also run
 `uv run pytest tests/test_lsl_setup.py`: exercise the Python form controller, reject
@@ -103,8 +104,25 @@ and marker sequence, plus native WebView reflow at 320/1440 CSS px and doubled
 text. The Rust lifecycle test covers normal, failed and deliberately hung Python
 children, including the bounded process-tree termination fallback on Windows.
 Keep diagnostic output in ignored `.for-ai-local/`.
-The private SessionID keeps test streams out of live recordings. Neither check verifies a
-physical belt or persistence to an XDF file.
+The private SessionID keeps test streams out of live recordings. The native check
+imports the actual saved XDFs with independent PyXDF, checks required data before
+display creation, contiguous marker sequences, cleanup/finalization and footers.
+It verifies a synthetic source, not a physical belt. Give WebView2 a unique test
+user-data folder as described by [Playwright](https://playwright.dev/docs/webview2).
+
+For recorder changes, also run:
+
+```powershell
+pnpm prepare:recorder
+uv run --frozen pytest tests/test_recording.py
+uv run --frozen python tests/check_recording.py
+```
+
+The standalone native proof checks pre-calibration raw samples, calibration/cleanup
+markers, late numeric/int64/source-less streams, Unicode output, clock offsets and
+independent full XDF decoding. Failure tests cover missing required data, bad chunk
+bounds/footers, missing bundle, Start rejection and hung-child reaping. Read
+`RECORDING.md`; subscription or header receipts alone cannot prove persistence.
 
 Do not let Python library subprocesses inherit the control pipe. Windows Git
 can hang when another thread reads that inherited stdin. The desktop worker
@@ -135,7 +153,7 @@ and compatibility checks for every affected boundary. Do not run an expensive
 or irrelevant full matrix for a documentation-only edit.
 
 The experiment runtime requires Vernier Stream Mini's live raw LSL outlet and a
-PsychoPy display. Recording is separately operated in the external recorder.
+PsychoPy display. The bundled native recorder must receive raw input before Start acceptance.
 Use the streamer's explicitly marked mock outlet to check discovery,
 metadata, fresh samples, marker order, early/normal/failed endings, and an LSL
 recording containing both streams. Then verify the physical belt separately.

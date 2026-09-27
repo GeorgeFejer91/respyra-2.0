@@ -7,6 +7,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 from mpi.desktop_bridge import DesktopCancelled, validate_action
+from mpi.recording import RecordingError
 from mpi.lsl_force import (
     LSLForceError, LSLForceSource, connect_force_source, load_force_selection,
     open_force_source, save_force_selection, scan_force_streams,
@@ -17,8 +18,9 @@ class SetupRejected(ValueError):
 
 
 class SourceSetup:
-    def __init__(self, cfg, markers):
+    def __init__(self, cfg, markers, recorder=None, cancel_check=lambda: None):
         self.cfg, self.markers = cfg, markers
+        self.recorder, self.cancel_check = recorder, cancel_check
         self.values = {"participant": "", "session": "001"}
         self.save_csv = False
         self.source = self.pending = None
@@ -124,6 +126,17 @@ class SourceSetup:
             self.poll()
             if not self.snapshot()["can_start"]:
                 raise SetupRejected("Participant, session and live Force input are required")
+            if self.recorder is not None:
+                try:
+                    self.recorder.start(self.values, self.source, self.markers, self.cancel_check)
+                except (RecordingError, OSError) as exc:
+                    self.message = ("Recording could not start. Check the local recording view."
+                                    if isinstance(exc, OSError) else str(exc))
+                    raise SetupRejected(self.message) from exc
+                self.poll()  # Drain setup samples and recheck input after recorder startup.
+                if not self.snapshot()["can_start"]:
+                    self.recorder.stop()
+                    raise SetupRejected("Force input was lost while starting the recorder")
             self.markers.name_locked = True
             emit("participant.dialog.accepted")
             emit("participant.dialog.hidden")
@@ -224,7 +237,7 @@ def run_source_setup(cfg, markers, bridge=None):
     """Return participant values and the same accepted inlet used during setup."""
     if bridge is None:
         raise RuntimeError("Participant setup requires the HTML desktop launcher")
-    setup = SourceSetup(cfg, markers)
+    setup = SourceSetup(cfg, markers, getattr(bridge, "recorder", None), bridge.check_cancel)
     previous = None
     try:
         setup.restore()

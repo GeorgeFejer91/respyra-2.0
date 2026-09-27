@@ -287,7 +287,13 @@ fn launch_backend(
             .map_err(|e| format!("Cannot open Respira engine diagnostics: {e}"))?;
         command
             .env("RESPIRA_DATA_DIR", working_dir.join("data"))
+            .env("RESPIRA_RECORDER_DIR", resources.join("engine/recorder"))
             .stderr(Stdio::from(log));
+    } else {
+        command.env(
+            "RESPIRA_RECORDER_DIR",
+            root.join(".for-ai-local/recorder/runtime"),
+        );
     }
     #[cfg(windows)]
     {
@@ -398,7 +404,8 @@ fn queue_action(
 fn wait_action(queued: Result<(u64, mpsc::Receiver<Value>), Value>) -> Result<Value, String> {
     match queued {
         Err(rejected) => Ok(rejected),
-        Ok((_sequence, receiver)) => receiver.recv_timeout(Duration::from_secs(12)).map_err(|_| {
+        // Start may wait eight seconds for recording, then reap a failed recorder.
+        Ok((_sequence, receiver)) => receiver.recv_timeout(Duration::from_secs(25)).map_err(|_| {
             "Command outcome unknown; check the local controller before trying again".into()
         }),
     }

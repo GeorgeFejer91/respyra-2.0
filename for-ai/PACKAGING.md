@@ -34,7 +34,11 @@ the control plane.
   delivery. No self-updater, firewall changes or startup task.
 - Installed runtime cwd is `%LOCALAPPDATA%/Respira`; optional original CSVs go
   to its `data/`. Retain `%LOCALAPPDATA%/Respyra/lsl-source.json` identity memory.
-  Uninstall must retain user data. Recorder readiness still belongs elsewhere.
+  Uninstall must retain user data. Bundle the pinned native recorder under
+  `engine/recorder`, including app-local DLLs, licenses and manifest. Build it
+  with the isolated packaging venv's locked runtime support; verify source,
+  adapter/script and output hashes before staging. Python requires raw-data
+  and native subscription evidence before Start acceptance.
 
 ## Build and evidence
 
@@ -47,7 +51,8 @@ the control plane.
    and MSVC/Rust. Use `-GenerateIcons` only for artwork changes. The installer
    overlay is `src-tauri/installer.conf.json`, explicitly passed; never name it
    `tauri.windows.conf.json` because Tauri also loads that during ordinary dev.
-4. Observe the embedded interpreter import check, liblsl outlet and closed
+4. Observe the embedded interpreter import check, liblsl outlet, native synthetic
+   XDF round trip and closed
    launcher lifecycle. Check `engine/manifest.json` path inventory/hashes,
    lock hashes, versions and source revision. A dirty manifest cannot be promoted.
 5. Install the **exact** resulting NSIS artifact to a chosen folder with spaces;
@@ -60,7 +65,7 @@ the control plane.
    native Stop/Close cleanup and real hosted QR coupling. Check no child remains.
 7. Check CSV writes in the writable user folder with original headers and off
    creates none. Installed scope is separate from scientific timing, physical
-   belt/phone, XDF persistence, clean VM, other OS, upgrade and uninstall evidence.
+   belt/phone, full study calibration/timing, clean VM, other OS, upgrade and uninstall evidence.
 8. Hash the installer (`dist/SHA256SUMS.txt`) and retain its manifest. Promote
    only these tested bytes. Upload installers as release assets, never to Git
    history or the static phone Pages branch. Source publication follows WORKFLOW.

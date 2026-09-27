@@ -3,13 +3,13 @@
 HTML/Tauri experiment controller for a Python breathing-belt validation study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
 amplified, attenuated, or absent. Vernier Stream Mini publishes the raw belt
-signal through LSL; Respyra publishes a separate event-marker LSL stream.
+signal through LSL; Respyra publishes an event-marker stream and records LSL to XDF automatically.
 
 The importable Python package keeps its original name, `mpi`.
 
 ## Windows program
 
-The standalone **Respira** installer includes the locked Python/PsychoPy engine
+The standalone **Respira** installer includes the native LSL/XDF recorder, locked Python/PsychoPy engine
 and offline WebView2 delivery. It allows choosing the installation folder and
 creates a Start menu shortcut. See [Windows installation](docs/windows-install.md)
 for build/download checks, writable CSV location and qualification limits.
@@ -24,6 +24,7 @@ checkout, launch the desktop app:
 ```powershell
 py -3.10 -m uv sync --frozen
 pnpm install --frozen-lockfile
+pnpm prepare:recorder
 # If Cargo is not already in PATH:
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 pnpm tauri dev
@@ -37,16 +38,15 @@ fall back to development Python.
 Running the experiment requires Vernier Stream Mini from
 [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream) publishing
 its **Separate Streams** raw Vernier LSL outlet and a working PsychoPy display.
-To record the continuous signal and events, use an external LSL recorder.
 Launch Respyra; its **Respyra-Events** outlet (type **Markers**) is advertised
 at Python-engine startup, before breathing-input selection or PsychoPy initialization.
-In LabRecorder, refresh the stream list, select **Respyra-Events** and the
-streamer's **VernierRaw** outlet, then start recording. Recording readiness is
-the experimenter's responsibility in that app. Respyra does not wait for or
-control the recorder. Keep both streams recording through the final **Close**.
+**Start Experiment** starts the bundled native recorder and requires raw Force
+samples plus both Force and marker subscriptions before opening PsychoPy.
+Recording includes calibration and study cleanup. Additional LSL streams join
+when discovered, including streams started later. No separate recorder is required.
 The first window is
 the **Experiment control** panel with participant/session and breathing-input setup.
-Expand **LSL input / marker name**, select **Scan streams**, choose a compatible result,
+Choose **Breathing input** in **View**, select **Scan streams**, choose a compatible result,
 then **Use stream**. The scan
 lists visible streams and reasons for rejecting incompatible inputs. It
 requires the Vernier Stream Mini raw outlet, its metadata-identified Force
@@ -74,7 +74,8 @@ calibration, trials, and assessments in its separate participant window.
 Experiment control remains available for monitoring and **Stop experiment**;
 on one display it may sit behind PsychoPy's full-screen window. Use a second
 display or the phone controller to monitor without taking participant focus.
-Keep the recorder running until the final **Close**. Discovery and connection
+**XDF recording** shows subscribed streams, the local file, bytes and completion
+status. Wait for **Saved** before closing. Discovery and connection
 run in one Python setup worker; experiment input keeps the existing nonblocking
 LSL read path. Qt is not used by this wrapper, although the installed PsychoPy
 and respyra distributions still include Qt dependencies.
@@ -82,15 +83,16 @@ and respyra distributions still include Qt dependencies.
 **Save original CSV files locally** is off by default. Enabling it restores the
 original sample columns and the companion `-self-assessment.csv` file in ignored
 `data/`, using the existing respyra logger. CSV writes flush each row and may add
-disk latency. The external LSL recorder owns the continuous raw input and event
-recording. The one-channel
+disk latency. XDF recording is always enabled and independent of this CSV option. The one-channel
 `Respyra-Events` stream sends named JSON markers documented in
 [`src/mpi/event_markers/catalog.json`](src/mpi/event_markers/catalog.json).
 Marker output is independent of recorder connection. Setup events sent before
-recording may be absent from the recorder's file. Select both streams and inspect
-the recording before analysis; an online marker outlet does not prove persistence.
-The marker outlet's default name is **Respyra-Events**; change it under
-**LSL input / marker name** before any recorder subscribes or the experiment starts.
+recording may be absent from the file. The final HTML result and Close markers
+follow XDF finalization. A complete `.xdf` requires matching chunk counts and
+closed footers, with data from both required streams. Failed files retain
+`.xdf.partial`; inspect them before analysis.
+The marker outlet's default name is **Respyra-Events**; change it in **Marker name**
+before any recorder subscribes or the experiment starts.
 The HTML participant form marks each field key press and text edit, Start/Cancel
 button clicks, accept/reject, and final field values. LSL selection, scan
 results, connection outcomes, saved-source actions, and source loss also send
@@ -113,7 +115,7 @@ pnpm check:ui
 closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
 helpers. `scripts/plot_session.py` reads local CSV sessions. `notebooks/` contains signal exploration,
-and `tests/` covers source and marker contracts.
+and `tests/` covers source, marker and recorded-file contracts.
 
 Older session CSVs and generated plots remain in the ignored local `data/`
 folder. Review and de-identify any recording separately before sharing it.
@@ -128,7 +130,11 @@ The Qt checkpoint before this migration is the Git tag
 **Enable phone control** creates a private link and QR. Scan it, then select
 **Connect** in the phone browser. The phone can edit participant/session,
 scan/select/use LSL input, Start, Cancel, Stop experiment and Close the final
-screen. Both controllers show phase/trial progress and LSL Force freshness.
+screen. The phone opens **LSL data & markers**: select a raw Vernier channel,
+view its current value/unit and a ten-second trace with marker ticks and recent
+event names. **Experiment controls** contains setup. The preview coalesces live
+samples at four updates per second; XDF retains full-rate data. Both controllers
+show phase/trial progress and recording status.
 The named marker outlet, sent-event count and latest event stay visible; recent
 12 markers, identities and battery status expand under details. The current
 stream provides no battery telemetry, so battery reads **Not reported**.

@@ -38,12 +38,15 @@ env=os.environ.copy()
 env.pop('RESPYRA_LSL_SOURCE_ID',None)
 env['LOCALAPPDATA']=str(root/'.for-ai-local'/('native-settings-'+uuid.uuid4().hex))
 env['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS']='--remote-debugging-port=9227'
+env['WEBVIEW2_USER_DATA_FOLDER']=str(root/'.for-ai-local'/('native-webview-'+uuid.uuid4().hex))
 env['RESPYRA_UI_TEST_READY_PATH']=str(root/'.for-ai-local'/('instructions-'+uuid.uuid4().hex))
 exe=Path(os.environ['RESPIRA_INSTALLED_EXE']) if os.environ.get('RESPIRA_INSTALLED_EXE') else root/'src-tauri/target/debug/respyra-desktop.exe'
 work=root/'.for-ai-local/packaging/run elsewhere' if os.environ.get('RESPIRA_INSTALLED_EXE') else root
 work.mkdir(parents=True,exist_ok=True)
 if os.environ.get('RESPIRA_INSTALLED_EXE'):
     env['RESPIRA_TEST_PARTICIPANT']='packaging-test-'+uuid.uuid4().hex[:12]
+else:
+    env['RESPIRA_DATA_DIR']=str(root/'.for-ai-local'/('native-recordings-'+uuid.uuid4().hex))
 results=[]
 try:
     for mode in ['select','memory','remote']:
@@ -93,6 +96,23 @@ try:
                 stopped=next(m for m in markers if m['event']=='ui.experiment.stop.requested')
                 assert stopped['ui_origin']==('remote' if mode=='remote' else 'local')
                 assert next(m for m in markers if m['event']=='run.aborted')['reason']=='experimenter_stop'
+                from mpi.recording import inspect_xdf
+                import pyxdf
+                file=Path(json.loads((root/f'.for-ai-local/native-{mode}-xdf.json').read_text())['file'])
+                recorded,_=pyxdf.load_xdf(str(file))
+                by_id={s['info']['source_id'][0]:s for s in recorded}
+                marker_id=streams[0].source_id()
+                summaries=inspect_xdf(file,[identity,marker_id])
+                recorded_events=[json.loads(row[0]) for row in by_id[marker_id]['time_series']]
+                recorded_names=[m['event'] for m in recorded_events]
+                for expected in ['recording.started','participant.dialog.accepted','display.opened',
+                                 'ui.instructions.shown','run.aborted','source.disconnected','display.closed','recording.finalizing']:
+                    assert expected in recorded_names,(expected,recorded_names)
+                assert by_id[identity]['time_stamps'][0] < next(m['lsl_time'] for m in recorded_events if m['event']=='display.opened')
+                assert recorded_names.index('display.closed') < recorded_names.index('recording.finalizing')
+                assert [m['seq'] for m in recorded_events]==list(range(recorded_events[0]['seq'],recorded_events[-1]['seq']+1))
+                assert len(recorded)==3 and all(s['sample_count'] for s in summaries)
+                print(json.dumps({'native_xdf':'passed','mode':mode,'file':str(file),'streams':summaries}),flush=True)
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             print(out.strip(),flush=True)
             results.append({'mode':mode,'markers':len(markers),'first':names[0],'last':names[-1]})
@@ -105,7 +125,7 @@ try:
         # Rust uses Windows' known local-data folder, not the isolated Python
         # identity-memory override. Only inspect/remove this test's unique IDs.
         output=Path(os.environ['LOCALAPPDATA'])/'Respira/data'
-        files=sorted(output.glob('*'+env['RESPIRA_TEST_PARTICIPANT']+'*'))
+        files=sorted(output.glob('*'+env['RESPIRA_TEST_PARTICIPANT']+'*.csv'))
         assert len(files)==2,files  # one CSV-on run; the other two create none
         from mpi.validation_study_jenny import CONFIG
         for file in files:

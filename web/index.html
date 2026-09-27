@@ -12,7 +12,13 @@
 <body class="desktop" data-view="setup">
   <main>
     <header><h1 data-measure>Experiment control</h1><p id="study" data-measure>Respyra 2.0</p></header>
-    <label class="view-picker"><span data-measure>View</span><select id="view"><option value="setup">Start experiment</option><option value="input">Breathing input</option><option value="markers">Marker name</option><option value="status">Experiment status</option><option value="phone">Phone control</option></select></label>
+    <label class="view-picker"><span data-measure>View</span><select id="view"><option value="setup">Start experiment</option><option value="input">Breathing input</option><option value="markers">Marker name</option><option value="data">LSL data &amp; markers</option><option value="recording">XDF recording</option><option value="status">Experiment status</option><option value="phone">Phone control</option></select></label>
+    <section id="recording-panel" aria-label="Native XDF recording">
+      <h2 data-measure>XDF recording</h2>
+      <p id="recording-status" role="status" data-measure>Start records all visible LSL streams, including streams that appear later.</p>
+      <p id="recording-file" data-measure></p>
+      <ul id="recorded-streams" aria-label="Streams subscribed by the recorder"></ul>
+    </section>
     <section class="viewer-setup" aria-label="Phone remote control">
       <div class="actions">
         <button id="viewer-start" type="button" data-measure>Enable phone control</button>
@@ -20,7 +26,7 @@
       </div>
       <p id="viewer-status" role="status" aria-live="polite" data-measure>Phone control disabled.</p>
       <div id="viewer-invitation" hidden>
-        <p data-measure>Scan, then Connect on your phone. This private link shares setup and control. Internet is required; it expires after four hours.</p>
+        <p data-measure>Scan, then Connect on your phone. This private link shares live LSL data, markers, setup and control. Internet is required; it expires after four hours.</p>
         <label><span data-measure>Private control link</span><input id="viewer-link" type="text" readonly spellcheck="false"></label>
         <button id="viewer-copy" type="button" data-measure>Copy link</button>
         <div id="viewer-qr"></div>
@@ -30,6 +36,5 @@
     <div id="controller"></div>
   </main>
   <div id="viewport-notice" hidden role="status"><p data-measure>This view needs more room. Enlarge the window or choose another view.</p></div>
-  <script type="module" src="./desktop-view.js"></script>
 </body>
 </html>

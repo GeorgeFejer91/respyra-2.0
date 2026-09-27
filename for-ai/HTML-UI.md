@@ -9,7 +9,7 @@ Pretext package/fonts; measure bounded text and verify the rendered DOM.
 - Never use page or panel scrollbars. All content in the active view fits the
   viewport. Do not hide scrollbars or clip overflow to pretend it fits.
 - Keep participant/session, accepted input, CSV choice, recording instruction,
-  and Start/Cancel together. Secondary input, marker, status, and phone controls
+  and Start/Cancel together. Secondary input, marker, recording, data, status and phone controls
   use separate views of the same screen space.
 - Paginate stream/event lists, preserving all entries and backend row identities.
 - Reflow and simplify before shrinking. Keep readable type, full critical
@@ -39,3 +39,7 @@ Respyra does not adopt that project's scrollable-sheet exception.
 
 The phone companion is a separate surface. Its reflow policy must not
 reintroduce scrolling into the desktop interface.
+It opens the LSL data/marker monitor; experiment setup uses a separate controls
+view. Plot only received finite channel values, retain declared units, show gaps
+and stale/paused status, and label the coalesced trace as a preview. Keep recording
+status and Stop/Close accessible. Use `RECORDING.md` for data/authority boundaries.

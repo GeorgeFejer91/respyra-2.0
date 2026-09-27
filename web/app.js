@@ -2,6 +2,7 @@ import { actionQueue } from './action-queue.js';
 import { mountController } from './controller-ui.js';
 import { measureTextRegions } from './text-fit.js';
 import { mountRemoteViewer } from './remote-host.js';
+import { renderRecording } from './desktop-view.js';
 
 const native = window.__TAURI__;
 const fail = error => {
@@ -23,6 +24,7 @@ if (native) {
   const render = snapshot => {
     if (snapshot.study_name) document.getElementById('study').textContent = snapshot.study_name;
     controller.render(snapshot);
+    renderRecording(snapshot.progress?.recording);
   };
   await native.event.listen('setup-state', event => render(event.payload));
   await native.core.invoke('launch_backend').then(render).catch(fail);
