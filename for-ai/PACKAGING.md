@@ -4,6 +4,11 @@ Current consumer: build/verify the downloadable Respira installer. Read this
 file for packaging, installation, dependency changes or release promotion.
 Product usage belongs in `docs/windows-install.md`; scripts/assets stay outside
 the control plane.
+All verification follows `VERIFICATION.md`'s background requirement. CLI builds
+use hidden/captured workers; installer dialogs and actual installed native/
+PsychoPy checks require a compatible isolated desktop/session or VM. Do not
+launch them on the user's active desktop; missing isolation leaves those gates
+`NOT RUN` and cannot qualify release promotion.
 
 ## Contract and ownership
 

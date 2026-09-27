@@ -225,3 +225,19 @@ decision and link both entries.
   claims still need their own evidence. No automated cache or new test runner.
 - Supersedes: Blanket interpretation of earlier verification lists; product
   protocol, runtime readiness and data-integrity requirements remain.
+
+## D-0011 — Keep verification off the user's active desktop
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user requires verification in the background without overlaying
+  their existing PC windows.
+- Decision: Use captured CLI workers and headless browsers. Actual native,
+  PsychoPy, focus/input and installer GUI checks require compatible isolated
+  execution, as specified in `VERIFICATION.md` and inventoried in `VERIFIED.md`.
+- Consequences: Hidden console flags do not establish GUI isolation. If an
+  isolated runner is unavailable, report affected GUI checks `NOT RUN` and
+  continue safe applicable checks/reuse. Do not weaken their evidence claims
+  or automatically request foreground execution.
+- Supersedes: Any earlier recipe interpreted as permission to display test
+  windows on the active desktop; product behavior and release gates remain.

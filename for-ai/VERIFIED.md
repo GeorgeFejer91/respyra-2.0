@@ -5,6 +5,29 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Execution modes
+
+Apply the background requirement in `VERIFICATION.md` before every run.
+These modes describe inspected launch paths, not a new runtime verification.
+Reclassify affected checks when their launchers or descendants change.
+
+| Checks | Execution mode / constraint |
+| --- | --- |
+| Context/link/diff checks, Node unit tests, Cargo fmt/test/clippy and non-GUI build/import helpers | Captured CLI output, no visible consoles. Audit spawned children; Rust's shutdown test already uses `CREATE_NO_WINDOW` for its Python workers. |
+| `pnpm check:ui`, `pnpm check:remote`, including the latter's live-VDO browser mode | Playwright launches headless Chrome. Preserve that setting and isolated browser contexts; inspect rendered results without showing a browser. |
+| Python focused tests excluding the real Windows hook test, including marker/study-flow tests with fake `Window` objects and the desktop pipe process check | Nonvisual as inspected; keep fake-display/controlled-input boundaries and console children hidden. Real focus/input-hook behavior requires isolation. |
+| `tests/check_recording.py` and `tests/check_control_center.py` without `--full-study` | Nonvisual LSL/recorder workers as inspected; hide console children, retain private sessions and observe cleanup. |
+| `tests/check_native_lsl.py` (every mode), its `check_native_ui.cjs` helper, and installed-runtime variants | Requires isolated GUI execution. The Python harness launches a real Tauri executable; headless phone Chrome does not hide its native target or PsychoPy windows. No established desktop isolation in the harness. |
+| `tests/check_control_center.py --full-study` | Requires isolated GUI execution: launches actual PsychoPy displays even though responses are simulated. No established desktop isolation in the harness. |
+| `tests/test_input_capture.py`, installer wizard, native focus/input checks and physical display/device qualification | Requires a compatible isolated environment or a later explicit user request for a visible check. The hook test registers real Windows hooks. Quiet/silent installation alone does not prove wizard behavior or suppress later GUI children. |
+
+If an isolated runner is unavailable, mark the applicable GUI check `NOT RUN`
+and keep its existing evidence limits. Do not run a GUI check merely to verify
+that its windows will be hidden. Historical receipts below record behavior;
+they do not establish compliance with this new background-execution policy.
+This launch policy does not invalidate unaffected behavioral evidence or
+require rerunning checks merely to classify their execution mode.
+
 ## Inventory
 
 This maps existing owners and checks; it does not certify the current working
@@ -69,6 +92,8 @@ provides existing coverage); preserve unchanged transport/pairing/study evidence
   include a concise observed result. Keep raw/private output out of Git.
 - Limits/state: tested environment and exclusions; `reusable`, `invalidated`
   with reason, or `historical-unbound` when input identity is unavailable.
+- Execution: captured CLI, headless browser or isolated GUI runner; identify
+  the isolated environment and its supported native/graphics scope when used.
 
 Reuse requires comparison with current relevant inputs, including uncommitted
 work. A different HEAD alone does not discard a pass. `REUSED` cites the original

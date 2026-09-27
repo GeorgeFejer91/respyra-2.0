@@ -10,6 +10,10 @@
    checks, compare prior entries in `VERIFIED.md`, and run only invalidated or
    missing applicable checks once against the final inputs. Record observed
    passes for reuse; do not restart the full matrix on each UI edit or handoff.
+   Apply `VERIFICATION.md`'s background requirement before launching any check:
+   use captured CLI/headless browsers or an isolated GUI runner, never the
+   user's active windows. An unavailable isolated runner leaves GUI checks
+   `NOT RUN`; continue the safe applicable work without opening test windows.
 6. Review the diff for accidental scope, secrets, generated output, and stale
    context.
 7. Update project memory and publish only when the rules below apply.

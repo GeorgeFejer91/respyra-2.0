@@ -13,6 +13,46 @@ runtime access produce `BLOCKED` or `NOT RUN`, never `VERIFIED`.
 - `NOT RUN`: the check was intentionally not applicable or not attempted, with
   the reason stated.
 
+## Background execution is required
+
+All verification runs must leave the user's open windows, focus and input
+undisturbed. This is a standing user instruction for every gate, including
+build helpers, browser checks, native integration, study and installer checks.
+
+- Run command-line checks through captured tool output without opening a
+  terminal/console window or allocating an interactive PTY. Redirect long logs
+  to ignored `.for-ai-local/` and retain the actual exit status/completion;
+  background execution does not mean abandoning an unobserved process.
+- Keep Playwright browsers `headless: true`, with separate test contexts/profiles.
+  Inspect screenshots and DOM results through tool output. Do not open/focus
+  browser tabs, native apps or artifact previews automatically for verification.
+- For Windows console helpers launched with PowerShell, use
+  `Start-Process -WindowStyle Hidden` with redirected output. Where a Python or
+  Rust launcher creates a console child, use `CREATE_NO_WINDOW` or the equivalent
+  creation flag. Review children too: these flags hide consoles, not Tauri,
+  PsychoPy, installer dialogs, or arbitrary GUI descendants.
+- Checks that create actual GUI windows or exercise focus/keyboard/input hooks
+  must use an available isolated Windows desktop/session, VM or test runner,
+  separate from the user's interactive desktop. Confirm that the chosen
+  environment supports the claimed graphics/WebView/input behavior before
+  launching. Do not use the user's currently running study/app as a test target.
+- Minimized/offscreen windows, a second monitor, Windows virtual desktops and
+  hiding after launch are not proof of isolation; they may flash or take focus.
+  Do not move/minimize existing user windows, change display settings, bring a
+  test window forward or send global keyboard/mouse input to make a check pass.
+- If no compatible isolation is available, do not launch the intrusive check.
+  Continue applicable headless/CLI checks and valid evidence reuse; report the
+  GUI scope `NOT RUN: isolated test desktop unavailable` (or the actual blocker).
+  A mocked/headless browser pass does not replace native/PsychoPy/installer proof.
+  Do not ask for routine foreground-testing permission. Only a later explicit
+  user request for a visible interactive verification may change this rule.
+
+Before launching a check, use the execution-mode inventory in `VERIFIED.md` and
+inspect changed launchers. Existing native/full-study scripts are not currently
+isolated by themselves and must not run on the active desktop. Record the actual
+headless/CLI/isolated environment with new evidence; do not relabel older visible
+passes as background-qualified. This policy edit does not require a GUI test.
+
 ## Select checks by impact
 
 This is the default for every task, including opening-panel UI work. The command
@@ -166,7 +206,8 @@ notice and recovery. Assert page dimensions fit and visible content is unclipped
 never form a scrolling desktop page. The phone companion retains its reflow policy.
 It checks controls, action order, long identities, 320/820/1440 CSS px, doubled
 text and text-spacing overrides. The native check requires Windows/WebView2,
-the built debug executable and port 9227 free. It opens real windows, uses
+the built debug executable and port 9227 free. Under the background requirement
+above, it opens real windows only in an isolated test environment, uses
 synthetic Force/normalized outlets, isolated settings, a private LSL SessionID
 and a live marker inlet;
 checks selection, automatic reconnect, PsychoPy instruction flip, abort/cleanup
@@ -247,6 +288,8 @@ Standalone installer work additionally follows `PACKAGING.md`. A workspace
 build is not an installed-runtime check. Use `pnpm package:windows`, the staged
 embedded import/resource check and the installed native/LSL/QR check via
 `RESPIRA_INSTALLED_EXE`; retain exact installer hashes and release evidence.
+Installer dialogs and installed native checks also require isolated execution;
+an unavailable isolated runner leaves those release gates unverified.
 
 1. Review status and diff; preserve unrelated changes.
 2. Confirm only intended paths are staged.

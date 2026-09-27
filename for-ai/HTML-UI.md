@@ -8,6 +8,9 @@ evidence from `VERIFIED.md`. Isolated opening-panel presentation changes require
 `pnpm check:ui` plus inspection of the changed area; they do not require a study,
 recorder, Rust, remote-pairing or installer run. Qualify the actual WebView when
 native-specific layout/focus, fonts, embedding or WebView inputs change.
+Use headless browser screenshots/DOM evidence without opening preview windows.
+Actual native WebView/focus checks follow the isolated-GUI requirement in
+`VERIFICATION.md`; never cover the user's open windows during verification.
 
 ## Main experiment interface
 

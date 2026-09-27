@@ -13,3 +13,5 @@ System, developer, and current user instructions take precedence. Before
 handoff, select gates by change impact in `for-ai/VERIFICATION.md`, reuse valid
 recorded evidence in `for-ai/VERIFIED.md`, and update the
 control plane only when a durable fact or rule changed.
+Run verification in the background under `for-ai/VERIFICATION.md`; never cover
+the user's windows or take focus on their active desktop.

@@ -47,7 +47,9 @@ task touches.
 4. Make the smallest complete change and preserve unrelated work.
 5. Select checks by change impact; reuse valid recorded passes and run only
    affected focused/integration checks. The verification catalogue is not a
-   mandatory full-project checklist.
+   mandatory full-project checklist. Run checks in the background without
+   taking focus or displaying test windows on the user's active desktop;
+   `VERIFICATION.md` defines the headless/isolation requirements.
 6. Update the narrowest canonical control-plane file when a durable fact
    changed.
 7. Report evidence, limitations, commit/remote state, and any blocker.
