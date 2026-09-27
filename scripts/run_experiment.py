@@ -7,7 +7,7 @@ from typing import Any, TYPE_CHECKING
 
 from mpi.event_markers import MarkerOutlet, NullSampleLogger
 from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, ExperimentStopped, isolate_control_input
-from mpi.lsl_force import LSLForceError
+from mpi.lsl_force import LSLForceError, LSLForceSource
 from mpi.lsl_setup import run_source_setup
 from mpi.recording import NativeRecording, RecordingError
 if TYPE_CHECKING:
@@ -32,8 +32,10 @@ def main():
         markers = MarkerOutlet()
         markers.observer = bridge.note_marker
         bridge.markers = markers
+        from mpi.lsl_viewer import LSLViewer
+        bridge.viewer = LSLViewer(markers.health_snapshot()["source_id"])
         bridge.send({"phase": "starting", "run_id": markers.run_id,
-                     "message": "Select live Force input. Start records XDF before calibration."})
+                     "message": "Finding LSL streams…"})
         bridge.start_progress()
         failure = None
         phase = "finished"
@@ -81,6 +83,7 @@ def main():
             bridge.closed.wait()
         if markers.sequence:
             bridge.mark_close(markers)
+        bridge.viewer.close()
         if failure is not None:
             raise failure
 
@@ -194,6 +197,7 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
     win = None
     state = None
     logger = self_assessment_logger = None
+    input_capture = None
     hooks = ExitStack()
     abort_reason = None
     completed_trials = 0
@@ -226,6 +230,11 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         participant = exp_info["participant"]
         session = exp_info["session"]
         markers.emit("participant.dialog.submitted", participant=participant, session=session)
+        if exp_info.get("record_keyboard") or exp_info.get("record_mouse"):
+            from mpi.input_capture import InputCapture
+            input_capture = InputCapture(exp_info.get("record_keyboard", False), exp_info.get("record_mouse", False))
+            if bridge is not None:
+                bridge.input_capture = input_capture
 
         if exp_info.get("save_csv", False):
             from pathlib import Path
@@ -329,6 +338,10 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             amplitude_n=state.global_amplitude,
             y_min_n=state.y_min, y_max_n=state.y_max,
         )
+        if isinstance(belt, LSLForceSource):
+            belt.calibrate(state.range_center, state.global_amplitude, markers.run_id)
+            if bridge is not None and bridge.recorder is not None:
+                bridge.recorder.wait_for_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
 
         # 8. Build trial order
         conditions = (cfg.trial.build_conditions(session)
@@ -577,6 +590,11 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                     cleanup_error = exc
 
         cleanup(hooks.close)
+        if input_capture is not None:
+            if bridge is not None:
+                bridge.input_capture = None
+            cleanup(input_capture.close)
+            cleanup(lambda: input_capture.poll(markers))
         if logger is not None:
             cleanup(logger.close)
         if self_assessment_logger is not None:

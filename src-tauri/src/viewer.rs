@@ -235,17 +235,30 @@ pub fn projection(
             else if setup_scope { snapshot["message"].clone() }
             else { json!("Observe-only connection. Use the local controller for details.") },
         "setup":null, "progress":progress});
+    // The phone keeps its bounded accepted-source preview; the full stream stack is local.
+    if let Some(progress) = result["progress"].as_object_mut() {
+        progress.remove("streams");
+        progress.remove("viewer_error");
+    }
     // File paths stay on the experiment computer, including observe-only grants.
     if let Some(recording) = result["progress"]["recording"].as_object_mut() {
         recording.remove("output_file");
         recording.remove("summary");
         recording.remove("streams");
+        recording.remove("data_sources");
         if !recording["error"].is_null() {
             recording.insert("error".into(), recording_error.clone());
         }
     }
+    if let Some(health) = result["progress"]["health"].as_object_mut() {
+        health.remove("calibrated");
+    }
     if setup_scope && snapshot["phase"] == "setup" {
         let mut setup = snapshot.clone();
+        if let Some(setup) = setup.as_object_mut() {
+            setup.remove("record_keyboard");
+            setup.remove("record_mouse");
+        }
         if recording_failed {
             setup["message"] = recording_error;
         }

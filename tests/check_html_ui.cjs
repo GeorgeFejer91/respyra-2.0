@@ -33,7 +33,7 @@ const assert = require('node:assert/strict');
       if(command === 'close_app') return;
       const a=args.action; window.testActions.push(a); state.ui_seq=a.ui_seq;
       if(a.action==='field_edit') state.values[a.field]=a.value;
-      if(a.action==='option') state.save_csv=a.enabled;
+      if(a.action==='option') state[a.field]=a.enabled;
       if(a.action==='scan') {state.selected_row=null;state.can_use=false;state.streams=[{source_id:'processed',stream_name:'Normalized breathing',stream_type:'Respiration',compatible:false,reason:'Requires raw Force in N'}, {source_id:'polar-stream-vernier-raw-'+ 'device'.repeat(25), stream_name:'Synthetic Vernier Force',stream_type:'VernierRaw',compatible:true,reason:'Compatible: raw Force (N)',force_channel_index:1}];}
       if(a.action==='select') {state.selected_row=a.row; state.can_use=state.streams[a.row].compatible;}
       if(a.action==='use') {state.source={source_id:state.streams[state.selected_row].source_id,stream_name:state.streams[state.selected_row].stream_name};state.message='Ready for this experiment.';}
@@ -41,6 +41,7 @@ const assert = require('node:assert/strict');
       if(a.action==='start') {state.phase='experiment';state.message='Experiment running in PsychoPy.';}
       if(a.action==='cancel') {state.phase='finished';state.message='Experiment ended.';}
       listener({payload:structuredClone(state)});
+      return {ok:true};
     }}};
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -50,6 +51,9 @@ const assert = require('node:assert/strict');
   await page.locator('#participant').fill('synthetic participant');
   await page.locator('#participant').press('ArrowLeft');
   await page.locator('#session').fill('002');
+  await page.locator('#record_keyboard').check();
+  await page.locator('#record_mouse').check();
+  await page.locator('#input-settings > summary').click();
   await page.locator('#save_csv').check();
   assert(await page.locator('#save_csv').isChecked());
   assert(await page.locator('#start').isDisabled());
@@ -67,6 +71,7 @@ const assert = require('node:assert/strict');
   await page.locator('#streams + .page-actions button').last().click();
   await page.locator('input[value="1"]').check();
   assert(!(await page.locator('#use').isDisabled()), 'Unchanged scan results must still be selectable');
+  await page.locator('dialog[open] > button').click();
   for(const [width,textSize,spacing] of [[320,16,false],[820,16,false],[1440,16,false],[320,32,false],[820,32,true]]) {
     await page.setViewportSize({width,height:900});
     await page.evaluate(({textSize,spacing})=>{
@@ -87,13 +92,20 @@ const assert = require('node:assert/strict');
   for(let i=0;i<3;i++) await page.evaluate(i=>window.testProgress({
     phase:'progress',markers:{name:'Respyra-Events',emitted:19},recent:[{event:'tracking.started',seq:19,lsl_time:321.5}],
     health:{signal:'live',sample_age_ms:100,battery_percent:null,preview:{source_id:'force-proof',name:'Raw Force',force_index:1,lsl_time:321+i*.25,
-      channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12},{index:1,label:'Force',unit:'N',value:5+i}]}}}),i);
+      channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12},{index:1,label:'Force',unit:'N',value:5+i}]}},
+    streams:[{uid:'raw-proof',source_id:'force-proof',name:'Raw Force',type:'VernierRaw',numeric:true,signal:'live',lsl_time:321+i*.25,
+      channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12},{index:1,label:'Force',unit:'N',value:5+i}]},
+      {uid:'other-proof',source_id:'other-proof',name:'Other device',type:'Signal',numeric:true,signal:'live',lsl_time:321+i*.25,
+       channels:[0,1,2,3].map(index=>({index,label:'Signal '+index,unit:'mV',value:index+i}))}]}),i);
   assert.equal(await page.locator('#view').count(), 0, 'The control center has no view picker');
   for (const [width,height] of [[820,760],[1440,900]]) {
     await page.setViewportSize({width,height});
     await page.waitForTimeout(100);
-    assert(await page.locator('main').isVisible(), JSON.stringify({width,height}));
-    for (const id of ['setup','lsl-monitor','observation','recording-panel']) assert(await page.locator('#'+id).isVisible(), id+' must remain visible together');
+    assert(await page.locator('main').isVisible(), JSON.stringify({width,height,geometry:await page.evaluate(()=>{
+      document.querySelector('main').hidden=false;
+      return [...document.querySelectorAll('main > *, #controller > *')].map(e=>({id:e.id,tag:e.tagName,height:e.getBoundingClientRect().height,bottom:e.getBoundingClientRect().bottom}));
+    })}));
+    for (const id of ['setup','stream-overview','observation','recording-panel']) assert(await page.locator('#'+id).isVisible(), id+' must remain visible together');
     const fit = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight,
       clipped: [...document.querySelectorAll('[data-measure]')].filter(e => e.getClientRects().length && (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)).map(e => e.textContent)
@@ -102,6 +114,25 @@ const assert = require('node:assert/strict');
     assert.deepEqual(fit.clipped, [], JSON.stringify({width,height,fit}));
   }
   await page.setViewportSize({width:820,height:760});
+  assert.equal(await page.locator('#available-streams input:checked').count(),3);
+  assert.equal(await page.locator('#channel-stack .channel-trace').count(),7);
+  assert(await page.evaluate(()=>{
+    const bounds=document.getElementById('start').getBoundingClientRect();
+    return Math.abs(bounds.left + bounds.width / 2 - innerWidth / 2) < 2;
+  }), 'Start is centered in the action bar');
+  assert(await page.locator('#channel-stack .trace-line').first().getAttribute('d'));
+  await page.locator('#channel-stack + .page-actions button').last().click();
+  assert(await page.locator('#channel-stack .channel-trace').last().isVisible());
+  await page.locator('#channel-stack + .page-actions button').first().click();
+  await page.setViewportSize({width:820,height:650});
+  await page.waitForTimeout(100);
+  assert(await page.locator('main').isVisible(), 'Paging adapts to short windows');
+  const channelNext = page.locator('#channel-stack + .page-actions button').last();
+  while (await channelNext.isEnabled()) await channelNext.click();
+  assert(await page.locator('#channel-stack .channel-trace').last().isVisible());
+  await page.setViewportSize({width:820,height:760});
+  const channelPrevious = page.locator('#channel-stack + .page-actions button').first();
+  while (await channelPrevious.isEnabled()) await channelPrevious.click();
   await page.locator('#recording-details > summary').click();
   await page.locator('#recorded-streams + .page-actions button').last().click();
   assert(await page.locator('#recorded-streams li').filter({hasText:'Late respiration'}).isVisible());

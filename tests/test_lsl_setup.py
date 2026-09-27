@@ -112,6 +112,7 @@ def test_saved_identity_reconnects_without_resaving_and_loss_gates_start(monkeyp
     send(setup, "field_edit", field="participant", value="repeat")
     assert setup.snapshot()["can_start"]
     if lose_source:
+        monkeypatch.setattr(lsl_setup, "scan_force_streams", lambda: [])
         source.inlet.failed = True
         setup.poll()
         assert not setup.snapshot()["can_start"] and source.inlet.closed
@@ -120,7 +121,35 @@ def test_saved_identity_reconnects_without_resaving_and_loss_gates_start(monkeyp
     else:
         send(setup, "start")
         source.stop()
-    assert calls == [source.source_id] and "source.scan.started" not in setup.markers.names
+    assert calls == [source.source_id]
+    assert ("source.scan.started" in setup.markers.names) == lose_source
+
+
+def test_automatic_discovery_connects_unique_belt_without_clicks(monkeypatch, setup):
+    source, saved = live_source(), []
+    info = SimpleNamespace(name=lambda: "Force", type=lambda: "VernierRaw", source_id=lambda: source.source_id)
+    monkeypatch.setattr(lsl_setup, "scan_force_streams", lambda: [ForceStreamCandidate(info, 0, "Compatible")])
+    monkeypatch.setattr(lsl_setup, "open_force_source", lambda _: source)
+    monkeypatch.setattr(lsl_setup, "save_force_selection", lambda value: saved.append(value.source_id))
+    setup.restore()
+    setup.poll()
+    finish(setup)
+    send(setup, "shown")
+    send(setup, "field_edit", field="participant", value="auto")
+    assert setup.snapshot()["can_start"] and saved == [source.source_id]
+    assert "source.ui.use.clicked" not in setup.markers.names
+
+
+def test_automatic_discovery_does_not_guess_between_belts(monkeypatch, setup):
+    rows = [ForceStreamCandidate(SimpleNamespace(name=lambda: "Belt", type=lambda: "VernierRaw",
+            source_id=lambda identity=identity: identity), 0, "Compatible") for identity in ["belt-one", "belt-two"]]
+    monkeypatch.setattr(lsl_setup, "scan_force_streams", lambda: rows)
+    monkeypatch.setattr(lsl_setup, "open_force_source", lambda _: pytest.fail("Ambiguous belt selected"))
+    setup.restore()
+    setup.poll()
+    finish(setup)
+    assert setup.source is None and not setup.snapshot()["can_start"]
+    assert "Several" in setup.message
 
 
 def test_cancel_pending_connection_closes_result_without_saving(monkeypatch, setup):

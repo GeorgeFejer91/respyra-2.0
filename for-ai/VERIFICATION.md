@@ -89,8 +89,10 @@ uv run --frozen python tests/check_native_lsl.py
 
 `check:ui` uses installed Chrome and a mocked native bridge with the actual form.
 For desktop layout changes, read `HTML-UI.md`. Verify the single control center at
-820×760 and 1440×900, with setup, live data, study and recording status visible
-together and no view dropdown. Check optional dialogs, stream pagination with
+820×760 and 1440×900, with the three-part minimal layout, all-stream inclusion
+checks, stacked channel previews, study/recording status and centered red Start.
+Check automatic unique-belt discovery, waiting/received calibration indicators,
+optional input checkboxes, optional dialogs, stream/channel pagination with
 original row identities, Escape closing a dialog without cancelling setup, and
 read-only setup plus accessible Stop during a run. At small windows (320/360 CSS
 px or 480 px height), doubled text and impossible fits, verify the explicit resize
@@ -118,6 +120,9 @@ For recorder changes, also run:
 pnpm prepare:recorder
 uv run --frozen pytest tests/test_recording.py
 uv run --frozen python tests/check_recording.py
+uv run --frozen pytest tests/test_input_capture.py
+uv run --frozen python tests/check_control_center.py
+uv run --frozen python tests/check_control_center.py --full-study
 ```
 
 The standalone native proof checks pre-calibration raw samples, calibration/cleanup

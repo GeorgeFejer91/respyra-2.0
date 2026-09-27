@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from mpi.desktop_bridge import DesktopCancelled, validate_action
@@ -23,15 +24,20 @@ class SourceSetup:
         self.recorder, self.cancel_check = recorder, cancel_check
         self.values = {"participant": "", "session": "001"}
         self.save_csv = False
+        self.record_keyboard = self.record_mouse = False
+        self.automatic = False
+        self.identity = None
+        self.next_scan = 0
         self.source = self.pending = None
         self.candidates = []
         self.row = None
         self.sequence = 0
         self.shown = self.done = self.accepted = False
-        self.message = "Select a live Force input."
+        self.message = "Waiting for a live VernierRaw Force stream."
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="respyra-lsl-setup")
 
     def restore(self):
+        self.automatic = True
         try:
             saved = load_force_selection()
         except LSLForceError as exc:
@@ -41,6 +47,7 @@ class SourceSetup:
         if saved:
             self.markers.emit("source.memory.loaded", **saved)
         identity = os.environ.get("RESPYRA_LSL_SOURCE_ID") or (saved["source_id"] if saved else None)
+        self.identity = identity
         if identity:
             origin = "environment" if os.environ.get("RESPYRA_LSL_SOURCE_ID") else "memory"
             self.message = "Reconnecting the previously configured LSL source…"
@@ -60,6 +67,7 @@ class SourceSetup:
         selected = self.candidates[self.row] if self.row is not None else None
         return {"phase": "setup", "ui_seq": self.sequence, "study_name": self.cfg.name, "values": self.values.copy(),
                 "marker_name": self.markers.name, "save_csv": self.save_csv,
+                "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
                 "message": self.message, "busy": self.pending is not None,
                 "can_start": bool(self.source and not self.pending and
                                   all(v.strip() for v in self.values.values())),
@@ -163,35 +171,55 @@ class SourceSetup:
             except LSLForceError as exc:
                 source, self.source = self.source, None
                 source.stop()
+                self.row = None
                 emit("source.lost", message=str(exc))
                 emit("source.disconnected")
-                self.message = f"{exc}\nExpand LSL input / marker name to reconnect."
+                self.message = f"{exc}\nReconnecting automatically…"
+        if self.automatic and not self.done and self.source is None and self.row is None and self.pending is None and time.monotonic() >= self.next_scan:
+            self.next_scan = time.monotonic() + 3
+            emit("source.scan.started")
+            self._submit("automatic_scan", scan_force_streams)
         if self.pending is None or not self.pending[0].done():
             return
         future, kind, identity = self.pending
         self.pending = None
         try:
             result = future.result()
-            if kind == "selection":
+            if kind in {"selection", "automatic"}:
                 try:
                     save_force_selection(result)
                 except Exception:
                     result.stop()
                     raise
         except Exception as exc:
-            self.message = f"{exc}\nExpand LSL input / marker name to scan or retry."
-            if kind == "scan":
+            if kind in {"automatic", "memory", "environment"}:
+                self.row = None
+            self.message = (f"{exc}\nRetrying automatically." if self.automatic and self.row is None
+                            else f"{exc}\nUse stream to retry." if kind == "selection" else str(exc))
+            if kind in {"scan", "automatic_scan"}:
                 emit("source.scan.failed", message=str(exc))
             else:
                 emit("source.connection.failed", source_id=identity, origin=kind, message=str(exc))
             return
-        if kind == "scan":
+        if kind in {"scan", "automatic_scan"}:
             self.candidates, self.row = result, None
             eligible = sum(c.force_index is not None for c in result)
             self.message = (f"Found {len(result)} streams; {eligible} compatible. Select a row and use it."
                             if eligible else "No compatible raw Force (N) stream. Start Vernier Stream Mini, then scan again.")
             emit("source.scan.completed", streams=[{k: v for k, v in row.items() if k != "force_channel_index"}
                                                    for row in self.rows()])
+            if kind == "automatic_scan":
+                eligible = [i for i, candidate in enumerate(result) if candidate.force_index is not None
+                            and (not self.identity or candidate.info.source_id() == self.identity)]
+                if len(eligible) == 1:
+                    self.row = eligible[0]
+                    candidate = result[self.row]
+                    emit("source.connection.started", source_id=candidate.info.source_id(), origin="automatic")
+                    self._submit("memory" if self.identity else "automatic", lambda: open_force_source(candidate.info), candidate.info.source_id())
+                    self.message = "Checking live breathing samples…"
+                else:
+                    self.message = ("Several breathing belts are available. Choose the study belt in Settings."
+                                    if len(eligible) > 1 else "Waiting for Vernier Stream Mini’s raw Force stream (Separate Streams mode).")
         else:
             previous, self.source = self.source, result
             if previous is not None:
@@ -201,7 +229,8 @@ class SourceSetup:
             emit("source.connected", source_id=result.source_id, stream_name=result.stream_name,
                  force_channel_index=result.force_index)
             emit("source.connection.accepted", source_id=result.source_id, origin=kind)
-            if kind == "selection":
+            self.identity = result.source_id
+            if kind in {"selection", "automatic"}:
                 emit("source.memory.saved", source_id=result.source_id, stream_name=result.stream_name)
 
     def close(self):
@@ -212,7 +241,7 @@ class SourceSetup:
             self.pending = None
             if not future.cancelled() and future.exception() is None and isinstance(future.result(), LSLForceSource):
                 resources.append(future.result())
-            events.append(("source.scan.cancelled", {}) if kind == "scan" else (
+            events.append(("source.scan.cancelled", {}) if kind in {"scan", "automatic_scan"} else (
                 "source.connection.cancelled", {"source_id": identity, "origin": kind}))
         if not self.accepted and self.source is not None:
             resources.append(self.source)
@@ -260,7 +289,8 @@ def run_source_setup(cfg, markers, bridge=None):
                 else:
                     bridge.send(setup.snapshot())
                     bridge.reply(action)
-        return ({**setup.values, "save_csv": setup.save_csv}, setup.source) if setup.accepted else (None, None)
+        return ({**setup.values, "save_csv": setup.save_csv,
+                 "record_keyboard": setup.record_keyboard, "record_mouse": setup.record_mouse}, setup.source) if setup.accepted else (None, None)
     except DesktopCancelled:
         setup.reject()
         raise

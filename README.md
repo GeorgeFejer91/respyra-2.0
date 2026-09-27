@@ -41,15 +41,23 @@ its **Separate Streams** raw Vernier LSL outlet and a working PsychoPy display.
 Launch Respyra; its **Respyra-Events** outlet (type **Markers**) is advertised
 at Python-engine startup, before breathing-input selection or PsychoPy initialization.
 **Start Experiment** starts the bundled **respyrecorder** and requires raw Force
-samples plus both Force and marker subscriptions before opening PsychoPy.
+samples and actual marker reception by the recorder before opening PsychoPy.
 Recording includes calibration and study cleanup. Additional LSL streams join
 when discovered, including streams started later. No separate recorder is required.
 The first window is
 the **Experiment control** panel with participant/session and breathing-input setup.
-The single control center keeps setup, live signals, study and recording status
-visible together. Select **Scan streams**, choose a compatible result,
-then **Use stream**. The scan
-lists visible streams and reasons for rejecting incompatible inputs. It
+The three-part control center shows participant/session inputs at the top,
+all available streams with stacked live channel previews in the middle, and a
+red **Start Experiment** button at the bottom. All streams are included
+automatically; the checked stream list is an inclusion display. Additional
+channels are paged without dropping them. Enter the participant number and
+study session, then Start. The default session is 001; its parity determines
+the study's counterbalancing.
+
+Respyra automatically discovers and connects a unique compatible breathing
+belt. If several belts are available, choose one in **Settings** using
+**Scan streams** / **Use stream**. Discovery
+lists visible streams and reasons for rejecting incompatible study inputs. It
 requires the Vernier Stream Mini raw outlet, its metadata-identified Force
 channel in **N**, floating-point samples, and a unique stable source ID. Live
 Force values are checked before **Start Experiment** becomes available.
@@ -58,13 +66,28 @@ targets and errors are in Newtons.
 The run stops if no Force samples arrive during calibration or if the live
 Force stream stalls.
 
+After calibration, **Respyra-Calibrated-Breathing** publishes
+`(force_n - center_n) / amplitude_n`, retaining the raw inlet's synchronized
+timestamps and calibration metadata. Values are not clipped or adjusted by
+condition feedback gain. The recorder must receive this stream before trials
+begin, and final XDF verification requires its samples. Its compact indicator
+shows waiting, recording, then saved.
+
+Optional **Keyboard events** and **Mouse events** record Windows key down/up,
+mouse movement, buttons and wheel as markers during recording, within Respyra's
+controller and participant windows. Both default off. Callback LSL time is
+retained separately from marker publication time; normal study response markers
+remain automatic. CSV, source selection, marker naming and diagnostics are in
+**Settings**.
+
 The accepted source ID is saved in `%LOCALAPPDATA%/Respyra/lsl-source.json`
 on Windows (otherwise `$LOCALAPPDATA`, or `~/.config/Respyra`). Later launches
 automatically reconnect that exact source and recheck metadata and live data;
 no repeated scan or acceptance is needed. Missing, changed, duplicate, or
-incompatible outlets require selection again. There is no automatic switch to
+incompatible outlets keep Start unavailable; missing/restarted outlets retry
+automatically. There is no automatic switch to
 another belt. Each accepted inlet stays pinned to that outlet; a streamer
-restart requires a new validated connection. Settings contain only source
+restart is revalidated before connection. Settings contain only source
 identity/name, never breathing samples or participant details.
 `RESPYRA_LSL_SOURCE_ID`, when set, overrides
 the saved identity on launch; remove it to use remembered UI selections.

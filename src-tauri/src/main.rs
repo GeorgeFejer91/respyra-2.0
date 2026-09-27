@@ -59,6 +59,8 @@ enum Field {
 #[serde(rename_all = "snake_case")]
 enum RecordingOption {
     SaveCsv,
+    RecordKeyboard,
+    RecordMouse,
 }
 
 #[derive(Deserialize)]
@@ -278,6 +280,7 @@ fn launch_backend(
         .arg("--desktop")
         .current_dir(&working_dir)
         .env("PYTHONIOENCODING", "utf-8")
+        .env("RESPIRA_CONTROLLER_PID", std::process::id().to_string())
         .env("PYTHONDONTWRITEBYTECODE", "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

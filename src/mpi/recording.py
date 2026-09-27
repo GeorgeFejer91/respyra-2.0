@@ -99,6 +99,7 @@ class NativeRecording:
                     "output_file": str(self.path) if self.path else None,
                     "bytes_written": size,
                     "streams": [{"source_id": identity, "name": name} for identity, name in self.streams.items()],
+                    "data_sources": sorted(self.data_sources),
                     "summary": list(self.summary)}
 
     def check_health(self):
@@ -168,6 +169,7 @@ class NativeRecording:
                     self.phase = "recording"
                     markers.name_locked = True
                     markers.emit("recording.started", source_ids=list(self.required), policy="all_visible_and_late")
+                    self.wait_for_data(self.required[1], cancel_check=cancel_check)
                     return
                 if time.monotonic() >= deadline:
                     raise RecordingError("Recorder could not subscribe to Force and markers; experiment has not started.")
@@ -181,6 +183,21 @@ class NativeRecording:
             else:
                 self.phase, self.error = "error", str(exc)
             raise
+
+    def wait_for_data(self, identity, poll=lambda: None, cancel_check=lambda: None):
+        deadline = time.monotonic() + 8
+        while True:
+            cancel_check()
+            self.check_health()
+            poll()
+            with self._lock:
+                if identity in self.data_sources:
+                    if identity not in self.required:
+                        self.required = (*self.required, identity)
+                    return
+            if time.monotonic() >= deadline:
+                raise RecordingError("Recorder has received no samples from a required LSL stream")
+            time.sleep(.025)
 
     def stop(self):
         process = self.process

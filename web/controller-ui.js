@@ -29,6 +29,11 @@ export const CONTROL_HTML = `
         </details>
       </section>
       <label class="check-option"><input id="save_csv" type="checkbox"><span data-measure>Save original CSV files locally</span></label>
+      <div class="input-options">
+        <label class="check-option"><input id="record_keyboard" type="checkbox"><span data-measure>Keyboard events</span></label>
+        <label class="check-option"><input id="record_mouse" type="checkbox"><span data-measure>Mouse events</span></label>
+        <span class="input-scope" data-measure>In Respyra windows</span>
+      </div>
       <p class="recording-note" data-measure>Start automatically records all LSL streams to XDF before calibration, including streams that appear later.</p>
       <div class="actions final-actions">
         <button id="start" type="submit" disabled data-measure>Start Experiment</button>
@@ -77,8 +82,9 @@ export function mountController(root, send, onReady) {
     const setup = state.phase === 'setup';
     byId('setup').hidden = !setup && !document.body.classList.contains('desktop');
     byId('controls').disabled = !enabled || !setup || operation > 0;
-    byId('scan').disabled = !!state.busy;
-    byId('use').disabled = !state.can_use;
+    byId('scan').disabled = !enabled || !setup || !!state.busy || operation > 0;
+    byId('use').disabled = !enabled || !setup || !state.can_use || operation > 0;
+    byId('save_csv').disabled = !enabled || !setup || operation > 0;
     byId('start').hidden = !setup;
     byId('start').disabled = !enabled || !setup || operation > 0 || !state.can_start;
     byId('cancel').hidden = !setup;
@@ -89,7 +95,7 @@ export function mountController(root, send, onReady) {
     byId('abort').disabled = !enabled || operation > 0 || progress.recording?.phase === 'finalizing';
     byId('close').hidden = !['finished', 'error'].includes(state.phase);
     byId('close').disabled = !enabled || operation > 0 || ['preparing','recording','finalizing'].includes(progress.recording?.phase);
-    for (const radio of byId('streams').querySelectorAll('input')) radio.disabled = !!state.busy;
+    for (const radio of byId('streams').querySelectorAll('input')) radio.disabled = !enabled || !setup || !!state.busy || operation > 0;
   }
 
   async function request(action, fields = {}) {
@@ -118,7 +124,9 @@ export function mountController(root, send, onReady) {
     byId('status').textContent = snapshot.message === 'Ready for this experiment.' ? '' : snapshot.message || '';
     byId('phase').textContent = phases[snapshot.phase] || 'Needs attention';
     byId('trial-summary').textContent = [progress.trial == null ? null : ' · Trial ' + progress.trial, progress.condition].filter(v => v !== null && v !== undefined).join(' · ');
-    byId('phase-summary').textContent = [progress.experiment_phase, progress.screen].filter(Boolean).join(' · ');
+    const phaseDetail = [progress.experiment_phase, progress.screen].filter(Boolean).join(' · ');
+    byId('phase-summary').textContent = document.body.classList.contains('desktop')
+      ? snapshot.phase === 'experiment' && phaseDetail ? ' · ' + phaseDetail : '' : phaseDetail;
     const health = progress.health;
     monitor.render(progress, enabled);
     byId('xdf-state').textContent = {idle:'Ready',preparing:'Preparing',recording:'Recording',finalizing:'Finalizing',complete:'Saved',error:'Failed'}[progress.recording?.phase] || 'Ready';
@@ -145,6 +153,8 @@ export function mountController(root, send, onReady) {
         if (!edits.has(field) && byId(field).value !== snapshot.values[field]) byId(field).value = snapshot.values[field];
       }
       byId('save_csv').checked = !!snapshot.save_csv;
+      byId('record_keyboard').checked = !!snapshot.record_keyboard;
+      byId('record_mouse').checked = !!snapshot.record_mouse;
       if (document.activeElement !== byId('marker_name')) byId('marker_name').value = snapshot.marker_name || 'Respyra-Events';
       byId('accepted').textContent = snapshot.source ? 'Accepted: ' + snapshot.source.stream_name : 'No input accepted.';
       byId('source-identity').textContent = snapshot.source ? snapshot.source.source_id : 'Select VernierRaw with raw Force in newtons.';
@@ -190,7 +200,7 @@ export function mountController(root, send, onReady) {
   byId('use').addEventListener('click', () => {
     if (!document.body.classList.contains('desktop')) byId('input-details').open = false;
   });
-  byId('save_csv').addEventListener('change', () => { void request('option', {field:'save_csv',enabled:byId('save_csv').checked}); });
+  for (const field of ['save_csv', 'record_keyboard', 'record_mouse']) byId(field).addEventListener('change', () => { void request('option', {field,enabled:byId(field).checked}); });
   byId('rename').addEventListener('click', () => { void request('field_edit', {field:'marker_name',value:byId('marker_name').value}); });
   byId('setup').addEventListener('submit', event => {
     event.preventDefault();
@@ -200,6 +210,7 @@ export function mountController(root, send, onReady) {
     if (event.key === 'Escape' && !document.querySelector('dialog[open]') && !byId('controls').disabled) void request('cancel');
   });
   availability();
+  if (!document.body.classList.contains('desktop')) byId('input-details').append(byId('record_keyboard').closest('.input-options'));
   return { render, setEnabled(value) { enabled = value; monitor.render(progress, enabled); availability(); },
     clearMonitor() { monitor.clear(); },
     fail(message) { enabled = false; monitor.render(progress, false); byId('command-status').textContent = message; availability(); } };

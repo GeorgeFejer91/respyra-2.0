@@ -143,6 +143,27 @@ class LSLForceSource:
         self.stopped = False
         self.channels = list(channels) or [{"index": force_index, "label": "Force", "unit": "N"}]
         self.latest_sample = None
+        self.calibrated_outlet = None
+        self.calibrated_id = None
+        self.calibrated_sample = None
+
+    def calibrate(self, center, amplitude, run_id):
+        """Publish the accepted study calibration, without clipping or feedback gain."""
+        from pylsl import StreamInfo, StreamOutlet, cf_float32
+        if not math.isfinite(center) or not math.isfinite(amplitude) or amplitude <= 0:
+            raise LSLForceError("Invalid breathing calibration")
+        self.center, self.amplitude = center, amplitude
+        self.calibrated_id = f"respyra-breathing-{run_id}"
+        info = StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 0, cf_float32, self.calibrated_id)
+        desc = info.desc()
+        for key, value in {"application": "Respyra 2.0", "raw_source_id": self.source_id,
+                           "center_n": str(center), "amplitude_n": str(amplitude),
+                           "formula": "(force_n - center_n) / amplitude_n"}.items():
+            desc.append_child_value(key, value)
+        channel = desc.append_child("channels").append_child("channel")
+        channel.append_child_value("label", "Calibrated breathing")
+        channel.append_child_value("unit", "normalized")
+        self.calibrated_outlet = StreamOutlet(info)
 
     def health_snapshot(self):
         """Only actual inlet freshness; the raw Force contract has no battery field."""
@@ -157,7 +178,9 @@ class LSLForceSource:
                                     for c in self.channels]}
         return {"signal": ("disconnected" if self.stopped else
                            "live" if age <= 1 else "stale" if age <= 3 else "lost"),
-                "sample_age_ms": round(age * 1000), "battery_percent": None, "preview": preview}
+                "sample_age_ms": round(age * 1000), "battery_percent": None, "preview": preview,
+                "calibrated": {"source_id": self.calibrated_id, "active": self.calibrated_outlet is not None,
+                               "lsl_time": self.calibrated_sample}}
 
     def get_all(self) -> list[tuple[float, float]]:
         try:
@@ -169,6 +192,9 @@ class LSLForceSource:
             if len(sample) > self.force_index and math.isfinite(sample[self.force_index]):
                 forces.append((timestamp, float(sample[self.force_index])))
                 self.latest_sample = (timestamp, list(sample))
+                if self.calibrated_outlet is not None:
+                    self.calibrated_outlet.push_sample([(float(sample[self.force_index]) - self.center) / self.amplitude], timestamp=timestamp)
+                    self.calibrated_sample = timestamp
         if forces:
             self.last_force_at = time.monotonic()
         elif time.monotonic() - self.last_force_at > 3.0:

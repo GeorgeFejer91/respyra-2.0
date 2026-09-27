@@ -25,7 +25,7 @@ if (native) {
   const render = snapshot => {
     if (snapshot.study_name) document.getElementById('study').textContent = snapshot.study_name;
     controller.render(snapshot);
-    renderRecording(snapshot.progress?.recording);
+    renderRecording(snapshot.progress?.recording, snapshot.progress);
   };
   await native.event.listen('setup-state', event => render(event.payload));
   await native.core.invoke('launch_backend').then(render).catch(fail);

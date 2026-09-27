@@ -9,10 +9,15 @@ Source/provenance is in `native/recorder/README.md`.
   `mpi.recording.NativeRecording` owns the native child's private pipes, output,
   readiness, stop and file completion. HTML/phone Start uses the existing action
   path; neither may select an executable, arbitrary path or shell command.
-- Start requires the exact raw Force and marker subscriptions and a first raw
-  sample before participant setup acceptance or PsychoPy creation. Failure rejects
+- Start requires the exact raw Force and marker subscriptions and actual samples
+  from both before participant setup acceptance or PsychoPy creation. Failure rejects
   Start. Calibration changes study parameters; it never delays or rewrites raw
   capture. Calibration result markers retain the parameters used for later analysis.
+- The accepted study calibration creates `Respyra-Calibrated-Breathing`, with
+  `(force_n - center_n) / amplitude_n`, synchronized inlet timestamps, original
+  source identity and calibration parameters in its metadata. No clipping or
+  condition feedback gain applies. Wait for native data reception before trials;
+  add this identity to final nonempty-stream verification only after calibration.
 - One native watch query records visible streams and discovers later streams.
   Stable source IDs deduplicate; source-less streams use UID. A producer must
   exist before subscription: late discovery cannot recover samples sent before
@@ -27,15 +32,33 @@ Source/provenance is in `native/recorder/README.md`.
   only on success. Preserve failures; never report an outlet/subscriber as disk evidence.
 - Installed XDF/optional original CSV files use the writable user data folder,
   survive uninstall, and never enter Git/Pages. CSV remains opt-in and unchanged.
+- Local `mpi.lsl_viewer.LSLViewer` owns separate display-only subscriptions to all
+  visible numeric and string streams, with UID identity, full channel metadata
+  and late discovery. The study's Force inlet remains its only acquisition and
+  calibrated-output owner. The study marker display uses the owner's projection;
+  its readiness indicator uses native receipt, preserving pre-subscription naming.
+  HTML stacks all channels with paging and ten-second previews (100 points each).
+- Optional Windows keyboard/mouse hooks (`mpi.input_capture`) capture only the
+  Python study and native desktop windows while XDF recording is active. Rust
+  supplies its PID so a virtualenv launcher cannot change the controller identity.
+  Queue callbacks; publish catalogued markers on the study owner with the callback
+  LSL time retained in `event_lsl_time`. Overflow/initialization failures fail the
+  run; hooks stop and drain before recorder finalization. Defaults are off.
 - Remote default is the LSL monitor: selected raw-channel value/unit, ten-second
   trace, recent marker names and recording status. Four-Hz coalesced snapshots
-  reuse the existing clock-synchronized inlet; no second acquisition/transform.
+  reuse the existing clock-synchronized study inlet.
   Preview is bounded to 32 channels and 100 local points. The private invitation
   shares this data; native paths, file summaries and assessment payloads stay local.
   Recording remains full-rate and includes supplementary streams beyond the preview.
+  Full-stream stacks, calibrated health, native data receipts and local input
+  options stay outside the existing bounded phone protocol.
 
 Verify `tests/check_recording.py` with independent PyXDF import, pre-calibration
 raw samples, marker order, late numeric/int64/source-less streams, clock offsets,
 Unicode paths and matching footers. Run failure tests in `tests/test_recording.py`,
 then the real native UI/LSL check and packaged synthetic round trip. Report the
 physical belt, scientific display timing and physical phone separately.
+`tests/check_control_center.py` proves all-channel/late-marker preview and calibrated
+XDF values with independent PyXDF. `--full-study` additionally executes all 48
+configured trials and real PsychoPy displays with accelerated timings and simulated
+responses; it is not a full-duration participant or physical-belt qualification.

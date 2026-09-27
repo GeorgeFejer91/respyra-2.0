@@ -17,7 +17,8 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   deployment system.
 - No second implementation tree or duplicate source of truth.
 - No capability claim without matching evidence.
-- No direct Vernier Bluetooth/USB connection or second force-to-breathing processor in this project.
+- No direct Vernier Bluetooth/USB connection or reimplementation of the streamer's
+  breathing algorithm. Export the study's accepted calibration in one place.
 - No session CSV output unless the experimenter enables the original CSV mode.
 - Do not publish raw session recordings or self-assessments from `data/`.
 
@@ -40,6 +41,9 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   reconnects saved input, and gates Start on a live accepted source plus native
   recording readiness. `src/mpi/recording.py` supervises the pinned LabRecorder
   adapter under `native/recorder/` and verifies XDF completion.
+  The same Force source exports the accepted study calibration; `lsl_viewer.py`
+  owns display-only all-stream subscriptions. `input_capture.py` owns optional
+  Windows input hooks; the study owner publishes their queued marker events.
   `src/mpi/event_markers/` owns the LSL marker publisher
   and exhaustive `catalog.json`. `scripts/run_experiment.py` runs the PsychoPy
   task using that source and `respyra`'s existing study phases; it passes a

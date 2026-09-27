@@ -61,7 +61,7 @@ def validate_action(action):
     timestamp = action["ui_time_ms"]
     if type(timestamp) not in (int, float) or not math.isfinite(timestamp) or timestamp < 0:
         raise ValueError("Invalid UI timestamp")
-    if "field" in action and action["field"] not in ({"save_csv"} if action["action"] == "option" else FIELDS):
+    if "field" in action and action["field"] not in ({"save_csv", "record_keyboard", "record_mouse"} if action["action"] == "option" else FIELDS):
         raise ValueError("Unknown participant field")
     if "enabled" in action and type(action["enabled"]) is not bool:
         raise ValueError("Invalid recording option")
@@ -91,6 +91,8 @@ class DesktopBridge:
         self.stop_action = None
         self.stopped = False
         self.recorder = None
+        self.viewer = None
+        self.input_capture = None
         threading.Thread(target=self._read, args=(reader,), daemon=True,
                          name="respyra-desktop-control").start()
 
@@ -117,6 +119,8 @@ class DesktopBridge:
             self.closed.set()
 
     def check_cancel(self):
+        if self.input_capture is not None:
+            self.input_capture.poll(self.markers)
         if self.error is not None:
             raise RuntimeError("Desktop control protocol failed") from self.error
         if self.closed.is_set():
@@ -187,6 +191,9 @@ class DesktopBridge:
                     latest["markers"] = self.markers.health_snapshot()
                 if self.recorder is not None:
                     latest["recording"] = self.recorder.snapshot()
+                if self.viewer is not None:
+                    latest["streams"] = self.viewer.snapshot()
+                    latest["viewer_error"] = self.viewer.error
                 latest["health"] = (self.source.health_snapshot() if self.source else
                                     {"signal": "not_selected", "sample_age_ms": None,
                                      "battery_percent": None})

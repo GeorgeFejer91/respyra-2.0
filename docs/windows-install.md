@@ -15,8 +15,10 @@ QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and
 therefore still needs Internet access. Hardware acquisition remains a separate
 Vernier Stream Mini program. Respira owns recording; a separate LSL recorder is unnecessary.
 
-Open Respira to use **Experiment control**. Scan/select a live raw Force LSL
-stream, enter participant/session, then **Start Experiment**. It waits for native
+Open Respira to use **Experiment control**. Enter participant/session; a unique
+live raw Force LSL stream connects automatically (ambiguous choices are in
+**Settings**). The middle panel includes all streams and stacked live channel
+previews. The red **Start Experiment** button waits for native
 recording readiness before opening PsychoPy, records raw input and markers through
 calibration/cleanup, and discovers additional streams during the run. **XDF recording**
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel

@@ -94,7 +94,15 @@ const assert = require('node:assert/strict');
   if(mode==='remote') await page.locator('dialog[open] > button').click();
   await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
-  if(process.env.RESPIRA_INSTALLED_EXE && mode==='memory') await ui.locator('#save_csv').check();
+  if(mode==='memory') {
+    await ui.locator('#record_keyboard').check();
+    await ui.locator('#record_mouse').check();
+  }
+  if(process.env.RESPIRA_INSTALLED_EXE && mode==='memory') {
+    await page.locator('#input-settings > summary').click();
+    await ui.locator('#save_csv').check();
+    await page.locator('dialog[open] > button').click();
+  }
   if(mode==='remote') {
     await ui.locator('#save_csv').check();
     await page.waitForFunction(()=>document.getElementById('save_csv').checked);
@@ -102,6 +110,7 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(()=>!document.getElementById('save_csv').checked);
   }
   if(mode==='select') {
+    await page.locator('#input-settings > summary').click();
     await page.locator('#scan').click();
     const choose = async name => {
       await page.waitForFunction(()=>!document.getElementById('controls').disabled);
@@ -125,6 +134,7 @@ const assert = require('node:assert/strict');
     assert(await page.locator('#use').isDisabled());
     await choose('Synthetic raw Force');
     await page.locator('#use').click();
+    await page.locator('dialog[open] > button').click();
   }
   await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000});
   assert((await ui.locator('#accepted').textContent()).includes('Synthetic raw Force'));
@@ -160,7 +170,7 @@ const assert = require('node:assert/strict');
       await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
     } else {
       await page.locator('#recording-status').getByText(/Recording/u).waitFor({timeout:10000});
-      await page.locator('#monitor-value').getByText(/Live/u).waitFor({timeout:10000});
+      await page.locator('#raw-check').getByText('Breathing: live',{exact:true}).waitFor({timeout:10000});
     }
     assert.equal(await ui.locator('#battery').textContent(),'Not reported');
     if(mode==='remote') {

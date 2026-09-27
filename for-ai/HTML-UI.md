@@ -8,14 +8,18 @@ Pretext package/fonts; measure bounded text and verify the rendered DOM.
 
 - Never use page or panel scrollbars. All content in the active view fits the
   viewport. Do not hide scrollbars or clip overflow to pretend it fits.
-- Use one compact control center, modeled on Remote LSL Recorder's session/stream
-  column, signal viewer and bottom recording/action bar. Never add a desktop view
-  dropdown. Keep setup, accepted input, live signal, study status and recording
-  status visible together. Optional marker/identity, recording-file and phone
-  details use native HTML dialogs; they do not replace the main control center.
+- Use three compact parts: participant/session and optional input markers;
+  automatic stream checks plus checked inclusion list and stacked channel traces;
+  one salient red Start/action bar. Record all available and late LSL streams by
+  default. Never add a desktop view dropdown. Source selection, CSV, naming and
+  diagnostics are optional native Settings dialogs; recording-file and phone
+  details also stay outside the default workflow.
 - Start launches respyrecorder and verifies exact Force/marker subscriptions and
-  first raw samples before opening PsychoPy. Preserve these Python prerequisites.
-- Paginate stream/event lists, preserving all entries and backend row identities.
+  raw and marker samples before opening PsychoPy. After calibration, require actual
+  native reception of the study's calibrated outlet before trials begin.
+- Automatically connect a unique compatible belt or the exact remembered identity;
+  require a choice only when discovery is ambiguous. Do not switch remembered belts.
+- Paginate stream/channel/event lists, preserving all entries and backend row identities.
 - Reflow and simplify before shrinking. Keep readable type, full critical
   instructions/errors, focus indicators, and accessible controls. Never undo
   user text enlargement. Impossible fits require an explicit no-fit outcome.
