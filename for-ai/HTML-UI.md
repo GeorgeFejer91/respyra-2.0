@@ -8,9 +8,13 @@ Pretext package/fonts; measure bounded text and verify the rendered DOM.
 
 - Never use page or panel scrollbars. All content in the active view fits the
   viewport. Do not hide scrollbars or clip overflow to pretend it fits.
-- Keep participant/session, accepted input, CSV choice, recording instruction,
-  and Start/Cancel together. Secondary input, marker, recording, data, status and phone controls
-  use separate views of the same screen space.
+- Use one compact control center, modeled on Remote LSL Recorder's session/stream
+  column, signal viewer and bottom recording/action bar. Never add a desktop view
+  dropdown. Keep setup, accepted input, live signal, study status and recording
+  status visible together. Optional marker/identity, recording-file and phone
+  details use native HTML dialogs; they do not replace the main control center.
+- Start launches respyrecorder and verifies exact Force/marker subscriptions and
+  first raw samples before opening PsychoPy. Preserve these Python prerequisites.
 - Paginate stream/event lists, preserving all entries and backend row identities.
 - Reflow and simplify before shrinking. Keep readable type, full critical
   instructions/errors, focus indicators, and accessible controls. Never undo

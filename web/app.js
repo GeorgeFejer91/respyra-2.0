@@ -2,7 +2,7 @@ import { actionQueue } from './action-queue.js';
 import { mountController } from './controller-ui.js';
 import { measureTextRegions } from './text-fit.js';
 import { mountRemoteViewer } from './remote-host.js';
-import { renderRecording } from './desktop-view.js';
+import { mountDesktop, renderRecording } from './desktop-view.js';
 
 const native = window.__TAURI__;
 const fail = error => {
@@ -17,6 +17,7 @@ const send = actionQueue(async (command, args) => {
   return native.core.invoke(command, args);
 }, fail);
 const controller = mountController(document.getElementById('controller'), send, () => { void send('shown'); });
+mountDesktop();
 
 measureTextRegions().catch(() => { document.documentElement.dataset.pretextFit = 'unavailable'; });
 if (native) {

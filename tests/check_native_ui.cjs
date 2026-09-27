@@ -68,7 +68,7 @@ const assert = require('node:assert/strict');
       assert(file.startsWith(path.resolve('companion')+path.sep));
       await route.fulfill({body:await fs.readFile(file),contentType:{'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'}[path.extname(file)]||'application/octet-stream'});
     });
-    await page.locator('#view').selectOption('phone');
+    await page.locator('.viewer-setup > summary').click();
     await page.locator('#viewer-start').click();
     await page.locator('#viewer-qr img').waitFor();
     const link=await page.locator('#viewer-link').inputValue();
@@ -91,6 +91,7 @@ const assert = require('node:assert/strict');
     assert.equal(await ui.locator('#remote-view').inputValue(),'data');
     await ui.locator('#remote-view').selectOption('controls');
   }
+  if(mode==='remote') await page.locator('dialog[open] > button').click();
   await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
   if(process.env.RESPIRA_INSTALLED_EXE && mode==='memory') await ui.locator('#save_csv').check();
@@ -101,7 +102,6 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(()=>!document.getElementById('save_csv').checked);
   }
   if(mode==='select') {
-    await page.locator('#view').selectOption('input');
     await page.locator('#scan').click();
     const choose = async name => {
       await page.waitForFunction(()=>!document.getElementById('controls').disabled);
@@ -155,8 +155,13 @@ const assert = require('node:assert/strict');
     const fs=require('node:fs');
     for(let i=0;i<250 && !fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH);i++) await new Promise(r=>setTimeout(r,100));
     assert(fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH),'PsychoPy instructions did not reach a display flip');
-    await ui.locator('#xdf-state').getByText('Recording', {exact:true}).waitFor({timeout:10000});
-    await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
+    if(mode==='remote') {
+      await ui.locator('#xdf-state').getByText('Recording', {exact:true}).waitFor({timeout:10000});
+      await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
+    } else {
+      await page.locator('#recording-status').getByText(/Recording/u).waitFor({timeout:10000});
+      await page.locator('#monitor-value').getByText(/Live/u).waitFor({timeout:10000});
+    }
     assert.equal(await ui.locator('#battery').textContent(),'Not reported');
     if(mode==='remote') {
       await ui.locator('#remote-view').selectOption('data');
@@ -173,7 +178,8 @@ const assert = require('node:assert/strict');
     }
     await ui.locator('#abort').click();
     await ui.locator('#close').waitFor({state:'visible',timeout:15000});
-    await ui.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor({timeout:20000});
+    if(mode==='remote') await ui.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor({timeout:20000});
+    else await page.locator('#recording-status').getByText(/XDF saved/u).waitFor({timeout:20000});
     assert((await page.locator('#recording-file').textContent()).endsWith('.xdf'));
     const file=await page.locator('#recording-file').textContent();
     require('node:fs').writeFileSync(`.for-ai-local/native-${mode}-xdf.json`, JSON.stringify({file}));

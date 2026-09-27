@@ -75,11 +75,16 @@ export function mountController(root, send, onReady) {
 
   function availability() {
     const setup = state.phase === 'setup';
-    byId('setup').hidden = !setup;
+    byId('setup').hidden = !setup && !document.body.classList.contains('desktop');
     byId('controls').disabled = !enabled || !setup || operation > 0;
     byId('scan').disabled = !!state.busy;
     byId('use').disabled = !state.can_use;
-    byId('start').disabled = !state.can_start;
+    byId('start').hidden = !setup;
+    byId('start').disabled = !enabled || !setup || operation > 0 || !state.can_start;
+    byId('cancel').hidden = !setup;
+    byId('cancel').disabled = !enabled || !setup || operation > 0;
+    byId('marker_name').disabled = !enabled || !setup || operation > 0;
+    byId('rename').disabled = !enabled || !setup || operation > 0;
     byId('abort').hidden = state.phase !== 'experiment';
     byId('abort').disabled = !enabled || operation > 0 || progress.recording?.phase === 'finalizing';
     byId('close').hidden = !['finished', 'error'].includes(state.phase);
@@ -98,7 +103,7 @@ export function mountController(root, send, onReady) {
       const result = await send(action, fields);
       if (result?.ok === false) {
         byId('command-status').textContent = result.message || result.error || 'Command rejected. Review the current controls.';
-      } else if (discrete && result?.ok === true) byId('command-status').textContent = 'Applied by Respyra.';
+      } else if (discrete && result?.ok === true) byId('command-status').textContent = '';
     } finally {
       if (discrete) operation -= 1;
       if (action === 'field_edit' && edits.get(fields.field) === fields.value) edits.delete(fields.field);
@@ -113,7 +118,7 @@ export function mountController(root, send, onReady) {
     byId('status').textContent = snapshot.message === 'Ready for this experiment.' ? '' : snapshot.message || '';
     byId('phase').textContent = phases[snapshot.phase] || 'Needs attention';
     byId('trial-summary').textContent = [progress.trial == null ? null : ' · Trial ' + progress.trial, progress.condition].filter(v => v !== null && v !== undefined).join(' · ');
-    byId('phase-summary').textContent = [progress.experiment_phase, progress.screen].filter(Boolean).join(' · ') || '—';
+    byId('phase-summary').textContent = [progress.experiment_phase, progress.screen].filter(Boolean).join(' · ');
     const health = progress.health;
     monitor.render(progress, enabled);
     byId('xdf-state').textContent = {idle:'Ready',preparing:'Preparing',recording:'Recording',finalizing:'Finalizing',complete:'Saved',error:'Failed'}[progress.recording?.phase] || 'Ready';
@@ -182,7 +187,9 @@ export function mountController(root, send, onReady) {
     input.addEventListener('input', () => { void request('field_edit', { field, value:input.value }); });
   }
   for (const action of ['scan','use','cancel','abort','close']) byId(action).addEventListener('click', () => { void request(action); });
-  byId('use').addEventListener('click', () => { byId('input-details').open = false; });
+  byId('use').addEventListener('click', () => {
+    if (!document.body.classList.contains('desktop')) byId('input-details').open = false;
+  });
   byId('save_csv').addEventListener('change', () => { void request('option', {field:'save_csv',enabled:byId('save_csv').checked}); });
   byId('rename').addEventListener('click', () => { void request('field_edit', {field:'marker_name',value:byId('marker_name').value}); });
   byId('setup').addEventListener('submit', event => {
@@ -190,7 +197,7 @@ export function mountController(root, send, onReady) {
     if (!byId('start').disabled && !byId('controls').disabled) void request('start');
   });
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !byId('controls').disabled) void request('cancel');
+    if (event.key === 'Escape' && !document.querySelector('dialog[open]') && !byId('controls').disabled) void request('cancel');
   });
   availability();
   return { render, setEnabled(value) { enabled = value; monitor.render(progress, enabled); availability(); },

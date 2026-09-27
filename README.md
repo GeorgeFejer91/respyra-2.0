@@ -46,7 +46,8 @@ Recording includes calibration and study cleanup. Additional LSL streams join
 when discovered, including streams started later. No separate recorder is required.
 The first window is
 the **Experiment control** panel with participant/session and breathing-input setup.
-Choose **Breathing input** in **View**, select **Scan streams**, choose a compatible result,
+The single control center keeps setup, live signals, study and recording status
+visible together. Select **Scan streams**, choose a compatible result,
 then **Use stream**. The scan
 lists visible streams and reasons for rejecting incompatible inputs. It
 requires the Vernier Stream Mini raw outlet, its metadata-identified Force

@@ -44,22 +44,24 @@ const assert = require('node:assert/strict');
     }}};
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.waitForTimeout(200);
+  await page.waitForFunction(() => !document.getElementById('controls').disabled);
+  await page.waitForTimeout(100);
   await page.locator('#participant').fill('synthetic participant');
   await page.locator('#participant').press('ArrowLeft');
   await page.locator('#session').fill('002');
   await page.locator('#save_csv').check();
   assert(await page.locator('#save_csv').isChecked());
   assert(await page.locator('#start').isDisabled());
-  await page.locator('#view').selectOption('input');
   await page.locator('#scan').click();
   await page.locator('input[value="0"]').check();
   assert(await page.locator('#use').isDisabled());
   await page.locator('#streams + .page-actions button').last().click();
+  assert(await page.locator('main').isVisible(), 'Stream selection must fit');
   await page.locator('input[value="1"]').check();
   await page.locator('#use').click();
   await page.waitForFunction(()=>!document.getElementById('start').disabled);
   assert.equal(await page.locator('#participant').inputValue(), 'synthetic participant');
-  await page.locator('#view').selectOption('input');
   await page.locator('#scan').click();
   await page.waitForFunction(()=>![...document.querySelectorAll('#streams input')].some(r=>r.checked));
   await page.locator('#streams + .page-actions button').last().click();
@@ -86,39 +88,47 @@ const assert = require('node:assert/strict');
     phase:'progress',markers:{name:'Respyra-Events',emitted:19},recent:[{event:'tracking.started',seq:19,lsl_time:321.5}],
     health:{signal:'live',sample_age_ms:100,battery_percent:null,preview:{source_id:'force-proof',name:'Raw Force',force_index:1,lsl_time:321+i*.25,
       channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12},{index:1,label:'Force',unit:'N',value:5+i}]}}}),i);
-  for (const [view,width,height] of [['setup',360,480],['setup',820,760],['setup',1440,900],['input',820,760],['markers',360,480],['recording',360,480],['recording',820,760],['data',360,760],['data',820,760],['status',820,760],['phone',360,480]]) {
+  assert.equal(await page.locator('#view').count(), 0, 'The control center has no view picker');
+  for (const [width,height] of [[820,760],[1440,900]]) {
     await page.setViewportSize({width,height});
-    await page.locator('#view').selectOption(view);
     await page.waitForTimeout(100);
-    assert(await page.locator('main').isVisible(), JSON.stringify({view,width,height}));
+    assert(await page.locator('main').isVisible(), JSON.stringify({width,height}));
+    for (const id of ['setup','lsl-monitor','observation','recording-panel']) assert(await page.locator('#'+id).isVisible(), id+' must remain visible together');
     const fit = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight,
       clipped: [...document.querySelectorAll('[data-measure]')].filter(e => e.getClientRects().length && (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)).map(e => e.textContent)
     }));
-    assert(fit.width <= width + 1 && fit.height <= height + 1, JSON.stringify({view,width,height,fit}));
-    assert.deepEqual(fit.clipped, [], JSON.stringify({view,width,height,fit}));
+    assert(fit.width <= width + 1 && fit.height <= height + 1, JSON.stringify({width,height,fit}));
+    assert.deepEqual(fit.clipped, [], JSON.stringify({width,height,fit}));
   }
-  await page.locator('#view').selectOption('recording');
   await page.setViewportSize({width:820,height:760});
+  await page.locator('#recording-details > summary').click();
   await page.locator('#recorded-streams + .page-actions button').last().click();
   assert(await page.locator('#recorded-streams li').filter({hasText:'Late respiration'}).isVisible());
   assert((await page.locator('#recording-status').textContent()).includes('4096 bytes'));
   await page.waitForTimeout(100);
   assert(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1 && document.documentElement.scrollWidth <= innerWidth + 1));
+  await page.locator('dialog[open] > button').click();
   await page.setViewportSize({width:320,height:480});
-  await page.locator('#view').selectOption('input');
   await page.evaluate(() => { document.documentElement.style.fontSize = '32px'; });
   await page.waitForTimeout(150);
   assert(await page.locator('#viewport-notice').isVisible(), 'Impossible fits must be explicit');
-  assert(await page.locator('#view').isVisible(), 'No-fit state keeps navigation available');
+  assert((await page.locator('#viewport-notice').innerText()).includes('Enlarge the window'));
   assert(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1 && document.documentElement.scrollWidth <= innerWidth + 1));
   await page.evaluate(() => { document.documentElement.style.fontSize = '16px'; });
-  await page.locator('#view').selectOption('setup');
   await page.setViewportSize({width:820,height:760});
+  await page.locator('#input-settings > summary').click();
+  assert(await page.locator('#marker_name').isEnabled());
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('dialog[open]').count(), 0);
+  assert(await page.locator('#start').isEnabled(), 'Escape closes settings without cancelling the experiment');
   await page.screenshot({path:'.for-ai-local/html-setup.png',fullPage:true});
-  await page.locator('#view').selectOption('setup');
   await page.locator('#start').click();
   await page.waitForFunction(()=>document.getElementById('controls').disabled);
+  assert(await page.locator('#setup').isVisible(), 'Session and source stay visible during the study');
+  assert(await page.locator('#abort').isVisible(), 'Stop remains in the action bar');
+  assert(await page.locator('#participant').isDisabled());
+  assert(await page.locator('#start').isHidden());
   const actions=await page.evaluate(()=>window.testActions);
   assert.deepEqual(actions.map(a=>a.ui_seq),actions.map((_,i)=>i+1));
   assert(actions.some(a=>a.action==='field_key'&&a.key==='ArrowLeft'));
@@ -126,10 +136,10 @@ const assert = require('node:assert/strict');
   assert.equal(actions.at(-1).action,'start');
   await page.evaluate(() => window.testRecording({phase:'complete',bytes_written:8192,
     output_file:'C:/Respira/data/test.xdf',streams:[{name:'Raw Force',source_id:'force-proof'}]}));
-  await page.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor();
+  await page.waitForFunction(() => document.getElementById('xdf-state').textContent === 'Saved');
   assert.equal(await page.locator('#recording-file').textContent(),'C:/Respira/data/test.xdf');
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({result:'passed',actions:actions.length,reflowLayouts:5,viewportLayouts:11,recordingPagination:true,noFitRecovery:true,clipping:0,pageErrors:0}));
+  console.log(JSON.stringify({result:'passed',actions:actions.length,reflowLayouts:5,controlCenterLayouts:2,recordingPagination:true,noFitRecovery:true,clipping:0,pageErrors:0}));
   await browser.close();
   await new Promise(resolve => server.close(resolve));
 })().catch(e=>{console.error(e);process.exit(1);});
