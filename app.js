@@ -7,23 +7,36 @@ import { actionQueue } from './action-queue.js';
 import { mountController } from './controller-ui.js';
 
 const byId = id => document.getElementById(id);
-let invitation = parseInvitation(location.href), active;
-if (location.hash) {
+let invitation = parseInvitation(location.href), active, linkGeneration = 0;
+function scrubInvitation() {
+  if (!location.hash) return;
   try { history.replaceState(null, '', location.pathname + location.search); }
   catch { location.replace('#'); }
 }
+scrubInvitation();
+window.addEventListener('hashchange', () => {
+  const next = parseInvitation(location.href);
+  scrubInvitation();
+  if (!next) return;
+  void stop().then(generation => {
+    if (generation !== linkGeneration) return;
+    invitation = next;
+    void connect();
+  });
+});
 const controller = mountController(byId('controller'), (action, fields) => active?.send(action, fields));
 byId('controller').querySelector('.diagnostics').append(byId('route'));
 controller.setEnabled(false);
 byId('remote-view').addEventListener('change', () => { document.body.dataset.view = byId('remote-view').value; });
 measureTextRegions().catch(() => { document.documentElement.dataset.pretextFit = 'unavailable'; });
-if (invitation) byId('connection-status').textContent = 'Private invitation received. Select Connect to control Respyra.';
+if (invitation) byId('connection-status').textContent = 'Private invitation received. Requesting desktop approval…';
 byId('pairing').addEventListener('submit', event => { event.preventDefault(); void connect(); });
 byId('disconnect').addEventListener('click', () => { void stop(); });
 window.addEventListener('pagehide', () => { void stop(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && active) void stop(); });
 
 async function stop(message = 'Disconnected. Enable a fresh phone invitation in Respyra to reconnect.') {
+  const generation = ++linkGeneration;
   const context = active;
   active = undefined;
   invitation = null;
@@ -50,6 +63,7 @@ async function stop(message = 'Disconnected. Enable a fresh phone invitation in 
   }
   context?.pending.clear();
   await context?.connection?.close();
+  return generation;
 }
 
 async function connect() {
@@ -103,8 +117,8 @@ async function connect() {
     context.connection.addEventListener('snapshot', event => state(event.detail.state));
     context.connection.addEventListener('state', event => state(event.detail.state));
     context.connection.addEventListener('ready', () => {
-      context.connection.sendCommand(OBSERVE_SCOPE,'renew');
-      context.lastRenew = performance.now();
+      context.approvalStarted = performance.now();
+      byId('connection-status').textContent = 'Waiting for approval on the Respyra desktop…';
     });
     context.connection.addEventListener('commandapplied', event => {
       if (active !== context) return;
@@ -125,15 +139,16 @@ async function connect() {
     context.timer = setInterval(() => {
       if (active !== context) return;
       const now = performance.now();
-      if (context.connection.phase === 'ready' && now - context.lastRenew >= 1000) {
+      if (context.lastState && context.connection.phase === 'ready' && now - context.lastRenew >= 1000) {
         context.connection.sendCommand(OBSERVE_SCOPE,'renew'); context.lastRenew = now;
       }
-      if (now - (context.lastState || context.started) > 2000) {
+      if (context.lastState && now - context.lastState > 2000) {
         controller.setEnabled(false);
         byId('connection-status').textContent = 'No recent updates. Controls paused; check the local controller.';
       }
       if (context.lastState && now - context.lastState > 6000) void stop();
-      if (!context.lastState && now - context.started > 30000) void stop('Respyra did not respond. Enable a fresh phone session and try again.');
+      if (!context.lastState && context.approvalStarted && now - context.approvalStarted > 60000) void stop('Desktop approval expired. Create a fresh QR code in Respyra.');
+      if (!context.lastState && !context.approvalStarted && now - context.started > 30000) void stop('Respyra did not respond. Create a fresh QR code and try again.');
     }, 250);
     await context.transport.start();
   } catch { if (active === context) await stop('Connection failed. Enable a fresh phone session and try again.'); }
@@ -141,3 +156,6 @@ async function connect() {
 
 byId('invitation').required = !invitation;
 byId('invitation-field').hidden = Boolean(invitation);
+// Opening a private QR/link requests access; the desktop still decides consent.
+// A restored base page (including Recorder's saved tabs) remains disconnected.
+if (invitation) void connect();

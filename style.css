@@ -74,38 +74,73 @@ details > label { display: block; }
   .coupled header p { display: none; }
   .coupled p { margin-block: 4px; }
 }
-/* Desktop controls occupy separate views of the same viewport. */
-.desktop main { max-width: 1000px; padding: 12px 20px; }
-#viewport-notice { max-width: 1000px; padding: 12px 20px; margin: auto; }
+/* Three parts: study inputs, all-stream viewer, experiment action. */
+.desktop { font-size: .875rem; }
+.desktop main { max-width: 1200px; padding: 12px 20px; display: flex; flex-direction: column; gap: 12px; }
+.desktop button, .desktop input:not([type=checkbox]):not([type=radio]) { min-height: 36px; padding: 6px 10px; }
+.desktop details > summary, .desktop .check-option { min-height: 36px; padding-block: 6px; }
+#viewport-notice { max-width: 1200px; padding: 12px 20px; margin: auto; }
 .desktop header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; }
+.desktop header h1 { font-size: 1.25rem; }
 .desktop header p { margin: 0; }
-.view-picker { display: flex; align-items: center; gap: 12px; margin-block: 8px; }
-.view-picker span { margin: 0; }
-.view-picker select { font: inherit; color: inherit; background: #fff; border: 1px solid #8c959f; border-radius: 4px; padding: 8px; min-height: 44px; min-width: 0; flex: 1; }
-.desktop p { margin-block: 8px; }
-.desktop #status { padding-block: 4px; }
-.desktop .viewer-setup, .desktop #observation { margin: 0; padding: 0; border: 0; }
-.desktop:not([data-view=phone]) .viewer-setup,
-.desktop:not([data-view=data]) #lsl-monitor,
-.desktop:not([data-view=recording]) #recording-panel,
-.desktop:not([data-view=status]) #observation,
-.desktop:is([data-view=phone], [data-view=status], [data-view=recording], [data-view=data]) #setup,
-.desktop:not([data-view=setup]) .fields,
-.desktop:not([data-view=setup]) .check-option,
-.desktop:not([data-view=setup]) .recording-note,
-.desktop:not([data-view=setup]) .final-actions,
-.desktop[data-view=setup] #input-details,
-.desktop[data-view=markers] #controls > section > h2,
-.desktop[data-view=markers] #accepted,
-.desktop:not([data-view=markers]) .marker-options,
-.desktop[data-view=markers] #input-details > :not(.marker-options),
+.desktop #controller { display: contents; }
+.desktop #status, .desktop #command-status { margin: 0; padding: 0; border: 0; }
+.desktop #setup { order: 1; }
+.desktop #controls { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 16px; align-items: center; }
+.desktop .fields { margin: 0; }
+.desktop #input-settings { grid-column: 2; grid-row: 1; }
+.desktop .input-options { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.input-scope { color: #57606a; font-size: .875rem; }
+.desktop #stream-overview { order: 2; border-top: 1px solid #d0d7de; padding-top: 12px; }
+.stream-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.stream-heading h2 { margin: 0; font-size: 1rem; }
+.stream-heading > span, .preview-note { font-size: .875rem; color: #57606a; }
+.readiness { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-block: 8px 12px; }
+.stream-display { display: grid; grid-template-columns: minmax(0,230px) minmax(0,1fr); gap: 24px; }
+.stream-display > div { min-width: 0; }
+.included-stream { display: grid; grid-template-columns: 16px minmax(0,1fr); gap: 8px; align-items: baseline; margin-bottom: 12px; }
+.included-stream > span { margin: 0; }
+.included-stream input { margin: 0; accent-color: #176534; }
+.included-stream[data-live=true]::before { content: none; }
+.included-stream[data-live=true] { color: inherit; }
+.channel-trace { border-bottom: 1px solid #d8dee4; padding-bottom: 4px; margin-bottom: 8px; }
+.channel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.channel-heading > span:first-child { min-width: 0; }
+.channel-value { flex: none; color: #57606a; font-variant-numeric: tabular-nums; }
+.channel-trace svg { display: block; width: 100%; height: 40px; }
+.channel-event { margin-block: 8px; color: #57606a; }
+.desktop .preview-note { margin: 4px 0 0; }
+#viewer-error:empty { display: none; }
+.desktop #action-bar { order: 3; display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 4px 16px; border-top: 1px solid #d0d7de; padding-top: 12px; }
+.desktop #action-bar > .actions { display: contents; }
+.desktop #action-bar > .actions > button { grid-column: 2; grid-row: 1 / 3; }
+.desktop #action-bar #cancel { grid-column: 3; justify-self: end; }
+.desktop #recording-panel, .desktop #observation { grid-column: 1; }
+.desktop #start, .desktop #abort { min-width: 230px; min-height: 54px; background: #b42332; border-color: #b42332; color: white; font-size: 1rem; }
+.desktop #start:hover:enabled, .desktop #abort:hover:enabled { background: #961d2a; }
+.desktop #start:disabled { background: #f0d5d8; border-color: #dfacb2; color: #7c343c; }
+.desktop #recording-panel { min-width: 0; }
+.desktop #recording-panel > h2, .desktop #observation > h2 { display: none; }
+.desktop #recording-panel p { margin: 0; }
+.desktop #recording-details summary { min-height: 28px; padding-block: 2px; }
+.desktop #observation { margin: 0; }
+.desktop #observation > .progress { display: block; margin: 0; }
+.desktop #observation > .progress > :not(:nth-child(4)) { display: none; }
+.desktop #phase-summary { display: inline; }
+.desktop #observation > .progress > :nth-child(4) { color: #57606a; }
+.desktop .viewer-setup { margin: 0; padding: 0; border: 0; }
+.desktop #viewer-open { font-size: inherit; padding: 6px 10px; }
+.desktop .recording-note { display: none; }
+.desktop .actions { gap: 8px; }
 .desktop #input-details > summary { display: none; }
-.desktop[data-view=markers] #input-details { display: block; }
-.desktop .marker-options { margin-top: 0; }
-.desktop #rename { margin-top: 8px; }
+.desktop .progress { margin-block: 8px; }
 .desktop .stream { padding-block: 8px; }
 .desktop #streams:not(:empty) { margin-top: 8px; }
 .desktop .page-actions { align-items: center; margin-block: 8px; }
+.desktop .page-actions button { min-height: 28px; padding: 2px 6px; font-size: .875rem; }
+.desktop dialog { width: min(680px, calc(100% - 24px)); max-width: none; max-height: none; padding: 16px; border: 1px solid #8c959f; border-radius: 4px; color: inherit; background: #fff; }
+.desktop dialog::backdrop { background: rgb(36 41 47 / 25%); }
+.desktop dialog > button { margin-top: 12px; }
 .desktop #viewer-invitation { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 8px 16px; }
 .desktop #viewer-invitation > p { grid-column: 1 / -1; }
 .desktop #viewer-qr { grid-column: 2; grid-row: 2 / 4; }
@@ -114,6 +149,7 @@ details > label { display: block; }
 .desktop #recorded-streams { padding-left: 20px; }
 .desktop #recorded-streams li { white-space: pre-wrap; }
 .desktop #recording-file:empty { display: none; }
+
 #lsl-monitor select { font: inherit; width: 100%; min-height: 44px; border: 1px solid #8c959f; border-radius: 4px; background: #fff; color: inherit; padding: 8px; }
 #monitor-trace { width: 100%; height: 140px; display: block; }
 .trace-grid { fill: none; stroke: #d0d7de; }
@@ -126,10 +162,17 @@ details > label { display: block; }
 .remote[data-view=data] #observation .progress > :nth-child(n+5) { display: none; }
 .remote[data-view=controls] #controller[data-phase=setup] #observation { display: none; }
 .remote #lsl-monitor > h2:first-child { display: none; }
+.remote .input-options { display: none; }
 @media (max-width: 520px) {
-  .desktop main { padding: 8px 12px; }
+  .desktop main { padding: 8px 12px; gap: 8px; }
+  .desktop #controls { grid-template-columns: minmax(0,1fr); }
+  .desktop #controls > details { grid-column: 1; }
+  .desktop #input-settings { grid-column: 1; grid-row: auto; }
+  .desktop #action-bar { grid-template-columns: minmax(0,1fr); }
+  .desktop #action-bar > .actions { display: flex; }
+  .stream-display { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .desktop header { flex-wrap: wrap; }
   .desktop header #study { display: none; }
-  .desktop .fields { gap: 8px; margin-block: 8px; }
-  .desktop #viewer-invitation { grid-template-columns: minmax(0, 1fr) 120px; gap: 8px; }
-  .desktop #viewer-qr img { width: 120px; }
+  .desktop #viewer-invitation { grid-template-columns: minmax(0,1fr); }
+  .desktop #viewer-qr { grid-column: 1; grid-row: auto; }
 }
