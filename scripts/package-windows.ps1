@@ -7,7 +7,7 @@ $stagingRoot = Join-Path $repoRoot '.for-ai-local/packaging'
 New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
 $env:UV_PROJECT_ENVIRONMENT = Join-Path $stagingRoot 'venv'
 try {
-    py -3.10 -m uv sync --frozen --no-dev --no-editable --python 3.10.11
+    py -3.10 -m uv sync --frozen --no-dev --no-editable --python 3.10.11 --reinstall-package mpi
     if ($LASTEXITCODE -ne 0) { throw 'Locked runtime sync failed.' }
 } finally { Remove-Item Env:UV_PROJECT_ENVIRONMENT }
 $archive = Join-Path $stagingRoot 'python-3.10.11-embed-amd64.zip'

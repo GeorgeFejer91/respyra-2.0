@@ -18,6 +18,8 @@ the control plane.
   `scripts/package_runtime.py`. Stage a fresh `uv sync --frozen --no-dev
   --no-editable` environment; never copy the working `.venv` or whole workspace.
   Preserve locked PsychoPy/respyra/LSL dependencies and wheel data/DLL/licenses.
+  Reinstall the local `mpi` wheel on every package build so uv's project cache
+  cannot ship stale source or README metadata after a source-only edit.
   Python `-I` excludes user site/environment paths. Retain stdio isolation.
 - Include only installed runtime packages, fixed product scripts, notices and
   public HTML/fonts/protocol assets. Never include `data/`, notebooks containing
