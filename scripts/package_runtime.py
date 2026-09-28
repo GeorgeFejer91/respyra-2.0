@@ -111,12 +111,14 @@ def stage_runtime() -> None:
 
 
 def icons() -> None:
-    # Reproduction for installer formats, not newly generated artwork.
-    from PIL import Image
+    # Keep the attributed logo intact; tint only the transparent circle interior.
+    from PIL import Image, ImageDraw
     source = Image.open(ROOT / "assets/branding/respyra-upstream.png").convert("RGBA")
     size = max(source.size)
     canvas = Image.new("RGBA", (size, size))
-    canvas.paste(source, ((size - source.width) // 2, (size - source.height) // 2))
+    left = (size - source.width) // 2
+    ImageDraw.Draw(canvas).ellipse((left + 110, 150, left + 1875, 1915), fill=(132, 191, 224, 96))
+    canvas.alpha_composite(source, (left, (size - source.height) // 2))
     canvas.save(STAGE / "icon-square.png")
 
 

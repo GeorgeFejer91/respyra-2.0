@@ -65,6 +65,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/check_native_lsl.py` after a matching native build | historical-unbound; see native receipt below | Native/pipe/lifecycle/remote contracts or consuming runtime change; UI-sensitive changes need focused WebView evidence rather than automatically this whole harness. |
 | Current public phone page pairing and published byte parity | Published mode in `tests/check_native_lsl.py`; deployment/parity readback | see published approval receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
 | Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | unrecorded | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
+| Windows shortcut icon transparency and circle tint: `scripts/package_runtime.py`, packaged PNG/ICO | Icon generation, alpha/color assertions and 48 px preview | reusable; see shortcut icon receipt | Artwork, icon generation, generated PNG/ICO or icon tooling changes. A new installer has its own packaging gate. |
 | Physical belt/phone, scientific timing and other operating systems | Separate named hardware/platform qualification | NOT RUN / unverified in `PROJECT.md` | Those surfaces are requested or claimed; synthetic/browser evidence does not qualify them. |
 | Agent routing, policy links and control-plane structure | `for-ai/scripts/check-context.ps1`, diff and local-link review | Record the policy change's final checks in handoff | Router/rule/linked document changes; this never triggers product suites by itself. |
 
@@ -100,6 +101,13 @@ work. A different HEAD alone does not discard a pass. `REUSED` cites the origina
 entry; it never updates the execution date or pretends the check ran again.
 
 ## Retained baseline evidence
+
+### Windows shortcut icon
+
+- Result/date: `VERIFIED`, 2026-09-28, captured CLI on Windows. The current desktop shortcut also points to the new ICO while retaining its installed-app target.
+- Scope/checks: `python scripts/package_runtime.py --icons`; `pnpm tauri icon .for-ai-local/packaging/icon-square.png`; Pillow assertions for transparent outside, translucent blue center, darker ring and 48 px ICO; visual inspection of `.for-ai-local/icon-preview.png`; shortcut target/icon readback; `git diff --check`.
+- Inputs: base `d557aac0c7c9a5daa6579464f4b48ef261fc97d0` plus uncommitted SHA-256 `scripts/package_runtime.py` `189b1b428e97be149d4f75df07b71d6591966e0438cdab4cdb87716d3b601dc0`, `icon.png` `6af21f792a3b2ab7cf075664cfee23baa9a09d0c7bc06917a1d25cb4db1a8dee`, `icon.ico` `c79d77c38a6953e625afa6ebe670be4a983bd232c48154e1f68ef8a0abd2e890`; upstream artwork retains pinned hash in `assets/branding/README.md`. Python 3.14.7, pnpm 11.19.0.
+- Evidence/limits: `.for-ai-local/icon-check.log`, `shortcut-check.log`, `icon-preview.png`; icon generation and readback passed. No new installer or installed executable was built, and Explorer's on-screen refresh was not observed.
 
 ### Recorder preview and event catalog
 
