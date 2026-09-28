@@ -32,8 +32,8 @@ launch them on the user's active desktop; missing isolation leaves those gates
   public HTML/fonts/protocol assets. Never include `data/`, notebooks containing
   outputs, identity settings, private invitations, diagnostics or credentials.
   Strip build-only editable links, direct_url paths, caches and venv hooks.
-- Use the attributed original upstream transparent artwork, pinned under
-  `assets/branding/`. Generate icon formats with Tauri; no speculative new logo.
+- Generate icon formats with Tauri directly from `assets/icon.svg`, a vector
+  recreation of the attributed upstream artwork pinned under `assets/branding/`.
 - NSIS per-user installation uses the normal destination page. Default requires
   no elevation; the user can choose any writable folder. Include offline WebView2
   delivery. No self-updater, firewall changes or startup task.

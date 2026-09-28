@@ -47,7 +47,7 @@ Build from source on Windows using the tools in the root README:
 
 ```powershell
 pnpm package:windows
-# Regenerate icon formats from the attributed original logo only when needed:
+# Regenerate icon formats from the vector logo only when needed:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-windows.ps1 -GenerateIcons
 ```
 

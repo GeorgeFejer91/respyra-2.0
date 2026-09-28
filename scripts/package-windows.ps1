@@ -21,9 +21,7 @@ $buildPython = Join-Path $stagingRoot 'venv/Scripts/python.exe'
 & $buildPython scripts/build_recorder.py
 if ($LASTEXITCODE -ne 0) { throw 'Pinned native recorder build failed.' }
 if ($GenerateIcons) {
-    & $buildPython scripts/package_runtime.py --icons
-    if ($LASTEXITCODE -ne 0) { throw 'Icon preparation failed.' }
-    pnpm tauri icon (Join-Path $stagingRoot 'icon-square.png')
+    pnpm tauri icon assets/icon.svg
     if ($LASTEXITCODE -ne 0) { throw 'Icon conversion failed.' }
 }
 & $buildPython scripts/package_runtime.py

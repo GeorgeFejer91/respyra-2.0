@@ -110,22 +110,8 @@ def stage_runtime() -> None:
     print(f"Staged {len(inventory)} locked Python distributions; {len(manifest['files'])} files")
 
 
-def icons() -> None:
-    # Keep the attributed logo intact; tint only the transparent circle interior.
-    from PIL import Image, ImageDraw
-    source = Image.open(ROOT / "assets/branding/respyra-upstream.png").convert("RGBA")
-    size = max(source.size)
-    canvas = Image.new("RGBA", (size, size))
-    left = (size - source.width) // 2
-    ImageDraw.Draw(canvas).ellipse((left + 110, 150, left + 1875, 1915), fill=(132, 191, 224, 96))
-    canvas.alpha_composite(source, (left, (size - source.height) // 2))
-    canvas.save(STAGE / "icon-square.png")
-
-
 if __name__ == "__main__":
-    if sys.argv[1:] == ["--icons"]:
-        icons()
-    elif not sys.argv[1:]:
+    if not sys.argv[1:]:
         stage_runtime()
     else:
-        raise SystemExit("Usage: package_runtime.py [--icons]")
+        raise SystemExit("Usage: package_runtime.py")
