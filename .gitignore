@@ -2,6 +2,7 @@
 .for-ai-local/
 node_modules/
 web/vendor/
+web/marker-catalog.js
 companion/vendor/
 companion/style.css
 companion/text-fit.js

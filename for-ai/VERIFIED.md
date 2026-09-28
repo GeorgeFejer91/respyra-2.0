@@ -56,10 +56,10 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | historical-unbound; covered by full-study receipt below | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
 | Complete 48-trial synthetic study: study/calibration/recording owners | `tests/check_control_center.py --full-study` | historical-unbound; see full-study receipt below | Complete-study triggers in `VERIFICATION.md`; panel presentation does not invalidate it. |
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
-| Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | unrecorded | Trace computation, sample/time assumptions or monitor rendering changes. |
+| Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | unrecorded | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
-| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `style.css`, controller/desktop/text-fit modules | `pnpm check:ui` plus inspect changed area | reusable; see remote approval receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
-| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | reusable; see remote approval receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
+| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `style.css`, controller/desktop/text-fit modules | `pnpm check:ui` plus inspect changed area | reusable; see recorder preview receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
+| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | reusable; see recorder preview receipt for current shared assets and remote approval receipt for native ownership | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | unrecorded | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | reusable; see remote approval receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/check_native_lsl.py` after a matching native build | historical-unbound; see native receipt below | Native/pipe/lifecycle/remote contracts or consuming runtime change; UI-sensitive changes need focused WebView evidence rather than automatically this whole harness. |
@@ -100,6 +100,15 @@ work. A different HEAD alone does not discard a pass. `REUSED` cites the origina
 entry; it never updates the execution date or pretends the check ran again.
 
 ## Retained baseline evidence
+
+### Recorder preview and event catalog
+
+- Result/date: `VERIFIED`, 2026-09-28. Headless Chrome 153.0.8010.54 on Windows; captured CLI for the unit check.
+- Scope: one shared time axis for paged channel lanes, marker lines crossing the visible plot with distinct event-group colors, no marker lane, per-stream tabs, reachable later streams, searchable/paged 89-entry program catalog generated from the Python marker authority, 320 px no-fit behavior, and unchanged phone rendering with shared CSS/trace code.
+- Checks: `node --test tests/lsl-monitor.test.mjs` (1 pass); `pnpm check:ui` (14 actions, 5 reflow layouts, 2 control-center layouts, no clipping/page errors); `pnpm check:remote` with `RECORDER_COMPANION` set to the clean `Remote-LSL-Recorder-respyra-control/companion` checkout (12 layouts, 9 mocked mutations, opaque iframe). The first remote invocation without that required variable stopped before running; the configured invocation passed.
+- Inputs: base `11ac8763cf3680e5835fb8b8a12bb6ec5bc41a69` plus scoped source/test/lock and generated-catalog hashes in `.for-ai-local/recorder-preview-inputs.json` (SHA-256 `1699ba0f00bc564f0267ea6b43902ab0da44d906cd3a9383074c1c0dcb74f0db`); Recorder companion commit `d95b1976613e1298ae3f5ead6726087b80703cea`, clean worktree. Node 24.19.0, pnpm 11.19.0.
+- Evidence: `.for-ai-local/recorder-preview-unit.log`, `recorder-preview-ui.log`, `recorder-preview-remote.log`, and headless screenshots `html-setup.png` and `html-markers.png`; the changed areas were inspected.
+- Limits/state: `reusable` for the named inputs. Browser/native bridge and remote transport were mocked; the actual WebView, physical belt, XDF persistence, installed runtime, and live VDO were not rerun for this presentation change.
 
 ### Remote QR request and local approval
 

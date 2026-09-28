@@ -17,9 +17,12 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
 - Never use page or panel scrollbars. All content in the active view fits the
   viewport. Do not hide scrollbars or clip overflow to pretend it fits.
 - Use three compact parts: participant/session and optional input markers;
-  automatic stream checks plus checked inclusion list and stacked channel traces;
-  one salient red Start/action bar. Record all available and late LSL streams by
-  default. Never add a desktop view dropdown. Source selection, CSV, naming and
+  automatic stream checks plus one shared plot with stacked channel lanes;
+  one salient red Start/action bar. Tabs show all channels, each numeric or text
+  stream, and the program event-marker catalog. Colored event lines cross the
+  visible plot lanes on one time axis; markers have no channel lane. Keep channel,
+  stream-tab and catalog pagination. Record all available and late LSL streams
+  regardless of the active tab. Never add a desktop view dropdown. Source selection, CSV, naming and
   diagnostics are optional native Settings dialogs; recording-file details stay
   outside the default workflow. The remote controller is a button opening a QR
   popup automatically, with desktop Approve/Reject on an authenticated request.

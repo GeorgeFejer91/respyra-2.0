@@ -28,6 +28,7 @@ const assert = require('node:assert/strict');
       listener({payload:structuredClone(state)});
     };
     window.testRecording = recording => window.testProgress({...state.progress,phase:'progress',recording});
+    window.testSnapshot = () => structuredClone(state.progress);
     window.__TAURI__ = { event:{listen:async (_name, cb) => {listener=cb; return () => {}; }}, core:{invoke:async (command,args) => {
       if(command === 'launch_backend') return structuredClone(state);
       if(command === 'close_app') return;
@@ -90,13 +91,16 @@ const assert = require('node:assert/strict');
     output_file:'C:/Respira/data/test.xdf.partial', streams:[
       {name:'Raw Force',source_id:'force-proof'}, {name:'Late respiration',source_id:'late-'+'device'.repeat(30)}]}));
   for(let i=0;i<3;i++) await page.evaluate(i=>window.testProgress({
-    phase:'progress',markers:{name:'Respyra-Events',emitted:19},recent:[{event:'tracking.started',seq:19,lsl_time:321.5}],
+    phase:'progress',markers:{name:'Respyra-Events',emitted:19},recent:[
+      {event:'calibration.completed',seq:18,lsl_time:321.25},{event:'tracking.started',seq:19,lsl_time:321.5}],
     health:{signal:'live',sample_age_ms:100,battery_percent:null,preview:{source_id:'force-proof',name:'Raw Force',force_index:1,lsl_time:321+i*.25,
       channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12},{index:1,label:'Force',unit:'N',value:5+i}]}},
     streams:[{uid:'raw-proof',source_id:'force-proof',name:'Raw Force',type:'VernierRaw',numeric:true,signal:'live',lsl_time:321+i*.25,
       channels:[{index:0,label:'Respiration Rate',unit:'breaths/min',value:12},{index:1,label:'Force',unit:'N',value:5+i}]},
       {uid:'other-proof',source_id:'other-proof',name:'Other device',type:'Signal',numeric:true,signal:'live',lsl_time:321+i*.25,
-       channels:[0,1,2,3].map(index=>({index,label:'Signal '+index,unit:'mV',value:index+i}))}]}),i);
+       channels:[0,1,2,3].map(index=>({index,label:'Signal '+index,unit:'mV',value:index+i}))},
+      {uid:'external-markers',source_id:'external-markers',name:'External events',type:'Markers',numeric:false,signal:'live',lsl_time:321.1,
+       channels:[{index:0,label:'Events',unit:'',value:'device.trigger'}]}]}),i);
   assert.equal(await page.locator('#view').count(), 0, 'The control center has no view picker');
   for (const [width,height] of [[820,760],[1440,900]]) {
     await page.setViewportSize({width,height});
@@ -114,24 +118,82 @@ const assert = require('node:assert/strict');
     assert.deepEqual(fit.clipped, [], JSON.stringify({width,height,fit}));
   }
   await page.setViewportSize({width:820,height:760});
-  assert.equal(await page.locator('#available-streams input:checked').count(),3);
-  assert.equal(await page.locator('#channel-stack .channel-trace').count(),7);
+  assert.equal(await page.locator('#available-streams [role=tab]').count(),2);
+  assert.equal(await page.locator('#channel-stack .channel-trace').count(),6);
+  assert.equal(await page.locator('#channel-stack .trace-markers').count(),0, 'Markers have no channel lane');
+  assert.equal(await page.locator('#marker-overlay line').count(),3, 'Program and external markers cross the shared plot');
+  assert.equal(await page.locator('#marker-overlay line').first().getAttribute('y2'),'100');
+  assert.notEqual(await page.locator('#marker-overlay line').first().getAttribute('stroke'),
+    await page.locator('#marker-overlay line').last().getAttribute('stroke'), 'Marker groups have distinct colors');
+  await page.locator('#tab-all').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('[data-preview="stream:raw-proof"]').getAttribute('aria-selected'),'true');
+  await page.keyboard.press('Home');
+  assert.equal(await page.locator('#tab-all').getAttribute('aria-selected'),'true');
+  await page.locator('[data-preview="stream:other-proof"]').click();
+  assert.equal(await page.locator('#channel-stack .channel-trace').count(),4);
+  await page.locator('[data-preview="stream:raw-proof"]').click();
+  assert.equal(await page.locator('#channel-stack .channel-trace').count(),2);
+  await page.locator('#tab-markers').click();
+  assert(await page.locator('#marker-panel').isVisible());
+  const catalog = JSON.parse(await fs.readFile(path.resolve(web, '../src/mpi/event_markers/catalog.json'), 'utf8'));
+  assert.equal(await page.locator('#marker-list .marker-definition').count(), Object.keys(catalog.events).length);
+  assert(await page.locator('main').isVisible(), 'Marker catalog fits the active view');
+  await page.screenshot({path:'.for-ai-local/html-markers.png',fullPage:true});
+  await page.locator('#marker-filter').fill('tracking.started');
+  assert(await page.locator('#marker-list').getByText('tracking.started', {exact:true}).isVisible());
+  await page.locator('#marker-filter').fill('no-such-event');
+  assert(await page.locator('#marker-list').getByText('No matching event markers.').isVisible());
+  await page.locator('#marker-filter').fill('');
+  await page.locator('#marker-list + .page-actions button').last().click();
+  assert(await page.locator('#marker-list .marker-definition').nth(4).isVisible(), 'Catalog pages retain later events');
+  await page.locator('#tab-all').click();
+  const savedProgress = await page.evaluate(() => window.testSnapshot());
+  await page.evaluate(progress => window.testProgress({...progress, streams:[...progress.streams,
+    ...['late-a','late-b'].map(uid => ({uid,source_id:uid,name:uid,type:'Signal',numeric:true,signal:'live',lsl_time:321.5,
+      channels:[{index:0,label:'Force',unit:'N',value:1}]}))]}), savedProgress);
+  const streamNext = page.locator('.stream-tabs + .page-actions button').last();
+  while (await streamNext.isEnabled()) await streamNext.click();
+  assert(await page.locator('[data-preview="stream:late-b"]').isVisible(), 'Later streams remain reachable by tab paging');
+  await page.locator('[data-preview="stream:late-b"]').click();
+  assert.equal(await page.locator('#channel-stack .channel-trace').count(),1);
+  await page.locator('.stream-tabs + .page-actions button').first().click();
+  assert.equal(await page.locator('#tab-all').getAttribute('aria-selected'),'true', 'Paging away keeps a visible active tab');
+  await page.evaluate(progress => window.testProgress(progress), savedProgress);
+  await page.locator('#tab-all').click();
+  for (const tab of ['#tab-all', '#tab-markers']) {
+    await page.setViewportSize({width:820,height:760});
+    await page.locator(tab).click();
+    await page.setViewportSize({width:320,height:900});
+    await page.waitForTimeout(100);
+    const layout = await page.evaluate(() => ({
+      main: !document.querySelector('main').hidden, notice: !document.getElementById('viewport-notice').hidden,
+      overflow: document.documentElement.scrollWidth > innerWidth + 1 || document.documentElement.scrollHeight > innerHeight + 1,
+      clipped: [...document.querySelectorAll('[data-measure]')].filter(e => e.getClientRects().length &&
+        (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)).map(e => e.textContent)
+    }));
+    assert(layout.main || layout.notice, JSON.stringify(layout));
+    assert.equal(layout.overflow, false, JSON.stringify(layout));
+    assert.deepEqual(layout.clipped, [], JSON.stringify(layout));
+  }
+  await page.setViewportSize({width:820,height:760});
+  await page.locator('#tab-all').click();
   assert(await page.evaluate(()=>{
     const bounds=document.getElementById('start').getBoundingClientRect();
     return Math.abs(bounds.left + bounds.width / 2 - innerWidth / 2) < 2;
   }), 'Start is centered in the action bar');
   assert(await page.locator('#channel-stack .trace-line').first().getAttribute('d'));
-  await page.locator('#channel-stack + .page-actions button').last().click();
+  await page.locator('.plot-frame + .page-actions button').last().click();
   assert(await page.locator('#channel-stack .channel-trace').last().isVisible());
-  await page.locator('#channel-stack + .page-actions button').first().click();
+  await page.locator('.plot-frame + .page-actions button').first().click();
   await page.setViewportSize({width:820,height:650});
   await page.waitForTimeout(100);
   assert(await page.locator('main').isVisible(), 'Paging adapts to short windows');
-  const channelNext = page.locator('#channel-stack + .page-actions button').last();
+  const channelNext = page.locator('.plot-frame + .page-actions button').last();
   while (await channelNext.isEnabled()) await channelNext.click();
   assert(await page.locator('#channel-stack .channel-trace').last().isVisible());
   await page.setViewportSize({width:820,height:760});
-  const channelPrevious = page.locator('#channel-stack + .page-actions button').first();
+  const channelPrevious = page.locator('.plot-frame + .page-actions button').first();
   while (await channelPrevious.isEnabled()) await channelPrevious.click();
   await page.locator('#recording-details > summary').click();
   await page.locator('#recorded-streams + .page-actions button').last().click();

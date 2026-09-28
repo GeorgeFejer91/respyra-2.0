@@ -37,7 +37,9 @@ Source/provenance is in `native/recorder/README.md`.
   and late discovery. The study's Force inlet remains its only acquisition and
   calibrated-output owner. The study marker display uses the owner's projection;
   its readiness indicator uses native receipt, preserving pre-subscription naming.
-  HTML stacks all channels with paging and ten-second previews (100 points each).
+  HTML stacks channels in one paged, ten-second plot (100 points each), with
+  marker lines crossing the visible lanes. Its event catalog tab is generated
+  from `src/mpi/event_markers/catalog.json` during web preparation.
 - Optional Windows keyboard/mouse hooks (`mpi.input_capture`) capture only the
   Python study and native desktop windows while XDF recording is active. Rust
   supplies its PID so a virtualenv launcher cannot change the controller identity.

@@ -195,8 +195,9 @@ uv run --frozen python tests/check_native_lsl.py
 
 `check:ui` uses installed Chrome and a mocked native bridge with the actual form.
 For desktop layout changes, read `HTML-UI.md`. Verify the single control center at
-820×760 and 1440×900, with the three-part minimal layout, all-stream inclusion
-checks, stacked channel previews, study/recording status and centered red Start.
+820×760 and 1440×900, with the three-part minimal layout, all-stream recording
+status, one paged plot of stacked channel lanes, colored marker lines crossing
+the lanes, stream and event-catalog tabs, and centered red Start.
 Check automatic unique-belt discovery, waiting/received calibration indicators,
 optional input checkboxes, optional dialogs, stream/channel pagination with
 original row identities, Escape closing a dialog without cancelling setup, and

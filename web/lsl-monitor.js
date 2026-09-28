@@ -14,10 +14,11 @@ export const MONITOR_HTML = `<section id="lsl-monitor" aria-label="Live LSL data
   <ol id="monitor-markers" aria-label="Four latest published markers"></ol>
 </section>`;
 
-export function traceGeometry(points) {
+export function traceGeometry(points, end = points.at(-1)?.[0]) {
   if (!points.length) return {path:'', min:null, max:null};
-  const end = points.at(-1)[0], start = end - 10;
+  const start = end - 10;
   const visible = points.filter(([time]) => time >= start);
+  if (!visible.length) return {path:'', min:null, max:null, start, end};
   const values = visible.map(([, value]) => value);
   const low = Math.min(...values), high = Math.max(...values);
   const padding = Math.max((high - low) * .1, .01);

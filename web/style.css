@@ -96,19 +96,28 @@ details > label { display: block; }
 .stream-heading h2 { margin: 0; font-size: 1rem; }
 .stream-heading > span, .preview-note { font-size: .875rem; color: #57606a; }
 .readiness { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-block: 8px 12px; }
-.stream-display { display: grid; grid-template-columns: minmax(0,230px) minmax(0,1fr); gap: 24px; }
-.stream-display > div { min-width: 0; }
-.included-stream { display: grid; grid-template-columns: 16px minmax(0,1fr); gap: 8px; align-items: baseline; margin-bottom: 12px; }
-.included-stream > span { margin: 0; }
-.included-stream input { margin: 0; accent-color: #176534; }
-.included-stream[data-live=true]::before { content: none; }
-.included-stream[data-live=true] { color: inherit; }
-.channel-trace { border-bottom: 1px solid #d8dee4; padding-bottom: 4px; margin-bottom: 8px; }
-.channel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.stream-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; border-bottom: 1px solid #d0d7de; margin-bottom: 8px; }
+#available-streams { display: contents; }
+.desktop .stream-tabs [role=tab] { max-width: 180px; min-height: 36px; padding: 5px 4px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; text-align: left; font-weight: 400; overflow-wrap: anywhere; }
+.desktop .stream-tabs [role=tab][aria-selected=true] { border-bottom-color: #24292f; font-weight: 600; }
+.desktop .stream-tabs [role=tab]:hover { background: #eaeef2; }
+.desktop .stream-tabs [role=tab][data-live=true]::before { content: none; }
+.stream-tabs + .page-actions { margin: 0 0 8px !important; }
+.plot-frame { --channel-label-width: 200px; position: relative; border: 1px solid #d0d7de; background: #fff; }
+.channel-trace { display: grid; grid-template-columns: minmax(0,var(--channel-label-width)) minmax(0,1fr); align-items: stretch; min-height: 50px; border-bottom: 1px solid #d8dee4; }
+.channel-trace:last-child { border-bottom: 0; }
+.channel-heading { display: flex; flex-direction: column; justify-content: center; min-width: 0; gap: 2px; padding: 4px 8px; border-right: 1px solid #d8dee4; line-height: 1.25; }
 .channel-heading > span:first-child { min-width: 0; }
 .channel-value { flex: none; color: #57606a; font-variant-numeric: tabular-nums; }
-.channel-trace svg { display: block; width: 100%; height: 40px; }
-.channel-event { margin-block: 8px; color: #57606a; }
+.channel-trace svg { display: block; width: 100%; height: 50px; }
+.channel-event { min-width: 0; margin: auto 8px; color: #57606a; }
+#marker-overlay { position: absolute; z-index: 1; left: var(--channel-label-width); top: 0; width: calc(100% - var(--channel-label-width)); height: 100%; pointer-events: none; }
+.marker-search { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.marker-search span { flex: none; margin: 0; }
+.desktop .marker-search input { flex: 1; min-width: 0; max-width: 320px; font: inherit; border: 1px solid #8c959f; border-radius: 4px; background: #fff; }
+.marker-definition { display: flex; align-items: baseline; gap: 12px; min-width: 0; padding: 5px 8px; border-left: 3px solid; border-bottom: 1px solid #d8dee4; }
+.marker-definition strong { flex: 0 0 34%; min-width: 0; overflow-wrap: anywhere; }
+.marker-definition span { min-width: 0; }
 .desktop .preview-note { margin: 4px 0 0; }
 #viewer-error:empty { display: none; }
 .desktop #action-bar { order: 3; display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 4px 16px; border-top: 1px solid #d0d7de; padding-top: 12px; }
@@ -170,7 +179,9 @@ details > label { display: block; }
   .desktop #input-settings { grid-column: 1; grid-row: auto; }
   .desktop #action-bar { grid-template-columns: minmax(0,1fr); }
   .desktop #action-bar > .actions { display: flex; }
-  .stream-display { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .plot-frame { --channel-label-width: 110px; }
+  .marker-definition { display: block; }
+  .marker-definition strong { display: block; }
   .desktop header { flex-wrap: wrap; }
   .desktop header #study { display: none; }
   .desktop #viewer-invitation { grid-template-columns: minmax(0,1fr); }
