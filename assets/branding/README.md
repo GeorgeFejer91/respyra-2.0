@@ -10,5 +10,5 @@ The Windows icon uses `assets/icon.svg`, a resolution-independent
 vector recreation of this attributed artwork. It keeps a translucent light
 blue circle interior and a transparent exterior. Tauri generates PNG and ICO
 sizes directly from the SVG; this original PNG remains a provenance reference.
-The installed product name is Respira; the upstream artwork retains its
+The installed product name is Respyra 2.0; the upstream artwork retains its
 original Respyra lettering. See `scripts/package-windows.ps1` for generation.

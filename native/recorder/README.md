@@ -2,7 +2,7 @@
 
 `respyrecorder.exe` is the bundled thin CLI over LabRecorder's native recording/XDF
 engine. It follows Remote-LSL-Recorder's native-process approach; its standalone
-recorder application and private settings are not copied into Respira.
+recorder application and private settings are not copied into Respyra 2.0.
 
 `upstream/` contains exact MIT-licensed source at the revision and hashes in
 `source-lock.json`. `scripts/build_recorder.py` verifies those inputs and applies

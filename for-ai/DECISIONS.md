@@ -241,3 +241,17 @@ decision and link both entries.
   or automatically request foreground execution.
 - Supersedes: Any earlier recipe interpreted as permission to display test
   windows on the active desktop; product behavior and release gates remain.
+
+## D-0012 — Use Respyra 2.0 as the product name
+
+- Date: 2026-09-28
+- Status: Accepted
+- Context: After reviewing the desktop app, the user corrected its name to
+  Respyra 2.0.
+- Decision: Use Respyra 2.0 for the window, installer, shortcut, product
+  manifest and user-facing documentation. Retain the app identifier and the
+  existing `%LOCALAPPDATA%/Respira` data folder, environment variables and
+  recorder protocol so prior recordings and integrations remain reachable.
+- Consequences: New installer branding needs its own artifact and installed
+  upgrade checks before release; a debug app build proves only the local title.
+- Supersedes: The product display name in D-0008, not its packaging design.

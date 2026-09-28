@@ -149,7 +149,7 @@ class NativeRecording:
         try:
             executable = self.runtime / "respyrecorder.exe"
             if not executable.is_file() or not (self.runtime / "lsl.dll").is_file():
-                raise RecordingError("Native recorder is missing. Reinstall Respira or run pnpm prepare:recorder.")
+                raise RecordingError("Native recorder is missing. Reinstall Respyra 2.0 or run pnpm prepare:recorder.")
             self.output.mkdir(parents=True, exist_ok=True)
             safe = lambda value: re.sub(r"[^A-Za-z0-9_-]", "-", value)[:32] or "session"
             self.path = self.output / f"respyra-{safe(values['participant'])}-{safe(values['session'])}-{uuid4().hex}.xdf.partial"

@@ -34,7 +34,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Windows installer build failed.' }
 $output = Join-Path $repoRoot 'dist'
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-$name = "Respira_${version}_x64-setup.exe"
+$productName = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).productName
+$name = "${productName}_${version}_x64-setup.exe"
 Copy-Item -LiteralPath (Join-Path $repoRoot "src-tauri/target/release/bundle/nsis/$name") -Destination (Join-Path $output $name)
 $checksum = (Get-FileHash -LiteralPath (Join-Path $output $name) -Algorithm SHA256).Hash.ToLowerInvariant()
 "$checksum  $name" | Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt') -Encoding ascii

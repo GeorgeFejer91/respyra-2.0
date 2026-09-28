@@ -1,6 +1,6 @@
 # Included third-party software
 
-The standalone Respira distribution retains the original licensed dependencies
+The standalone Respyra 2.0 distribution retains the original licensed dependencies
 listed in `engine/notices/python-packages.json`, their metadata, original
 license files, DLL/data files, and the resolved `uv.lock`. The private CPython
 runtime includes its own `LICENSE.txt`. These components keep their own licenses.

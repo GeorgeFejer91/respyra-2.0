@@ -1,7 +1,7 @@
-# Respira for Windows
+# Respyra 2.0 for Windows
 
-Run `Respira_0.3.0_x64-setup.exe` on Windows 10/11 x64. The installer lets you
-choose a destination folder, creates a Respira Start menu shortcut and provides
+Run `Respyra 2.0_0.3.0_x64-setup.exe` on Windows 10/11 x64. The installer lets you
+choose a destination folder, creates a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
 folder on the destination page if desired.
@@ -13,18 +13,19 @@ need Python, Git, Node, Rust, a source checkout or package downloads to launch.
 The Windows Universal C Runtime supplied by Windows 10/11 is required.
 QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and
 therefore still needs Internet access. Hardware acquisition remains a separate
-Vernier Stream Mini program. Respira owns recording; a separate LSL recorder is unnecessary.
+Vernier Stream Mini program. Respyra 2.0 owns recording; a separate LSL recorder is unnecessary.
 
-Open Respira to use **Experiment control**. Enter participant/session; a unique
+Open Respyra 2.0 to use **Experiment control**. Enter participant/session; a unique
 live raw Force LSL stream connects automatically (ambiguous choices are in
 **Settings**). The middle panel includes all streams and stacked live channel
-previews. The red **Start Experiment** button waits for native
+previews in one plot with stream tabs and event-marker lines. The red **Start Experiment** button waits for native
 recording readiness before opening PsychoPy, records raw input and markers through
 calibration/cleanup, and discovers additional streams during the run. **XDF recording**
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
 
 XDFs are always saved in `%LOCALAPPDATA%\Respira\data`, with unique filenames.
+The data folder keeps its previous name so existing recordings stay in place.
 **Saved** means required stream data and closed XDF footers passed verification.
 Failures preserve `.xdf.partial` files. The phone opens a live LSL channel/marker
 monitor; select **Experiment controls** to set up the study.

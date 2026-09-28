@@ -1,4 +1,4 @@
-# Respira (Respyra 2.0)
+# Respyra 2.0
 
 HTML/Tauri experiment controller for a Python breathing-belt validation study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -9,7 +9,7 @@ The importable Python package keeps its original name, `mpi`.
 
 ## Windows program
 
-The standalone **Respira** installer includes **respyrecorder**, the native LSL/XDF recorder, locked Python/PsychoPy engine
+The standalone **Respyra 2.0** installer includes **respyrecorder**, the native LSL/XDF recorder, locked Python/PsychoPy engine
 and offline WebView2 delivery. It allows choosing the installation folder and
 creates a Start menu shortcut. See [Windows installation](docs/windows-install.md)
 for build/download checks, writable CSV location and qualification limits.
@@ -47,10 +47,9 @@ when discovered, including streams started later. No separate recorder is requir
 The first window is
 the **Experiment control** panel with participant/session and breathing-input setup.
 The three-part control center shows participant/session inputs at the top,
-all available streams with stacked live channel previews in the middle, and a
+one shared plot with stacked live channels, stream tabs and event markers in the middle, and a
 red **Start Experiment** button at the bottom. All streams are included
-automatically; the checked stream list is an inclusion display. Additional
-channels are paged without dropping them. Enter the participant number and
+automatically. Additional channels are paged without dropping them. Enter the participant number and
 study session, then Start. The default session is 001; its parity determines
 the study's counterbalancing.
 

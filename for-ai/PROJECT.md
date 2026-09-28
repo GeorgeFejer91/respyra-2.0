@@ -68,7 +68,7 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   The experiment control window remains available during PsychoPy, without
   taking participant focus. A second display or phone avoids focus changes.
   Stop cleans up the study; phone loss revokes control but leaves a run active.
-  Debug workspace builds use the checkout's `.venv`. The user-requested Respira
+  Debug workspace builds use the checkout's `.venv`. The Respyra 2.0
   Windows installer bundles the locked engine with isolated CPython; release
   builds never fall back to a checkout. Optional installed CSVs use the writable
   user folder. Packaging/release gates are in `PACKAGING.md`. App identity is

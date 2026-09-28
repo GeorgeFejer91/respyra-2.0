@@ -44,7 +44,7 @@ fn engine_paths(
             "Python environment missing. Run uv sync --frozen in the checkout first.".into(),
         );
     }
-    Err("The bundled experiment engine is missing. Reinstall Respira.".into())
+    Err("The bundled experiment engine is missing. Reinstall Respyra 2.0.".into())
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -265,7 +265,7 @@ fn launch_backend(
             .map_err(|e| e.to_string())?
             .join("Respira");
         std::fs::create_dir_all(&directory)
-            .map_err(|e| format!("Cannot create Respira data folder: {e}"))?;
+            .map_err(|e| format!("Cannot create application data folder: {e}"))?;
         directory
     } else {
         root.to_path_buf()
@@ -287,7 +287,7 @@ fn launch_backend(
         .stderr(Stdio::inherit());
     if packaged {
         let log = std::fs::File::create(working_dir.join("engine.log"))
-            .map_err(|e| format!("Cannot open Respira engine diagnostics: {e}"))?;
+            .map_err(|e| format!("Cannot open engine diagnostics: {e}"))?;
         command
             .env("RESPIRA_DATA_DIR", working_dir.join("data"))
             .env("RESPIRA_RECORDER_DIR", resources.join("engine/recorder"))

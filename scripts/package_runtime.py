@@ -93,7 +93,8 @@ def stage_runtime() -> None:
     (notices / "python-packages.json").write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
     shutil.copy2(ROOT / "uv.lock", notices)
     print(f"Staged {len(inventory)} locked packages; hashing installed inputs…", flush=True)
-    manifest = {"product": "Respira", "version": json.loads((ROOT / "package.json").read_text())["version"],
+    manifest = {"product": json.loads((ROOT / "src-tauri/tauri.conf.json").read_text())["productName"],
+                "version": json.loads((ROOT / "package.json").read_text())["version"],
                 "platform": "windows-x86_64", "python": {"version": "3.10.11", "url": PYTHON_URL, "sha256": PYTHON_SHA256},
                 "runtime_support": "App-local MSVC DLLs from the locked PyQt6-Qt6 wheel",
                 "source_revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),

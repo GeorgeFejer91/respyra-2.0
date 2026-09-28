@@ -46,6 +46,7 @@ const assert = require('node:assert/strict');
     }}};
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  assert.equal(await page.title(), 'Respyra 2.0 — Experiment control');
   await page.waitForTimeout(200);
   await page.waitForFunction(() => !document.getElementById('controls').disabled);
   await page.waitForTimeout(100);

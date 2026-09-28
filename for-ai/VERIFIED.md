@@ -58,7 +58,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | unrecorded | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
-| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `style.css`, controller/desktop/text-fit modules | `pnpm check:ui` plus inspect changed area | reusable; see recorder preview receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
+| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `style.css`, controller/desktop/text-fit modules | `pnpm check:ui` plus inspect changed area | reusable; see recorder preview and product naming receipts | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
 | Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | reusable; see recorder preview receipt for current shared assets and remote approval receipt for native ownership | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | unrecorded | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | reusable; see remote approval receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
@@ -117,6 +117,15 @@ entry; it never updates the execution date or pretends the check ran again.
 - Inputs: base `11ac8763cf3680e5835fb8b8a12bb6ec5bc41a69` plus scoped source/test/lock and generated-catalog hashes in `.for-ai-local/recorder-preview-inputs.json` (SHA-256 `1699ba0f00bc564f0267ea6b43902ab0da44d906cd3a9383074c1c0dcb74f0db`); Recorder companion commit `d95b1976613e1298ae3f5ead6726087b80703cea`, clean worktree. Node 24.19.0, pnpm 11.19.0.
 - Evidence: `.for-ai-local/recorder-preview-unit.log`, `recorder-preview-ui.log`, `recorder-preview-remote.log`, and headless screenshots `html-setup.png` and `html-markers.png`; the changed areas were inspected.
 - Limits/state: `reusable` for the named inputs. Browser/native bridge and remote transport were mocked; the actual WebView, physical belt, XDF persistence, installed runtime, and live VDO were not rerun for this presentation change.
+
+### Respyra 2.0 product name
+
+- Result/date: `VERIFIED`, 2026-09-28, for the local debug build and browser title.
+- Scope: Tauri product/window name, HTML title, installer overlay labels, package-manifest source and retained legacy data path. No new release artifact was promoted.
+- Checks: `pnpm check:ui` passed its headless layout/action suite with the exact HTML title assertion; `.venv/Scripts/python.exe -m pytest tests/test_recording.py` passed 10 tests; `pnpm tauri build --debug --no-bundle` compiled the renamed app. Parsed the Tauri/NSIS JSON labels and PowerShell/Python packaging script syntax. A user-requested visible review launch exposed a responsive window titled `Respyra 2.0 — Experiment control` through `EnumWindows/GetWindowText`; this was not an isolated GUI qualification run.
+- Inputs: base `d557aac0c7c9a5daa6579464f4b48ef261fc97d0`, scoped source/config/test hashes and debug executable hash in `.for-ai-local/product-name-inputs.json` (SHA-256 `4a7b741559e18394a1438897fec755ca16fed4aa887aa35fcc73f623fa824e80`). Node 24.19.0, Python 3.10.11, Cargo 1.96.0.
+- Evidence: captured command results in this task and the ignored input/window manifest above.
+- Limits/state: `reusable` for the local title and named checks. The 495 MB pre-existing `Respira_0.3.0_x64-setup.exe` is an older artifact; a new NSIS build, install/upgrade, shortcuts and uninstall behavior remain `NOT RUN` until release qualification. The `%LOCALAPPDATA%/Respira` data path deliberately remains unchanged.
 
 ### Remote QR request and local approval
 

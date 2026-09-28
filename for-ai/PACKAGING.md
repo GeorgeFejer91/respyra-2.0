@@ -1,6 +1,6 @@
 # Windows standalone packaging protocol
 
-Current consumer: build/verify the downloadable Respira installer. Read this
+Current consumer: build/verify the downloadable Respyra 2.0 installer. Read this
 file for packaging, installation, dependency changes or release promotion.
 Product usage belongs in `docs/windows-install.md`; scripts/assets stay outside
 the control plane.
@@ -12,7 +12,7 @@ launch them on the user's active desktop; missing isolation leaves those gates
 
 ## Contract and ownership
 
-- Product display name: **Respira**. Retain app ID `dev.georgefejer.respyra2`,
+- Product display name: **Respyra 2.0**. Retain app ID `dev.georgefejer.respyra2`,
   Python names `mpi`/`respyra`, raw Force units and existing study semantics.
 - Windows 10/11 x64 only for this installer. Raspberry Pi/macOS are separate
   host/runtime qualification work; a Windows bundle is no evidence for them.
@@ -37,8 +37,9 @@ launch them on the user's active desktop; missing isolation leaves those gates
 - NSIS per-user installation uses the normal destination page. Default requires
   no elevation; the user can choose any writable folder. Include offline WebView2
   delivery. No self-updater, firewall changes or startup task.
-- Installed runtime cwd is `%LOCALAPPDATA%/Respira`; optional original CSVs go
-  to its `data/`. Retain `%LOCALAPPDATA%/Respyra/lsl-source.json` identity memory.
+- Installed runtime cwd remains `%LOCALAPPDATA%/Respira` for existing recordings;
+  optional original CSVs go to its `data/`. Retain
+  `%LOCALAPPDATA%/Respyra/lsl-source.json` identity memory.
   Uninstall must retain user data. Bundle the pinned native recorder under
   `engine/recorder`, including app-local DLLs, licenses and manifest. Build it
   with the isolated packaging venv's locked runtime support; verify source,
