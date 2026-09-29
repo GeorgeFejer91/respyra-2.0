@@ -40,6 +40,9 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
         def source_id(self):
             return "polar-stream-vernier-raw-Vernier-GDX-Mini_rawVernier"
 
+        def uid(self):
+            return "synthetic-force-uid"
+
         def as_xml(self):
             return XML
 

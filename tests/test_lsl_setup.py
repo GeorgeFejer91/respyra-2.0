@@ -73,6 +73,15 @@ def test_experiment_fields_save_without_a_button_and_restore_on_restart(setup):
         send(setup, "field_edit", field="variables", value="not json")
 
 
+def test_record_stream_choice_is_reflected_in_setup_snapshot(setup):
+    send(setup, "shown")
+    send(setup, "record_stream", uid="polar-heart-rate-uid", enabled=False)
+    assert setup.snapshot()["excluded_streams"] == ["polar-heart-rate-uid"]
+    send(setup, "record_stream", uid="polar-heart-rate-uid", enabled=True)
+    assert setup.snapshot()["excluded_streams"] == []
+    assert setup.markers.names.count("recording.stream.changed") == 2
+
+
 @pytest.mark.parametrize("saved_state", ["none", "missing", "corrupt"])
 def test_scan_rejects_wrong_units_and_remembers_only_live_selection(monkeypatch, setup, saved_state):
     source, saved = live_source(), []

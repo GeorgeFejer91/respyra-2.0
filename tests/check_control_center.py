@@ -49,7 +49,10 @@ source = None
 recorder = NativeRecording(root / ".for-ai-local/recorder/runtime", output)
 try:
     source = open_force_source(resolve_byprop('source_id', identity, timeout=5)[0])
+    source.start_derived(markers.run_id)
     recorder.start(dict(participant="synthetic-control", session="001"), source, markers)
+    assert source.calibrated_id in recorder.snapshot()["data_sources"]
+    assert source.calibrated_sample is None
     if '--full-study' in sys.argv:
         # Exercise every configured trial and actual PsychoPy phase with fast timings
         # and simulated responses. This is deliberately separate from a participant run.
@@ -80,9 +83,16 @@ try:
         assert source.stopped
         calibration_center, calibration_amplitude = source.center, source.amplitude
     else:
-        markers.emit("calibration.completed", center_n=5, amplitude_n=2, y_min_n=3, y_max_n=7)
+        source.get_all()
+        markers.emit("calibration.completed", center_n=5, amplitude_n=2, y_min_n=3, y_max_n=7,
+                     center_value=5, amplitude_value=2, y_min_value=3, y_max_value=7, signal_unit="N")
         source.calibrate(5, 2, markers.run_id)
-        recorder.wait_for_data(source.calibrated_id, source.get_all)
+        deadline = time.monotonic() + 8
+        while source.calibrated_sample is None and time.monotonic() < deadline:
+            source.get_all()
+            time.sleep(.025)
+        assert source.calibrated_sample is not None
+        recorder.wait_for_finite_data(source.calibrated_id, source.get_all)
         calibration_center, calibration_amplitude = 5, 2
     late = StreamOutlet(StreamInfo("Late external markers", "Markers", 1, 0, cf_string, "late-control-markers"))
     deadline = time.monotonic() + 10
@@ -108,7 +118,12 @@ try:
     streams, _ = pyxdf.load_xdf(str(recorder.path), synchronize_clocks=False, dejitter_timestamps=False)
     by_id = {stream["info"]["source_id"][0]: stream for stream in streams}
     raw_values = [(timestamp, sample[1]) for timestamp, sample in zip(by_id[identity]["time_stamps"], by_id[identity]["time_series"])]
-    for timestamp, sample in zip(by_id[source.calibrated_id]["time_stamps"], by_id[source.calibrated_id]["time_series"]):
+    derived = list(zip(by_id[source.calibrated_id]["time_stamps"], by_id[source.calibrated_id]["time_series"]))
+    assert any(math.isnan(sample[0]) for _, sample in derived)
+    assert any(math.isfinite(sample[0]) for _, sample in derived)
+    for timestamp, sample in derived:
+        if math.isnan(sample[0]):
+            continue
         # The study inlet applies clock synchronization; native raw XDF retains producer timestamps.
         raw_time, raw_value = min(raw_values, key=lambda row: abs(row[0] - timestamp))
         assert abs(raw_time - timestamp) < .01

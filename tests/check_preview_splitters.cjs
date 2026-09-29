@@ -17,11 +17,11 @@ const { chromium } = require('playwright');
   const server = http.createServer(async (request, response) => {
     if (request.url === '/api/streams') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify(sample)); return; }
     if (request.url === '/api/refresh') { response.end('{}'); return; }
-    const file = path.resolve(web, '.' + request.url);
+    const file = path.resolve(web, '.' + new URL(request.url, 'http://localhost').pathname);
     if (!file.startsWith(web + path.sep)) { response.writeHead(403).end(); return; }
     try {
       const data = await fs.readFile(file);
-      response.setHeader('Content-Type', { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2' }[path.extname(file)] || 'application/octet-stream');
+      response.setHeader('Content-Type', { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.woff2': 'font/woff2' }[path.extname(file)] || 'application/octet-stream');
       response.end(data);
     } catch { response.writeHead(404).end(); }
   });

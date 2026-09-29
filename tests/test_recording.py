@@ -38,10 +38,11 @@ def test_completion_rejects_incomplete_or_missing_data(tmp_path, kind):
 
 def test_recorder_failure_prevents_setup_acceptance():
     events = []
-    markers = SimpleNamespace(name='Events', emit=lambda name, **_: events.append(name))
+    markers = SimpleNamespace(name='Events', run_id='test-run', emit=lambda name, **_: events.append(name))
     recorder = SimpleNamespace(start=lambda *a: (_ for _ in ()).throw(RecordingError('disk unavailable')))
     setup = SourceSetup(SimpleNamespace(name='Study'), markers, recorder)
-    setup.source = SimpleNamespace(get_all=lambda: [], source_id='raw-test', stream_name='Force')
+    setup.source = SimpleNamespace(get_all=lambda: [], start_derived=lambda _: None,
+                                   source_id='raw-test', stream_name='Force')
     setup.values['participant'] = 'synthetic'
     setup.shown = True
     try:

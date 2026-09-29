@@ -19,7 +19,7 @@ const path = require('node:path');
     const file = path.resolve(web, '.' + pathname);
     if (!file.startsWith(web + path.sep)) { res.writeHead(403).end(); return; }
     try {
-      res.setHeader('Content-Type', { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2' }[path.extname(file)] || 'application/octet-stream');
+      res.setHeader('Content-Type', { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.woff2': 'font/woff2' }[path.extname(file)] || 'application/octet-stream');
       res.end(await fs.readFile(file));
     } catch { res.writeHead(404).end(); }
   });

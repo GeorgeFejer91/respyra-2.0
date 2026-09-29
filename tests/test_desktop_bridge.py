@@ -19,6 +19,13 @@ def test_closed_action_contract_rejects_malformed_input(fields):
     with pytest.raises(ValueError): validate_action(action(**fields))
 
 
+def test_record_stream_accepts_lsl_uid_only():
+    assert validate_action(action(action="record_stream", uid="abc-123", enabled=False))["uid"] == "abc-123"
+    for uid in ["", "a' or true()", "x" * 129]:
+        with pytest.raises(ValueError):
+            validate_action(action(action="record_stream", uid=uid, enabled=False))
+
+
 def test_pipe_preserves_order_then_reports_close():
     bridge = DesktopBridge(io.StringIO("\n".join(json.dumps(action(n)) for n in [1, 2]) + "\n"), io.StringIO())
     assert bridge.closed.wait(1)

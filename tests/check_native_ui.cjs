@@ -14,12 +14,12 @@ const assert = require('node:assert/strict');
   }
   assert(page,'Respyra WebView missing');
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-  try { await page.waitForFunction(()=>!document.getElementById('controls').disabled,{},{timeout:15000}); }
+  try { await page.waitForFunction(()=>document.getElementById('shell')?.getClientRects().length && !document.getElementById('participant').disabled,{},{timeout:15000}); }
   catch(e) { console.error(await page.locator('body').innerText());console.error(await page.evaluate(()=>window.__TAURI__.core.invoke('launch_backend')));console.error(errors);throw e; }
   const mode=process.argv[2];
   let ui=page, phoneBrowser;
   if(mode==='remote') {
-    await page.waitForFunction(()=>document.getElementById('accepted').textContent.includes('Synthetic raw Force'),{},{timeout:20000});
+    await page.waitForFunction(()=>document.getElementById('hub-input-status').textContent.includes('Synthetic raw Force'),{},{timeout:20000});
     const fences=await page.evaluate(async()=>{
       const call=action=>window.__TAURI__.core.invoke('viewer_action',{action});
       const invite=await call({action:'start'});
@@ -125,71 +125,48 @@ const assert = require('node:assert/strict');
   await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
   if(mode==='memory') {
-    await ui.locator('#record_keyboard').check();
-    await ui.locator('#record_mouse').check();
+    await ui.locator('#include-keyboard-markers').check();
+    await ui.locator('#include-mouse-markers').check();
   }
   if(process.env.RESPIRA_INSTALLED_EXE && mode==='memory') {
-    await page.locator('#input-settings > summary').click();
-    await ui.locator('#save_csv').check();
-    await page.locator('dialog[open] > button').click();
+    await page.locator('#settings-open').click();
+    await page.locator('#save-csv').check();
+    await page.locator('#settings-done').click();
   }
   if(mode==='remote') {
     await ui.locator('#save_csv').check();
-    await page.waitForFunction(()=>document.getElementById('save_csv').checked);
+    await page.waitForFunction(()=>document.getElementById('save-csv').checked);
     await ui.locator('#save_csv').uncheck();
-    await page.waitForFunction(()=>!document.getElementById('save_csv').checked);
+    await page.waitForFunction(()=>!document.getElementById('save-csv').checked);
   }
   if(mode==='select') {
-    await page.locator('#input-settings > summary').click();
-    await page.locator('#scan').click();
-    const choose = async name => {
-      await page.waitForFunction(()=>!document.getElementById('controls').disabled);
-      const row = page.locator('.stream').filter({hasText:name});
-      await row.waitFor({state:'attached',timeout:20000});
-      const previous = page.locator('#streams + .page-actions button').first();
-      while (await previous.isEnabled()) await previous.click();
-      for (let i=0; !(await row.isVisible()) && i<20; i++) {
-        const next=page.locator('#streams + .page-actions button').last();
-        assert(await next.isEnabled(),JSON.stringify(await page.evaluate(()=>({view:document.body.dataset.view,
-          mainHidden:document.querySelector('main').hidden,height:innerHeight,width:innerWidth,
-          text:document.querySelector('main').innerText,pager:document.querySelector('#streams + .page-actions')?.innerText}))));
-        await next.click();
-      }
-      await row.locator('input').check();
-      await page.waitForFunction(()=>!document.getElementById('controls').disabled);
-    };
-    await choose('Synthetic raw Force');
-    assert(await page.locator('.stream').filter({hasText:'Synthetic normalized'}).count());
-    await choose('Synthetic normalized');
-    assert(await page.locator('#use').isDisabled());
-    await choose('Synthetic raw Force');
-    await page.locator('#use').click();
-    await page.locator('dialog[open] > button').click();
+    await page.locator('#refresh').click();
+    await page.locator('#breathing-source option', {hasText:'Synthetic raw Force'}).waitFor({state:'attached',timeout:20000});
+    assert(await page.locator('.stream-row').filter({hasText:'Synthetic normalized'}).count());
+    await page.locator('#breathing-source').selectOption({label:'Synthetic raw Force'});
   }
   await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000});
-  assert((await ui.locator('#accepted').textContent()).includes('Synthetic raw Force'));
+  if(mode!=='remote') assert((await page.locator('#hub-input-status').textContent()).includes('Synthetic raw Force'));
   if(mode==='remote') {
     await ui.evaluate(()=>document.fonts.ready);
     const compact=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth}));
     await ui.screenshot({path:'.for-ai-local/native-phone-setup.png',fullPage:true});
     assert(compact.height<=compact.viewport+1,'Phone setup needs scrolling: '+JSON.stringify(compact));
   }
-  const geometry=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1, measured:document.querySelectorAll('[data-pretext-fit]').length}));
+  const geometry=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1, measured:document.querySelectorAll('[data-measure]').length}));
   assert(!geometry.overflow && geometry.measured>10,JSON.stringify(geometry));
   for (const [width,size] of [[320,16],[1440,16],[320,32]]) {
     await page.setViewportSize({width,height:900});
     await page.evaluate(size=>{document.documentElement.style.fontSize=size+'px';},size);
     await page.waitForTimeout(100);
     const fit=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,clipped:[...document.querySelectorAll('[data-measure]')].filter(e=>e.getClientRects().length && (e.scrollWidth>e.clientWidth+1 || e.scrollHeight>e.clientHeight+1)).length}));
-    assert(!fit.overflow && !fit.clipped,JSON.stringify({width,size,fit}));
+    assert(!fit.overflow && (!await page.locator('#shell').isVisible() || !fit.clipped),JSON.stringify({width,size,fit}));
   }
   await page.setViewportSize({width:820,height:900});
   await page.evaluate(()=>{document.documentElement.style.fontSize='16px';});
   await page.screenshot({path:`.for-ai-local/native-${mode}.png`,fullPage:true});
   if(mode==='select') {
-    await page.locator('#cancel').click();
-    await page.locator('#close').waitFor({state:'visible',timeout:20000});
-    await page.locator('#close').click();
+    await page.evaluate(()=>{ void window.__TAURI__.core.invoke('close_app',{reason:'close_button'}); });
   } else {
     await ui.locator('#start').click();
     const fs=require('node:fs');
@@ -199,10 +176,10 @@ const assert = require('node:assert/strict');
       await ui.locator('#xdf-state').getByText('Recording', {exact:true}).waitFor({timeout:10000});
       await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
     } else {
-      await page.locator('#recording-status').getByText(/Recording/u).waitFor({timeout:10000});
-      await page.locator('#raw-check').getByText('Breathing: live',{exact:true}).waitFor({timeout:10000});
+      await page.locator('#stream-status').getByText(/recording/u).waitFor({timeout:10000});
+      await page.locator('#input-readiness').getByText('Receiving samples',{exact:true}).waitFor({timeout:10000});
     }
-    assert.equal(await ui.locator('#battery').textContent(),'Not reported');
+    if(mode==='remote') assert.equal(await ui.locator('#battery').textContent(),'Not reported');
     if(mode==='remote') {
       await ui.waitForFunction(() => document.getElementById('monitor-value').textContent.includes('Live') && document.getElementById('trace-line').getAttribute('d')?.includes('L'));
       assert.equal(await ui.locator('#monitor-channel option').count(),2);
@@ -215,12 +192,12 @@ const assert = require('node:assert/strict');
       assert(monitorFit.height<=monitorFit.viewport+1 && monitorFit.width<=monitorFit.viewportWidth+1,'Phone monitor needs scrolling: '+JSON.stringify(monitorFit));
       await ui.screenshot({path:'.for-ai-local/native-remote-controller.png',fullPage:true});
     }
-    await ui.locator('#abort').click();
+    await ui.locator(mode==='remote' ? '#abort' : '#stop').click();
     await ui.locator('#close').waitFor({state:'visible',timeout:15000});
     if(mode==='remote') await ui.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor({timeout:20000});
-    else await page.locator('#recording-status').getByText(/XDF saved/u).waitFor({timeout:20000});
-    assert((await page.locator('#recording-file').textContent()).endsWith('.xdf'));
-    const file=await page.locator('#recording-file').textContent();
+    else await page.locator('#stream-status').getByText(/XDF saved/u).waitFor({timeout:20000});
+    const file=await page.evaluate(async()=> (await window.__TAURI__.core.invoke('launch_backend')).progress.recording.output_file);
+    assert(file.endsWith('.xdf'));
     require('node:fs').writeFileSync(`.for-ai-local/native-${mode}-xdf.json`, JSON.stringify({file}));
     await ui.locator('#close').click();
   }

@@ -97,9 +97,10 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
 - Respyra owns only the study's range calibration, target generation, visual
   gain, performance error, and discrete event markers. Keep target/error units
   in N; do not silently replace raw Force with the normalized 0–1 outlet.
-- The first UI is Experiment control, with compact participant/session setup.
-  Input selection, marker naming, XDF recording, LSL monitoring and phone pairing use separate
-  desktop views of the same viewport; stream/event lists paginate. See
+- The opening desktop UI is one two-segment Experiment hub and LSL streams page.
+  It shows participant number and remembered custom variables beside compatible
+  input selection, compact stream rows and a shared live plot. The Remote Viewer
+  popup pairs the phone. A legacy session value remains internal. See
   `HTML-UI.md` for the no-scroll and explicit no-fit contract.
   Discovery lists visible outlets with compatibility
   reasons; only raw Force (N) with the producer contract, numeric float format,
@@ -118,13 +119,18 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
 - The bundled native recorder owns persisted samples. Respyra's marker stream uses one JSON
   string per event. Its outlet is advertised at desktop Python-engine startup,
   before study/PsychoPy imports or Force selection. Setup needs no external
-  subscriber; Start requires native subscription and raw-data readiness.
+  subscriber; Start requires native subscription and raw, derived and marker
+  sample readiness.
   Marker pushes do not require a subscriber. Keep the run's outlet through final
   Close; its default name may change during setup before subscription or Start. Markers use a
   shared run UUID, monotonic sequence, LSL timestamp, and
   trial/condition/phase/screen context. The catalog is the authority for every
-  emitted marker name and its timing meaning. Record both LSL streams from
-  before calibration through final cleanup. The force inlet
+  emitted marker name and its timing meaning. Advertise the derived breathing
+  outlet before recording starts, emit NaN until calibration, then finite
+  normalized values on the same outlet. Record raw, derived and marker streams
+  from Start through final cleanup. Additional visible and late streams record
+  by default; a stream unchecked for recording before Start is excluded by its
+  current LSL UID. The force inlet
   enables LSL clock synchronization so source and marker timestamps can be
   compared in the local LSL clock domain. Setup events sent before recording may
   be absent from the file. Only inspection of the recorder output verifies persistence.

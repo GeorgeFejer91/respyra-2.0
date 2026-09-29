@@ -194,14 +194,14 @@ uv run --frozen python tests/check_native_lsl.py
 ```
 
 `check:ui` uses installed Chrome and a mocked native bridge with the actual form.
-For desktop layout changes, read `HTML-UI.md`. Verify the single control center at
-820×760 and 1440×900, with the three-part minimal layout, all-stream recording
-status, one paged plot of stacked channel lanes, colored marker lines crossing
-the lanes, stream and event-catalog tabs, and centered red Start.
-Check automatic unique-belt discovery, waiting/received calibration indicators,
-optional input checkboxes, optional dialogs, stream/channel pagination with
-original row identities, Escape closing a dialog without cancelling setup, and
-read-only setup plus accessible Stop during a run. At small windows (320/360 CSS
+For desktop layout changes, read `HTML-UI.md`. Verify the single two-segment
+control center at 820×760 and 1440×900, with participant/custom-variable setup,
+compact stream R/V rows, a compatible Force selector, one shared paged XY plot
+and Start. Check automatic unique-belt discovery, waiting/received input indicators,
+optional input-marker checkboxes, the Remote Viewer dialog, stream/channel
+pagination with original row identities, Escape closing the dialog without
+cancelling setup, and read-only setup plus accessible Stop during a run.
+At small windows (320/360 CSS
 px or 480 px height), doubled text and impossible fits, verify the explicit resize
 notice and recovery. Assert page dimensions fit and visible content is unclipped;
 never form a scrolling desktop page. The phone companion retains its reflow policy.

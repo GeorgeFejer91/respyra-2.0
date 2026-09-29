@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import deque
 from contextlib import ExitStack, redirect_stdout
 import sys
+import time
 from typing import Any, TYPE_CHECKING
 
 from mpi.event_markers import MarkerOutlet, NullSampleLogger
@@ -333,6 +334,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             return  # finally handles cleanup
         if used_defaults:
             raise LSLForceError("Range calibration received no Force samples")
+        if isinstance(belt, LSLForceSource):
+            belt.get_all()  # Keep buffered pre-calibration samples on the missing-value side.
         markers.emit(
             "calibration.completed", center_n=state.range_center,
             amplitude_n=state.global_amplitude,
@@ -341,7 +344,14 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         if isinstance(belt, LSLForceSource):
             belt.calibrate(state.range_center, state.global_amplitude, markers.run_id)
             if bridge is not None and bridge.recorder is not None:
-                bridge.recorder.wait_for_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
+                deadline = time.monotonic() + 8
+                while belt.calibrated_sample is None:
+                    bridge.check_cancel()
+                    belt.get_all()
+                    if time.monotonic() >= deadline:
+                        raise LSLForceError("Calibrated breathing has no live Force samples")
+                    time.sleep(.025)
+                bridge.recorder.wait_for_finite_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
 
         # 8. Build trial order
         conditions = (cfg.trial.build_conditions(session)

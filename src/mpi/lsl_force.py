@@ -139,31 +139,45 @@ class LSLForceSource:
         self.force_index = force_index
         self.source_id = source_id
         self.stream_name = stream_name
+        self.uid = ""
         self.last_force_at = time.monotonic()
         self.stopped = False
         self.channels = list(channels) or [{"index": force_index, "label": "Force", "unit": "N"}]
         self.latest_sample = None
         self.calibrated_outlet = None
         self.calibrated_id = None
+        self.calibrated_uid = None
         self.calibrated_sample = None
+        self.center = self.amplitude = None
 
-    def calibrate(self, center, amplitude, run_id):
-        """Publish the accepted study calibration, without clipping or feedback gain."""
+    def start_derived(self, run_id):
+        """Advertise the derived channel before recording; NaN means not calibrated."""
         from pylsl import StreamInfo, StreamOutlet, cf_float32
-        if not math.isfinite(center) or not math.isfinite(amplitude) or amplitude <= 0:
-            raise LSLForceError("Invalid breathing calibration")
-        self.center, self.amplitude = center, amplitude
-        self.calibrated_id = f"respyra-breathing-{run_id}"
-        info = StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 0, cf_float32, self.calibrated_id)
+        identity = f"respyra-breathing-{run_id}"
+        if self.calibrated_outlet is not None:
+            if self.calibrated_id != identity:
+                raise LSLForceError("A different derived breathing stream is already active")
+            return
+        self.calibrated_id = identity
+        info = StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 0, cf_float32, identity)
         desc = info.desc()
         for key, value in {"application": "Respyra 2.0", "raw_source_id": self.source_id,
-                           "center_n": str(center), "amplitude_n": str(amplitude),
-                           "formula": "(force_n - center_n) / amplitude_n"}.items():
+                           "formula": "(force_n - center_n) / amplitude_n",
+                           "before_calibration": "NaN; parameters are in calibration.completed markers"}.items():
             desc.append_child_value(key, value)
         channel = desc.append_child("channels").append_child("channel")
         channel.append_child_value("label", "Calibrated breathing")
         channel.append_child_value("unit", "normalized")
         self.calibrated_outlet = StreamOutlet(info)
+        self.calibrated_uid = self.calibrated_outlet.get_info().uid()
+
+    def calibrate(self, center, amplitude, run_id):
+        """Activate the accepted study calibration on the existing outlet."""
+        if not math.isfinite(center) or not math.isfinite(amplitude) or amplitude <= 0:
+            raise LSLForceError("Invalid breathing calibration")
+        if self.calibrated_outlet is None or self.calibrated_id != f"respyra-breathing-{run_id}":
+            raise LSLForceError("Derived breathing outlet was not started before recording")
+        self.center, self.amplitude = center, amplitude
 
     def health_snapshot(self):
         """Only actual inlet freshness; the raw Force contract has no battery field."""
@@ -179,7 +193,8 @@ class LSLForceSource:
         return {"signal": ("disconnected" if self.stopped else
                            "live" if age <= 1 else "stale" if age <= 3 else "lost"),
                 "sample_age_ms": round(age * 1000), "battery_percent": None, "preview": preview,
-                "calibrated": {"source_id": self.calibrated_id, "active": self.calibrated_outlet is not None,
+                "calibrated": {"source_id": self.calibrated_id, "active": self.center is not None,
+                               "prepared": self.calibrated_outlet is not None,
                                "lsl_time": self.calibrated_sample}}
 
     def get_all(self) -> list[tuple[float, float]]:
@@ -193,8 +208,11 @@ class LSLForceSource:
                 forces.append((timestamp, float(sample[self.force_index])))
                 self.latest_sample = (timestamp, list(sample))
                 if self.calibrated_outlet is not None:
-                    self.calibrated_outlet.push_sample([(float(sample[self.force_index]) - self.center) / self.amplitude], timestamp=timestamp)
-                    self.calibrated_sample = timestamp
+                    value = ((float(sample[self.force_index]) - self.center) / self.amplitude
+                             if self.center is not None else math.nan)
+                    self.calibrated_outlet.push_sample([value], timestamp=timestamp)
+                    if self.center is not None:
+                        self.calibrated_sample = timestamp
         if forces:
             self.last_force_at = time.monotonic()
         elif time.monotonic() - self.last_force_at > 3.0:
@@ -204,6 +222,8 @@ class LSLForceSource:
     def stop(self) -> None:
         self.stopped = True
         self.inlet.close_stream()
+        self.calibrated_outlet = None
+        self.calibrated_uid = None
 
 
 def connect_force_source(timeout: float = 5.0, source_id: str | None = None) -> LSLForceSource:
@@ -245,6 +265,7 @@ def open_force_source(resolved, timeout: float = 5.0) -> LSLForceSource:
             channels.append({"index": number, "label": channel.findtext("label") or f"Channel {number + 1}",
                              "unit": channel.findtext("unit", "")})
         source = LSLForceSource(inlet, index, info.source_id(), info.name(), channels)
+        source.uid = info.uid()
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             samples, _ = inlet.pull_chunk(timeout=min(0.5, deadline - time.monotonic()))

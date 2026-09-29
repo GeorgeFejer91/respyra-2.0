@@ -84,6 +84,10 @@ class MarkerOutlet:
                 "online": self.online,
                 "emitted": self.sequence}
 
+    @property
+    def uid(self):
+        return self._outlet.get_info().uid()
+
     def start_calibration_attempt(self) -> None:
         self.emit("calibration.attempt.started")
         self.calibration_attempt_open = True

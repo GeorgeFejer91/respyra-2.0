@@ -1,50 +1,110 @@
 <!doctype html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="referrer" content="no-referrer">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Respyra 2.0 — Experiment control</title>
-  <link rel="stylesheet" href="./style.css">
-  <script src="./vendor/vdoninja-sdk.min.js" defer></script>
-  <script type="module" src="./app.js"></script>
+
+  <link rel="stylesheet" href="./experiment-hub.css">
+
 </head>
-<body class="desktop">
-  <main>
-    <header><h1 data-measure>Experiment control</h1><div class="header-actions"><p id="study" data-measure>Respyra 2.0</p><div class="viewer-setup"><button id="viewer-open" type="button" data-measure><svg aria-hidden="true" viewBox="0 0 16 20" width="14" height="18"><rect x="2" y="1" width="12" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Remote Viewer</span></button></div></div></header>
-    <section id="recording-panel" aria-label="Native XDF recording">
-      <h2 data-measure>XDF recording</h2>
-      <p id="recording-status" role="status" data-measure>Start records all visible LSL streams, including streams that appear later.</p>
-      <details id="recording-details"><summary data-measure>Recording file and streams</summary>
-        <p id="recording-file" data-measure></p>
-        <ul id="recorded-streams" aria-label="Streams subscribed by the recorder"></ul>
-      </details>
-    </section>
-    <dialog id="viewer-dialog" aria-labelledby="viewer-title">
-      <h2 id="viewer-title" data-measure>Remote Viewer</h2>
-      <section aria-label="Phone remote control">
-      <div class="actions">
-        <button id="viewer-start" type="button" hidden data-measure>Create new QR code</button>
-        <button id="viewer-stop" type="button" disabled data-measure>Disconnect remote controller</button>
-      </div>
-      <p id="viewer-status" role="status" aria-live="polite" data-measure>Remote control disconnected.</p>
-      <section id="viewer-approval" hidden aria-label="Remote control approval">
-        <p data-measure>Phone name: <strong id="viewer-requester"></strong></p>
-        <p data-measure>Allow this phone to view data and control the experiment?</p>
-        <div class="actions"><button id="viewer-approve" type="button" data-measure>Approve</button><button id="viewer-reject" type="button" data-measure>Reject</button></div>
+
+<body>
+
+  <div class="shell" id="shell">
+
+    <header class="topbar"><div class="brand" data-measure>Respyra 2.0</div><div class="top-actions"><span class="preview-note" data-measure>Design preview · live LSL discovery</span><button id="settings-open" type="button" data-measure>Settings</button><button id="viewer-open" type="button" data-measure><svg aria-hidden="true" viewBox="0 0 16 20" width="13" height="16"><rect x="2" y="1" width="12" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Remote Viewer</span></button></div></header>
+
+    <main class="content">
+
+      <section class="view" id="hub" aria-labelledby="hub-title">
+
+        <div class="heading"><div><h1 id="hub-title" data-measure>Experiment hub</h1></div></div>
+        <div class="segment-body" id="hub-body">
+
+        <label class="participant"><span class="field-label" data-measure>Participant number</span><input class="text-input" id="participant" type="text" maxlength="128" placeholder="e.g. P024" autocomplete="off"></label>
+
+        <section class="section" aria-labelledby="variable-title">
+
+          <div class="section-head"><h2 id="variable-title" data-measure>Custom variables</h2><button class="plus" id="add-field" type="button" aria-label="Add custom variable" title="Add custom variable">+</button></div>
+
+          <div class="variable-head"><span data-measure>Variable label</span><span data-measure>Value</span></div>
+          <div id="variable-list"></div>
+
+          <div class="pager" id="variable-pager"><button id="variable-prev" type="button" data-measure>Previous</button><span id="variable-count" data-measure></span><button id="variable-next" type="button" data-measure>Next</button></div>
+
+        </section>
+
+        </div>
+
+        <div class="hub-foot"><p id="hub-input-status" class="sr-only" aria-live="polite">No breathing input selected</p><button class="start" id="start" type="button" data-measure>Start experiment</button><button id="stop" type="button" hidden data-measure>Stop experiment</button><button id="close" type="button" hidden data-measure>Close</button></div>
       </section>
-      <div id="viewer-invitation" hidden>
-        <p data-measure>Scan the private code, enter a phone name, then approve the request here. Internet is required.</p>
-        <label><span data-measure>Private control link</span><input id="viewer-link" type="text" readonly spellcheck="false"></label>
-        <button id="viewer-copy" type="button" data-measure>Copy link</button>
-        <div id="viewer-qr"></div>
-        <p data-measure>The link expires after four hours. Disconnect revokes access and leaves an ongoing study running.</p>
-      </div>
+
+      <button class="splitter" id="hub-divider" type="button" role="separator" aria-label="Resize experiment hub" aria-orientation="vertical" aria-controls="hub streams" aria-valuemin="0" aria-valuemax="100" aria-valuenow="28" title="Drag to resize the experiment hub; use arrow keys to adjust"></button>
+
+      <section class="view" id="streams" aria-labelledby="streams-title">
+
+        <div class="heading"><h1 id="streams-title" data-measure>LSL streams</h1><button id="refresh" type="button" data-measure>Refresh streams</button></div>
+
+        <div class="segment-body" id="stream-body">
+
+        <div class="stream-selection" id="stream-selection">
+
+        <section aria-labelledby="input-title">
+
+          <div class="stream-input"><label><span class="field-label" id="input-title" data-measure>Respyra breathing input</span><select id="breathing-source" disabled><option value="">Scanning LSL streams…</option></select></label><span class="readiness" id="input-readiness" data-state="waiting" data-measure>Scanning for compatible raw Force (N)…</span></div>
+
+        </section>
+
+        <section class="section stream-section" aria-labelledby="record-title"><div class="section-head"><h2 id="record-title" data-measure>Available streams</h2><div class="marker-options" role="group" aria-label="Input markers"><label class="keyboard"><input id="include-keyboard-markers" type="checkbox" aria-label="Include keyboard markers"><span data-measure>Keyboard markers</span></label><label class="mouse"><input id="include-mouse-markers" type="checkbox" aria-label="Include mouse markers"><span data-measure>Mouse markers</span></label></div></div>
+          <div id="stream-list"></div>
+          <div class="pager" id="stream-pager"><button id="stream-prev" type="button" data-measure>Previous</button><span id="stream-page-count" data-measure></span><button id="stream-next" type="button" data-measure>Next</button></div>
+        </section>
+        </div>
+        <button class="splitter" id="selection-divider" type="button" role="separator" aria-label="Resize stream selection and data viewer" aria-orientation="horizontal" aria-controls="stream-selection plot-section" aria-valuemin="0" aria-valuemax="100" aria-valuenow="42" title="Drag to resize stream selection and data viewer; use arrow keys to adjust"></button>
+        <section class="section plot-section" id="plot-section" aria-labelledby="plot-title"><div class="section-head"><h2 id="plot-title" data-measure>Data viewer</h2><span id="plot-count" class="plot-count" data-measure></span></div><div id="plot-legend" class="plot-legend" aria-label="Displayed channel ranges"></div><div class="pager" id="channel-pager" hidden><button id="channel-prev" type="button" data-measure>Previous</button><span id="channel-page-count" data-measure></span><button id="channel-next" type="button" data-measure>Next</button></div><svg id="plot-canvas" class="plot-canvas" role="img" aria-label="Live signals over ten seconds, each scaled to its own range"></svg></section>
+        </div>
+
+        <div class="stream-footer"><span class="status" id="stream-status" role="status" aria-live="polite" data-measure></span></div>
+
       </section>
-      <button id="viewer-done" type="button" data-measure>Done</button>
-    </dialog>
-    <div id="controller"></div>
-  </main>
-  <div id="viewport-notice" hidden role="status"><p data-measure>The experiment control center needs more room. Enlarge the window to show all controls and monitoring together.</p></div>
+
+    </main>
+
+  </div>
+
+  <div id="no-fit" class="no-fit" role="status" hidden data-measure>This window needs more room. Enlarge it to show the experiment controls.</div>
+
+  <dialog id="remote-preview-dialog" aria-labelledby="remote-preview-title">
+    <h2 id="remote-preview-title" data-measure>Remote Viewer</h2>
+    <div class="remote-preview-body"><div class="remote-qr-placeholder" role="img" aria-label="QR code area, available when the desktop experiment is running">Private QR code appears here</div><p data-measure>Scan the desktop app's code, enter your name on the phone, then approve the request here. The approved phone can monitor data and start the experiment.</p><p class="muted" data-measure>This browser preview cannot issue a live pairing code.</p></div>
+    <div class="remote-preview-actions"><button id="remote-preview-close" type="button" data-measure>Close</button></div>
+  </dialog>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <h2 id="settings-title" data-measure>Experiment settings</h2>
+    <label><span data-measure>Event marker stream name</span><input id="marker-name" type="text" maxlength="128" spellcheck="false"></label>
+    <label class="settings-check"><input id="save-csv" type="checkbox"><span data-measure>Save original CSV files locally</span></label>
+    <div class="remote-preview-actions"><button id="settings-done" type="button" data-measure>Done</button></div>
+  </dialog>
+
+  <dialog id="viewer-dialog" aria-labelledby="viewer-title">
+    <h2 id="viewer-title" data-measure>Remote Viewer</h2>
+    <div class="viewer-actions"><button id="viewer-start" type="button" hidden data-measure>Create new QR code</button><button id="viewer-stop" type="button" disabled data-measure>Disconnect remote controller</button></div>
+    <p id="viewer-status" role="status" aria-live="polite" data-measure>Remote control disconnected.</p>
+    <section id="viewer-approval" hidden aria-label="Remote control approval"><p data-measure>Phone name: <strong id="viewer-requester"></strong></p><p data-measure>Allow this phone to view data and control the experiment?</p><div class="viewer-actions"><button id="viewer-approve" type="button" data-measure>Approve</button><button id="viewer-reject" type="button" data-measure>Reject</button></div></section>
+    <div id="viewer-invitation" hidden><p data-measure>Scan the private code, enter a phone name, then approve the request here. Internet is required.</p><label><span data-measure>Private control link</span><input id="viewer-link" type="text" readonly spellcheck="false"></label><button id="viewer-copy" type="button" data-measure>Copy link</button><div id="viewer-qr"></div><p data-measure>The link expires after four hours. Disconnect revokes access and leaves an ongoing study running.</p></div>
+    <button id="viewer-done" type="button" data-measure>Done</button>
+  </dialog>
+
+  <script src="./vendor/vdoninja-sdk.min.js" defer></script>
+  <script type="module" src="./experiment-hub.js"></script>
+
 </body>
+
 </html>

@@ -40,7 +40,7 @@ def build():
     cpp = patched / "src/recording.cpp"
     text = cpp.read_text()
     # Native readiness identifies the exact subscribed source, not another consumer.
-    text = '#include <cstdio>\n' + text
+    text = '#include <cmath>\n#include <cstdio>\n#include <type_traits>\n' + text
     helper = '''
 static std::string hex_text(const std::string &value) {
     const char *digits = "0123456789abcdef";
@@ -67,9 +67,22 @@ static std::string hex_text(const std::string &value) {
     sample_count = 'sample_count += timestamps.size();'
     if text.count(sample_count) != 2:
         raise RuntimeError("Pinned native sample notification patch no longer matches")
+    text = replace_once(text, 'double sample_interval = srate ? 1.0 / srate : 0;',
+                        'double sample_interval = srate ? 1.0 / srate : 0;\n\t\tbool finite_reported = false;')
     text = text.replace(sample_count, '''if (sample_count == 0 && !timestamps.empty() && !in->info().source_id().empty()) {
                 std::fprintf(stderr, "\\nRESPIRA_RECORDER_DATA/1 %s\\n",
                     hex_text(in->info().source_id()).c_str()); std::fflush(stderr);
+            }
+            if constexpr (std::is_floating_point_v<T>) {
+                if (!finite_reported && !timestamps.empty() &&
+                    in->info().source_id().rfind("respyra-breathing-", 0) == 0) {
+                    for (const auto value : chunk) if (std::isfinite(value)) {
+                        std::fprintf(stderr, "\\nRESPIRA_RECORDER_FINITE/1 %s\\n",
+                            hex_text(in->info().source_id()).c_str()); std::fflush(stderr);
+                        finite_reported = true;
+                        break;
+                    }
+                }
             }
             sample_count += timestamps.size();''')
     for kind in ("record_from_query_results", "record_from_streaminfo", "record_boundaries", "record_offsets"):

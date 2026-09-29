@@ -72,6 +72,7 @@ class SourceSetup:
         self.variables = []
         self.save_csv = False
         self.record_keyboard = self.record_mouse = False
+        self.excluded_streams = set()
         self.automatic = False
         self.identity = None
         self.next_scan = 0
@@ -122,6 +123,7 @@ class SourceSetup:
                 "variables": [row.copy() for row in self.variables],
                 "marker_name": self.markers.name, "save_csv": self.save_csv,
                 "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
+                "excluded_streams": sorted(self.excluded_streams),
                 "message": self.message, "busy": self.pending is not None,
                 "can_start": bool(self.source and not self.pending and
                                   all(v.strip() for v in self.values.values()) and
@@ -180,6 +182,14 @@ class SourceSetup:
         elif kind == "option":
             setattr(self, action["field"], action["enabled"])
             emit("recording.option.changed", field=action["field"], enabled=action["enabled"], **ui)
+        elif kind == "record_stream":
+            if action["enabled"]:
+                self.excluded_streams.discard(action["uid"])
+            elif len(self.excluded_streams) < 128:
+                self.excluded_streams.add(action["uid"])
+            else:
+                raise SetupRejected("Too many excluded LSL streams")
+            emit("recording.stream.changed", uid=action["uid"], enabled=action["enabled"], **ui)
         elif kind == "scan":
             if self.pending:
                 raise SetupRejected("Source operation is already in progress")
@@ -210,8 +220,10 @@ class SourceSetup:
                 raise SetupRejected("Participant, session and live Force input are required")
             if self.recorder is not None:
                 try:
-                    self.recorder.start({**self.values, "variables": self.variables}, self.source, self.markers, self.cancel_check)
-                except (RecordingError, OSError) as exc:
+                    self.source.start_derived(self.markers.run_id)
+                    self.recorder.start({**self.values, "variables": self.variables}, self.source, self.markers,
+                                        self.cancel_check, self.excluded_streams)
+                except (RecordingError, LSLForceError, OSError) as exc:
                     self.message = ("Recording could not start. Check the local recording view."
                                     if isinstance(exc, OSError) else str(exc))
                     raise SetupRejected(self.message) from exc
