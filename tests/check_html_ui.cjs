@@ -96,6 +96,19 @@ const path = require('node:path');
     assert.deepEqual(await page.locator('#polar-source option').allTextContents(), ['Choose Polar stream', 'StudyPolar_adrPcaWaveform']);
     assert.equal(await page.title(), 'Respyra 2.0 — Experiment control');
     assert(await page.locator('#viewer-open').isVisible());
+    const catalog = JSON.parse(await fs.readFile(path.resolve(__dirname, '../src/mpi/event_markers/catalog.json'), 'utf8'));
+    const planned = Object.entries(catalog.events).filter(([, event]) => event.active !== false).map(([name]) => name);
+    await page.locator('#marker-inventory-open').click();
+    assert(await page.locator('#marker-inventory-dialog').isVisible());
+    assert.equal(await page.locator('#marker-inventory-list li').count(), planned.length);
+    assert.deepEqual(await page.locator('#marker-inventory-list li strong').allTextContents(), planned);
+    await page.locator('#marker-inventory-search').fill('tracking.started');
+    assert.equal(await page.locator('#marker-inventory-list li').count(), 1);
+    assert.match(await page.locator('#marker-inventory-list').textContent(), /First displayed tracking frame/);
+    await page.locator('#marker-inventory-search').fill('no-such-marker');
+    assert.match(await page.locator('#marker-inventory-list').textContent(), /No matching markers/);
+    await page.locator('#marker-inventory-close').click();
+    assert(await page.locator('#marker-inventory-dialog').isHidden());
     assert(await page.locator('#hub').isVisible() && await page.locator('#streams').isVisible());
     assert(await page.locator('#start').isDisabled());
     await page.locator('#participant').fill('P024');
@@ -132,6 +145,13 @@ const path = require('node:path');
           (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)).map(element => element.textContent) }));
       assert(fit.width <= width + 1 && fit.height <= height + 1 && !fit.clipped.length, JSON.stringify({ width, height, fit }));
       if (width === 1200 || width === 390) await page.screenshot({ path:path.resolve(__dirname, `../.for-ai-local/hub-${width}.png`) });
+      if (width === 390) {
+        await page.locator('#marker-inventory-open').click();
+        const bounds = await page.locator('#marker-inventory-dialog').boundingBox();
+        assert(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width + 1 && bounds.y + bounds.height <= height + 1);
+        await page.screenshot({ path:path.resolve(__dirname, '../.for-ai-local/marker-inventory-390.png') });
+        await page.locator('#marker-inventory-close').click();
+      }
     }
     for (const [width, height, textSize] of [[320,480,16], [360,700,16], [820,760,32], [1440,900,32]]) {
       await page.setViewportSize({ width, height });
@@ -145,6 +165,27 @@ const path = require('node:path');
       assert(fit.width <= width + 1 && fit.height <= height + 1 && (fit.shell || fit.notice), JSON.stringify({ width, height, fit }));
       if (fit.shell) assert(!fit.clipped.length, JSON.stringify({ width, height, fit }));
     }
+    await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.documentElement.style.letterSpacing = ''; });
+    await page.setViewportSize({ width:1200, height:760 });
+    await page.waitForFunction(() => document.querySelector('#shell').getClientRects().length > 0);
+    await page.locator('#marker-inventory-open').click();
+    await page.setViewportSize({ width:320, height:480 });
+    await page.evaluate(() => { document.documentElement.style.fontSize = '32px'; document.documentElement.style.letterSpacing = '.08em'; });
+    const dialogFit = await page.locator('#marker-inventory-dialog').evaluate(dialog => {
+      const box = dialog.getBoundingClientRect();
+      const clipped = [...dialog.querySelectorAll('[data-measure]')].filter(element =>
+        element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1).map(element => element.textContent);
+      return { x:box.x, y:box.y, right:box.right, bottom:box.bottom,
+        horizontalOverflow:dialog.scrollWidth > dialog.clientWidth + 1,
+        headerOverflow:dialog.querySelector('.inventory-head').scrollWidth > dialog.querySelector('.inventory-head').clientWidth + 1,
+        clipped };
+    });
+    assert(dialogFit.x >= 0 && dialogFit.y >= 0 && dialogFit.right <= 321 && dialogFit.bottom <= 481 &&
+      !dialogFit.horizontalOverflow && !dialogFit.headerOverflow && !dialogFit.clipped.length, JSON.stringify(dialogFit));
+    await page.screenshot({ path:path.resolve(__dirname, '../.for-ai-local/marker-inventory-320-large.png') });
+    await page.locator('#marker-inventory-list').evaluate(list => { list.scrollTop = list.scrollHeight; });
+    assert(await page.locator('#marker-inventory-list li').last().isVisible());
+    await page.locator('#marker-inventory-close').click();
     await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.documentElement.style.letterSpacing = ''; });
     await page.setViewportSize({ width:1200, height:760 });
     await page.waitForFunction(() => document.querySelector('#shell').getClientRects().length > 0);
@@ -183,6 +224,9 @@ const path = require('node:path');
     await page.locator('#stop').waitFor({ state:'visible' });
     assert(await page.locator('#participant').isDisabled());
     assert(await page.locator('#start').isHidden());
+    await page.locator('#marker-inventory-open').click();
+    assert(await page.locator('#marker-inventory-dialog').isVisible());
+    await page.locator('#marker-inventory-close').click();
     await page.evaluate(() => window.testProgress({ streams:[...window.testSnapshot().progress.streams,
       { uid:'derived-ui', source_id:'respyra-breathing-ui', name:'Respyra-Calibrated-Breathing', type:'Respiration',
         numeric:true, signal:'live', lsl_time:2, channels:[{ index:0, label:'Calibrated breathing', unit:'normalized', value:null }] }] }));

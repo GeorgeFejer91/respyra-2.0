@@ -29,6 +29,10 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
   streams unless their current LSL UID was unchecked before Start. The remote button opens a
   QR popup with desktop Approve/Reject on an authenticated request. Settings
   contains the pre-recording marker name and optional original CSV export.
+  Marker inventory opens a searchable dialog populated by `prepare-web.mjs` from
+  active entries in the Python event catalog. Its own content can scroll; the
+  main panel still cannot. It lists possible event types, not a claim that each
+  event occurs in every run or lands in the XDF outside recorder lifetime.
 - Polar input requires an explicit inhale-direction choice after selection.
   Start prepares the derived outlet, launches respyrecorder, and verifies exact
   selected-input/marker/derived subscriptions and samples before opening PsychoPy.

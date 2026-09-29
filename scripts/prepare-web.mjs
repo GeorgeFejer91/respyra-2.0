@@ -6,7 +6,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const vendor = path.join(root, 'web/vendor');
 const catalog = JSON.parse(await readFile(path.join(root, 'src/mpi/event_markers/catalog.json'), 'utf8'));
 await writeFile(path.join(root, 'web/marker-catalog.js'),
-  `export const EVENT_MARKERS = ${JSON.stringify(Object.entries(catalog.events).map(([name, details]) => ({name, when: details.when})))};\n`);
+  `export const EVENT_MARKERS = ${JSON.stringify(Object.entries(catalog.events).filter(([, details]) => details.active !== false).map(([name, details]) => ({name, when: details.when})))};\n`);
 await mkdir(path.join(vendor, 'fonts'), { recursive: true });
 await cp(path.join(root, 'node_modules/@chenglou/pretext/dist'), path.join(vendor, 'pretext'), { recursive: true });
 await cp(path.join(root, 'node_modules/@chenglou/pretext/LICENSE'), path.join(vendor, 'PRETEXT-LICENSE'));
