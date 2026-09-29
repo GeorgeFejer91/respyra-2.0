@@ -10,10 +10,11 @@ stimuli, keyboard responses, assessments and display-flip markers.
 
 1. Launch Respyra and select live Force input. Start automatically records XDF
    with the bundled native recorder before calibration. Optional CSV output is separate.
-2. Click **Connect remote experiment controller**. Its popup creates a QR code
-   automatically. Scan it or open its private link in a phone browser.
-3. The phone requests access automatically. Click **Approve** in the desktop
-   popup to share state and controls, or **Reject** to revoke the invitation.
+2. Click **Remote Viewer**. Its popup creates a QR code automatically. Scan it
+   or open its private link in a phone browser.
+3. Enter a name on the phone and tap **Request access**. The desktop popup shows
+   that self-entered name. Click **Approve** to share state and controls, or
+   **Reject** to revoke the invitation.
    Requests expire after 60 seconds; no state or commands are available before
    approval. One approved phone controls the same setup and run.
    Approval explicitly shares participant/session fields and
@@ -29,11 +30,11 @@ A second display or the phone lets the experimenter monitor without moving
 focus away from the participant window. On a single display the control
 window may sit behind PsychoPy's full-screen window.
 
-The phone opens **LSL data & markers**. Select a channel from the accepted raw
-Vernier stream to view its value/unit, a ten-second trace and timestamped marker
-ticks. Four recent markers stay visible; the full last-12 list is under details
-in **Experiment controls**, which contains participant/source setup. Stop/Close
-and recording status remain available beside the monitor. The trace uses coalesced
+The phone shows experiment setup and the LSL monitor on one scrolling page.
+Select a channel from the accepted raw Vernier stream to view its value/unit,
+a ten-second trace and timestamped marker ticks. Four recent markers stay
+visible; the full last-12 list is under details below the monitor. Start,
+Stop/Close and recording status remain on the same page. The trace uses coalesced
 four-Hz snapshots of the existing clock-synchronized inlet, holds through loss,
 and breaks across gaps. It is a live preview, not an analysis waveform; XDF
 contains full-rate data and late streams. No extra LSL inlet or processing is added.
@@ -81,11 +82,14 @@ control revision. The phone renews through authenticated commands every second.
 Native reads/effects fail after revocation or expiry. Only the bundled main
 WebView has the narrow native capability; external pages have none.
 The local-only review action binds approval to the current request and invitation.
-Authentication creates a pending request, never an owner. Reject invalidates the
+Authentication plus the phone's bounded name introduction creates a pending
+request, never an owner. The name is self-entered and does not prove identity.
+Reject invalidates the
 invitation; timeout denies late approval. Opening the popup or scanning its QR
 does not start an experiment. Closing the popup does not disconnect an approved
-controller. Restored base pages stay disconnected and retain a manual Connect
-option for a pasted fresh invitation; private links request access on load.
+controller. Restored base pages stay disconnected and retain a manual Request
+access option for a pasted fresh invitation; private links wait for the phone's
+name and request action.
 
 Mutual HMAC proof and the wire sequence remain in pinned BRSP JavaScript in
 that trusted bundled WebView. Native claim/dispatch therefore trusts its

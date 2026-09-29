@@ -34,6 +34,9 @@ test('invitation, state and commands have closed bounded contracts', () => {
   assert(validCommand(csv));
   const variables = {scope:SCOPES[1],action:'field_edit',args:{ui_seq:3,ui_time_ms:3,field:'variables',value:'[{"label":"Age","value":"28"}]'},expectedRevision:2};
   assert(validCommand(variables));
+  assert(validCommand({scope:OBSERVE_SCOPE,action:'introduce',args:{name:'Ada'},expectedRevision:null}));
+  for (const name of ['', ' Ada', 'Ada\nX', '\u202eAda', 'x'.repeat(65)])
+    assert(!validCommand({scope:OBSERVE_SCOPE,action:'introduce',args:{name},expectedRevision:null}));
   assert(!validCommand({...variables,args:{...variables.args,value:'x'.repeat(2049)}}));
   assert(!validCommand({...csv,args:{...csv.args,enabled:'true'}}));
   assert(!validCommand({...csv,args:{...csv.args,field:'recording'}}));

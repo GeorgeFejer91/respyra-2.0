@@ -3,7 +3,6 @@ import { MONITOR_HTML, mountLslMonitor } from './lsl-monitor.js';
 export const CONTROL_HTML = `
   <p id="status" role="status" aria-live="polite" data-measure>Waiting for the experiment engine…</p>
   <p id="command-status" role="status" aria-live="polite" data-measure></p>
-  ${MONITOR_HTML}
   <form id="setup" autocomplete="off">
     <fieldset id="controls" disabled>
       <legend class="sr-only">Experiment setup</legend>
@@ -46,6 +45,7 @@ export const CONTROL_HTML = `
       </div>
     </fieldset>
   </form>
+  ${MONITOR_HTML}
   <section id="observation" aria-label="Experiment monitoring">
     <h2 data-measure>Experiment status</h2>
     <dl class="progress">

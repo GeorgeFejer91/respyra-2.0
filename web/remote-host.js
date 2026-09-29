@@ -30,7 +30,8 @@ export function mountRemoteViewer(invoke) {
     byId('viewer-stop').disabled = true;
     byId('viewer-invitation').hidden = true;
     byId('viewer-approval').hidden = true;
-    byId('viewer-open').textContent = 'Connect remote experiment controller';
+    byId('viewer-open').querySelector('span').textContent = 'Remote Viewer';
+    byId('viewer-requester').textContent = '';
     byId('viewer-link').value = '';
     byId('viewer-qr').replaceChildren();
     byId('viewer-status').textContent = message;
@@ -57,7 +58,7 @@ export function mountRemoteViewer(invoke) {
       clearTimeout(context.approvalTimer);
       byId('viewer-approval').hidden = true;
       byId('viewer-invitation').hidden = true;
-      byId('viewer-open').textContent = 'Remote controller connected';
+      byId('viewer-open').querySelector('span').textContent = 'Remote Viewer connected';
       await context.refresh();
       if (active !== context) return;
       context.connection.publishSnapshot();
@@ -103,6 +104,29 @@ export function mountRemoteViewer(invoke) {
         getState:() => active === context && context.owner && context.connection.acceptedScopes.includes(OBSERVE_SCOPE) ? context.snapshot : undefined,
         applyCommand:async command => {
           if (!validCommand(command)) return { ok:false, revision:context.snapshot?.revision || 0, error:'unsupported_command' };
+          if (command.scope === OBSERVE_SCOPE && command.action === 'introduce') {
+            if (context.claim || context.owner) return { ok:false, revision:0, error:'request_already_pending' };
+            const peer = context.connection.remoteHello;
+            context.claim = (async () => {
+              const request = await invoke('viewer_action', { action:{ action:'claim', token:context.invitation.token,
+                peer_id:peer.senderId, epoch:peer.senderEpoch, scopes:context.connection.acceptedScopes, name:command.args.name } });
+              if (active !== context) return;
+              context.request = request.request;
+              byId('viewer-requester').textContent = request.name;
+              byId('viewer-approve').disabled = false;
+              byId('viewer-reject').disabled = false;
+              byId('viewer-approval').hidden = false;
+              byId('viewer-invitation').hidden = true;
+              byId('viewer-open').querySelector('span').textContent = 'Review remote request';
+              status('Remote viewer requests access. Review the name below.');
+              open();
+              context.approvalTimer = setTimeout(() => {
+                if (active === context && !context.owner) void stop('Remote request expired. Create a new QR code to try again.');
+              }, 60000);
+            })();
+            await context.claim;
+            return { ok:true, revision:0, result:null, error:null };
+          }
           await context.claim;
           if (active !== context || !context.owner) return { ok:false, revision:0, error:'local_approval_required' };
           const peer = context.connection.remoteHello;
@@ -115,26 +139,7 @@ export function mountRemoteViewer(invoke) {
       });
       context.transport.addEventListener('status', event => status(event.detail.message));
       context.transport.addEventListener('quality', event => status('Phone route: ' + event.detail.route + '.'));
-      context.connection.addEventListener('ready', () => {
-        const peer = context.connection.remoteHello;
-        context.claim = (async () => {
-          const request = await invoke('viewer_action', { action:{ action:'claim', token:context.invitation.token,
-            peer_id:peer.senderId, epoch:peer.senderEpoch, scopes:context.connection.acceptedScopes } });
-          if (active !== context) return;
-          context.request = request.request;
-          byId('viewer-approve').disabled = false;
-          byId('viewer-reject').disabled = false;
-          byId('viewer-approval').hidden = false;
-          byId('viewer-invitation').hidden = true;
-          byId('viewer-open').textContent = 'Review remote request';
-          status('Remote controller authenticated. Waiting for your approval.');
-          open();
-          context.approvalTimer = setTimeout(() => {
-            if (active === context && !context.owner) void stop('Remote request expired. Create a new QR code to try again.');
-          }, 60000);
-        })();
-        void context.claim.catch(() => { if (active === context) void stop(); });
-      });
+      context.connection.addEventListener('ready', () => status('Phone connected. Waiting for its name…'));
       context.connection.addEventListener('phasechange', event => {
         if (active === context && ['disconnected','closed','error'].includes(event.detail.phase)) void stop();
       });
@@ -144,6 +149,7 @@ export function mountRemoteViewer(invoke) {
       const code = qrcode(0, 'M'); code.addData(url, 'Byte'); code.make();
       const image = document.createElement('img');
       image.alt = 'QR code for private Respyra phone control'; image.src = code.createDataURL(4, 16);
+      status('Private QR ready. Scan it to enter a phone name.');
       byId('viewer-qr').append(image);
       byId('viewer-invitation').hidden = false;
       await context.transport.start();

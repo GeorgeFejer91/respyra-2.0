@@ -30,7 +30,9 @@ export function scopeForAction(action) {
 
 export function validCommand(command) {
   if (!command || typeof command !== 'object' || Array.isArray(command)) return false;
-  if (command.scope === OBSERVE_SCOPE) return command.action === 'renew' && exact(command.args, []) && command.expectedRevision === null;
+  if (command.scope === OBSERVE_SCOPE) return command.expectedRevision === null && (
+    (command.action === 'renew' && exact(command.args, [])) ||
+    (command.action === 'introduce' && exact(command.args, ['name']) && validViewerName(command.args.name)));
   if (scopeForAction(command.action) !== command.scope || !Number.isSafeInteger(command.expectedRevision) || command.expectedRevision < 0) return false;
   if (command.action === 'close') return exact(command.args, []);
   const keys = ['ui_seq','ui_time_ms'];
@@ -45,6 +47,11 @@ export function validCommand(command) {
   if (keys.includes('key') && !text(args.key,128)) return false;
   if (keys.includes('value') && !text(args.value,args.field === 'variables' ? 2048 : 128)) return false;
   return !keys.includes('row') || integer(args.row);
+}
+
+export function validViewerName(value) {
+  return typeof value === 'string' && value.length > 0 && value.length <= 64 &&
+    value.trim() === value && !/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u.test(value);
 }
 
 function exact(value, keys) {

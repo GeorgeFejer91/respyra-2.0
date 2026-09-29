@@ -470,11 +470,12 @@ fn handle_viewer(
             peer_id,
             epoch,
             scopes,
+            name,
         } => state
             .viewer
             .as_mut()
             .ok_or("Remote control disabled")?
-            .claim(&token, peer_id, epoch, scopes),
+            .claim(&token, peer_id, epoch, scopes, name),
         viewer::ViewerAction::Review {
             token,
             request,

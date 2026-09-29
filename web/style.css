@@ -89,6 +89,7 @@ details > label { display: block; }
 .desktop details > summary, .desktop .check-option { min-height: 36px; padding-block: 6px; }
 #viewport-notice { max-width: 1200px; padding: 12px 20px; margin: auto; }
 .desktop header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; }
+.desktop .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
 .desktop header h1 { font-size: 1.25rem; }
 .desktop header p { margin: 0; }
 .desktop #controller { display: contents; }
@@ -147,7 +148,8 @@ details > label { display: block; }
 .desktop #phase-summary { display: inline; }
 .desktop #observation > .progress > :nth-child(4) { color: #57606a; }
 .desktop .viewer-setup { margin: 0; padding: 0; border: 0; }
-.desktop #viewer-open { font-size: inherit; padding: 6px 10px; }
+.desktop #viewer-open { display: inline-flex; align-items: center; gap: 6px; font-size: inherit; padding: 5px 9px; white-space: nowrap; }
+.desktop #viewer-open svg { flex: none; }
 .desktop .recording-note { display: none; }
 .desktop .actions { gap: 8px; }
 .desktop #input-details > summary { display: none; }
@@ -163,7 +165,7 @@ details > label { display: block; }
 .desktop #viewer-invitation > p { grid-column: 1 / -1; }
 .desktop #viewer-qr { grid-column: 2; grid-row: 2 / 4; }
 .desktop #viewer-qr img { width: 180px; margin: 0; }
-.desktop #viewer-copy { margin: 0; }
+.desktop #viewer-copy { margin: 0; justify-self: start; }
 .desktop #recorded-streams { padding-left: 20px; }
 .desktop #recorded-streams li { white-space: pre-wrap; }
 .desktop #recording-file:empty { display: none; }
@@ -181,12 +183,21 @@ details > label { display: block; }
 .trace-markers { fill: none; stroke: #8c959f; stroke-width: 1; stroke-dasharray: 3 3; }
 .trace-scale { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: .875rem; color: #57606a; }
 #monitor-markers { padding-left: 24px; margin-block: 8px; }
-.remote:not([data-view=data]) #lsl-monitor, .remote[data-view=data] #setup,
-.remote[data-view=data] .diagnostics, .remote[data-view=data] #observation h2,
-.remote[data-view=data] #observation .progress > :nth-child(n+5) { display: none; }
-.remote[data-view=controls] #controller[data-phase=setup] #observation { display: none; }
-.remote #lsl-monitor > h2:first-child { display: none; }
+.remote #lsl-monitor { border-top: 1px solid #d0d7de; margin-top: 20px; padding-top: 16px; }
 .remote .input-options { display: none; }
+.remote { color: #e9f1f4; background: #0d171f; }
+.remote header, .remote #status, .remote #lsl-monitor, .remote #streams:not(:empty), .remote .stream, .remote .diagnostics { border-color: #2a414e; }
+.remote #study, .remote .variable-columns, .remote .stream .identity, .remote .recording-note, .remote .trace-scale, .remote .progress dd, .remote .input-scope { color: #a7b8c0; }
+.remote button, .remote input[type=text], .remote input[type=url], .remote input:not([type]), .remote select, .remote #lsl-monitor select { color: #e9f1f4; border-color: #455d6c; background: #15252e; }
+.remote button:hover:enabled { background: #20343e; }
+.remote button:disabled, .remote #start:disabled { color: #738d9b; border-color: #2a414e; background: #0d171f; }
+.remote #start { color: #111a20; border-color: #e95e60; background: #e95e60; }
+.remote #start:hover:enabled { background: #f07878; }
+.remote :focus-visible { outline-color: #84bfe0; }
+.remote #monitor-trace { background: #101e26; }
+.remote .trace-grid { stroke: #29414d; }
+.remote .trace-line { stroke: #84bfe0; }
+.remote .trace-markers { stroke: #e9a86c; }
 @media (max-width: 520px) {
   .desktop main { padding: 8px 12px; gap: 8px; }
   .desktop #controls { grid-template-columns: minmax(0,1fr); }

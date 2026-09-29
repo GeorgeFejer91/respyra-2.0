@@ -24,7 +24,8 @@ const assert = require('node:assert/strict');
       const call=action=>window.__TAURI__.core.invoke('viewer_action',{action});
       const invite=await call({action:'start'});
       const request=await call({action:'claim',token:invite.token,peer_id:'native_probe',epoch:7,
-        scopes:['experiment.observe','experiment.setup','experiment.run']});
+        scopes:['experiment.observe','experiment.setup','experiment.run'],name:'Native probe'});
+      if(request.name!=='Native probe')throw new Error('Native approval lost the requested name');
       let denied=0;
       const reject=async action=>{try{await call(action);}catch{denied++;return;}throw new Error('Native fence allowed invalid request');};
       await reject({action:'snapshot',token:invite.token,owner:request.request});
@@ -36,7 +37,7 @@ const assert = require('node:assert/strict');
       const command={commandId:'cmd_native_probe',scope:'experiment.setup',action:'field_edit',
         args:{ui_seq:1,ui_time_ms:1,field:'participant',value:'ownership-probe'},expectedRevision:revision};
       await reject({action:'snapshot',token:invite.token,owner:'wrong'});
-      await reject({action:'claim',token:invite.token,peer_id:'second_phone',epoch:7,scopes:['experiment.observe']});
+      await reject({action:'claim',token:invite.token,peer_id:'second_phone',epoch:7,scopes:['experiment.observe'],name:'Second phone'});
       await reject({action:'dispatch',...binding,peer_id:'wrong_peer',sequence:1,command});
       await reject({action:'dispatch',...binding,epoch:8,sequence:1,command});
       const first=await call({action:'dispatch',...binding,sequence:1,command});
@@ -53,14 +54,14 @@ const assert = require('node:assert/strict');
       await reject({action:'snapshot',token:invite.token,owner:grant.owner});
       await call({action:'stop',token:invite.token});
       const reader=await call({action:'start'});
-      const readRequest=await call({action:'claim',token:reader.token,peer_id:'native_reader',epoch:9,scopes:['experiment.observe']});
+      const readRequest=await call({action:'claim',token:reader.token,peer_id:'native_reader',epoch:9,scopes:['experiment.observe'],name:'Reader'});
       const readGrant=await call({action:'review',token:reader.token,request:readRequest.request,approve:true});
       if((await call({action:'snapshot',token:reader.token,owner:readGrant.owner})).setup!==null)throw new Error('Observe-only scope exposed participant');
       await reject({action:'dispatch',token:reader.token,owner:readGrant.owner,peer_id:'native_reader',epoch:9,sequence:1,command});
       await call({action:'stop',token:reader.token});
       await reject({action:'snapshot',token:reader.token,owner:readGrant.owner});
       const rejected=await call({action:'start'});
-      const pending=await call({action:'claim',token:rejected.token,peer_id:'native_rejected',epoch:10,scopes:['experiment.observe']});
+      const pending=await call({action:'claim',token:rejected.token,peer_id:'native_rejected',epoch:10,scopes:['experiment.observe'],name:'Rejected phone'});
       await call({action:'review',token:rejected.token,request:pending.request,approve:false});
       await reject({action:'review',token:rejected.token,request:pending.request,approve:true});
       await reject({action:'snapshot',token:rejected.token,owner:pending.request});
@@ -91,10 +92,13 @@ const assert = require('node:assert/strict');
     ui=await context.newPage();ui.on('pageerror',e=>errors.push(String(e)));
     await ui.setViewportSize({width:390,height:844});
     await ui.goto(link);
+    await ui.locator('#viewer-name').fill('Ada');
+    await ui.locator('#connect').click();
     await ui.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…',{exact:true}).waitFor({timeout:45000});
     assert.equal(await ui.locator('#controller').isVisible(),false);
     assert(await ui.locator('#controls').evaluate(fieldset=>fieldset.disabled));
     await page.locator('#viewer-approval').waitFor();
+    assert.equal(await page.locator('#viewer-requester').textContent(),'Ada');
     await page.screenshot({path:'.for-ai-local/native-remote-approval.png'});
     await page.locator('#viewer-reject').click();
     await ui.locator('#connection-status').getByText(/Disconnected/u).waitFor();
@@ -105,6 +109,8 @@ const assert = require('node:assert/strict');
     assert.notEqual(replacement,link,'Rejection rotates the private invitation');
     link=replacement;
     await ui.goto(link);
+    await ui.locator('#viewer-name').fill('Ada');
+    await ui.locator('#connect').click();
     try { await ui.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…',{exact:true}).waitFor({timeout:45000}); }
     catch(error) { console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent()}); throw error; }
     assert.equal(await ui.locator('#controller').isVisible(),false);
@@ -114,9 +120,7 @@ const assert = require('node:assert/strict');
     catch(error){console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent()});throw error;}
   }
   if(mode==='remote') {
-    await ui.locator('#remote-view').waitFor();
-    assert.equal(await ui.locator('#remote-view').inputValue(),'data');
-    await ui.locator('#remote-view').selectOption('controls');
+    assert(await ui.locator('#setup').isVisible() && await ui.locator('#lsl-monitor').isVisible());
   }
   await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
@@ -200,7 +204,6 @@ const assert = require('node:assert/strict');
     }
     assert.equal(await ui.locator('#battery').textContent(),'Not reported');
     if(mode==='remote') {
-      await ui.locator('#remote-view').selectOption('data');
       await ui.waitForFunction(() => document.getElementById('monitor-value').textContent.includes('Live') && document.getElementById('trace-line').getAttribute('d')?.includes('L'));
       assert.equal(await ui.locator('#monitor-channel option').count(),2);
       await ui.locator('#monitor-channel').selectOption('0');

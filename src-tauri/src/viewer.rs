@@ -30,6 +30,7 @@ pub enum ViewerAction {
         peer_id: String,
         epoch: u32,
         scopes: Vec<String>,
+        name: String,
     },
     Review {
         token: String,
@@ -69,6 +70,7 @@ struct Cached {
 
 struct Pending {
     request: String,
+    name: String,
     peer_id: String,
     epoch: u32,
     scopes: Vec<String>,
@@ -115,6 +117,7 @@ impl ViewerSession {
         peer_id: String,
         epoch: u32,
         scopes: Vec<String>,
+        name: String,
     ) -> Result<Value, String> {
         if !self.permits(key) || self.owner.is_some() || self.pending.is_some() {
             return Err("Remote session is unavailable; enable a fresh link".into());
@@ -130,18 +133,25 @@ impl ViewerSession {
                 .iter()
                 .enumerate()
                 .any(|(i, s)| !SCOPES.contains(&s.as_str()) || scopes[..i].contains(s))
+            || name.is_empty()
+            || name.trim() != name
+            || name.encode_utf16().count() > 64
+            || name.chars().any(|c| {
+                c.is_control() || matches!(c, '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}')
+            })
         {
-            return Err("Invalid remote owner or scopes".into());
+            return Err("Invalid remote owner, name or scopes".into());
         }
         let request = token()?;
         self.pending = Some(Pending {
             request: request.clone(),
+            name: name.clone(),
             peer_id,
             epoch,
             scopes,
             deadline: Instant::now() + APPROVAL_WINDOW,
         });
-        Ok(json!({"request":request}))
+        Ok(json!({"request":request,"name":name}))
     }
 
     // Local-only consent. This action is never part of the BRSP command registry.
@@ -167,7 +177,7 @@ impl ViewerSession {
             sequence: 0,
             deadline: Instant::now() + LEASE,
         });
-        Ok(json!({"owner":owner_token}))
+        Ok(json!({"owner":owner_token,"name":pending.name}))
     }
 
     pub fn read(&self, key: &str, owner_token: &str) -> Result<(), String> {
@@ -356,15 +366,24 @@ mod tests {
                 "phone_test".into(),
                 7,
                 SCOPES.iter().map(|s| s.to_string()).collect(),
+                "Alice".into(),
             )
             .unwrap();
+        assert_eq!(request["name"], "Alice");
         let owner = session
             .review(key, request["request"].as_str().unwrap(), true)
             .unwrap();
+        assert_eq!(owner["name"], "Alice");
         let owner = owner["owner"].as_str().unwrap();
         assert!(
             session
-                .claim(key, "second_phone".into(), 8, vec![SCOPES[0].into()])
+                .claim(
+                    key,
+                    "second_phone".into(),
+                    8,
+                    vec![SCOPES[0].into()],
+                    "Bob".into()
+                )
                 .is_err()
         );
         assert!(
@@ -419,12 +438,38 @@ mod tests {
         let key = invite["token"].as_str().unwrap();
         assert!(
             session
-                .claim("wrong", "phone_test".into(), 7, vec![SCOPES[0].into()])
+                .claim(
+                    "wrong",
+                    "phone_test".into(),
+                    7,
+                    vec![SCOPES[0].into()],
+                    "Alice".into()
+                )
                 .is_err()
         );
+        for name in ["", " Alice", "Alice\nX", "\u{202e}Alice"] {
+            assert!(
+                session
+                    .claim(
+                        key,
+                        "phone_test".into(),
+                        7,
+                        vec![SCOPES[0].into()],
+                        name.into()
+                    )
+                    .is_err()
+            );
+        }
         let request = session
-            .claim(key, "phone_test".into(), 7, vec![SCOPES[0].into()])
+            .claim(
+                key,
+                "phone_test".into(),
+                7,
+                vec![SCOPES[0].into()],
+                "Alice".into(),
+            )
             .unwrap();
+        assert_eq!(request["name"], "Alice");
         assert!(request["owner"].is_null());
         let request = request["request"].as_str().unwrap();
         assert!(session.read(key, request).is_err());
@@ -436,7 +481,13 @@ mod tests {
         assert!(!session.has_scope(SCOPES[0]));
         assert!(
             session
-                .claim(key, "second_phone".into(), 8, vec![SCOPES[0].into()])
+                .claim(
+                    key,
+                    "second_phone".into(),
+                    8,
+                    vec![SCOPES[0].into()],
+                    "Bob".into()
+                )
                 .is_err()
         );
         assert!(session.review("wrong", request, true).is_err());
@@ -453,7 +504,13 @@ mod tests {
             let (mut session, invite) = ViewerSession::start().unwrap();
             let key = invite["token"].as_str().unwrap();
             let request = session
-                .claim(key, "phone_test".into(), 7, vec![SCOPES[0].into()])
+                .claim(
+                    key,
+                    "phone_test".into(),
+                    7,
+                    vec![SCOPES[0].into()],
+                    "Alice".into(),
+                )
                 .unwrap();
             let request = request["request"].as_str().unwrap();
             if expired {
@@ -473,6 +530,7 @@ mod tests {
                     "phone_test".into(),
                     7,
                     vec![SCOPES[0].into()],
+                    "Alice".into(),
                 )
                 .unwrap();
             assert_ne!(new_request["request"], request);

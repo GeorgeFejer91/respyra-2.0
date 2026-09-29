@@ -10,17 +10,17 @@
   <script src="./vendor/vdoninja-sdk.min.js" defer></script>
   <script type="module" src="./app.js"></script>
 </head>
-<body class="remote" data-view="data"><main>
-  <header><h1 data-measure>LSL monitor</h1><p data-measure>Respyra 2.0 · phone controller</p></header>
+<body class="remote"><main>
+  <header><h1 data-measure>Respyra 2.0</h1><p data-measure>Remote Viewer</p></header>
   <div class="connection-row">
-  <p id="connection-status" role="status" aria-live="polite" data-measure>Disconnected. Open Connect remote experiment controller in Respyra for a fresh QR code.</p>
+  <p id="connection-status" role="status" aria-live="polite" data-measure>Disconnected. Open Remote Viewer in Respyra for a fresh QR code.</p>
   <form id="pairing" autocomplete="off">
+    <label id="viewer-name-field"><span data-measure>Your name</span><input id="viewer-name" type="text" maxlength="64" autocomplete="off" required spellcheck="false"></label>
     <label id="invitation-field"><span data-measure>Private Respyra control link</span><input id="invitation" type="url" maxlength="4096" spellcheck="false" required></label>
-    <div class="actions"><button id="connect" type="submit" data-measure>Connect</button><button id="disconnect" type="button" disabled data-measure>Disconnect</button></div>
+    <div class="actions"><button id="connect" type="submit" data-measure>Request access</button><button id="disconnect" type="button" disabled data-measure>Disconnect</button></div>
   </form>
   </div>
-  <p id="pairing-note" data-measure>Scan a private QR code or paste its link to request control. Approve access on the Respyra desktop. Disconnecting leaves the study running.</p>
-  <label class="view-picker" id="remote-view-picker" hidden><span data-measure>View</span><select id="remote-view"><option value="data">LSL data &amp; markers</option><option value="controls">Experiment controls</option></select></label>
+  <p id="pairing-note" data-measure>Enter your name to request desktop approval. Disconnecting leaves the study running.</p>
   <div id="controller" hidden></div>
   <p id="route" data-measure></p>
 </main></body></html>
