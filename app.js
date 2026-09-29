@@ -1,7 +1,7 @@
 import { BRSPConnection } from './vendor/brsp.js';
 import { VdoNinjaTransport } from './vendor/vdo-ninja-transport.js';
 import { createEmbeddedVdoSdk } from './vendor/external-page-connector.js';
-import { parseInvitation, SCOPES, OBSERVE_SCOPE, scopeForAction, validateControllerState } from './remote-profile.js';
+import { parseInvitation, SCOPES, OBSERVE_SCOPE, scopeForAction, validateControllerState, validViewerName } from './remote-profile.js';
 import { measureTextRegions } from './text-fit.js';
 import { actionQueue } from './action-queue.js';
 import { mountController } from './controller-ui.js';
@@ -21,15 +21,16 @@ window.addEventListener('hashchange', () => {
   void stop().then(generation => {
     if (generation !== linkGeneration) return;
     invitation = next;
-    void connect();
+    byId('invitation-field').hidden = true;
+    byId('invitation').required = false;
+    byId('connection-status').textContent = 'Private invitation received. Enter your name to request access.';
   });
 });
 const controller = mountController(byId('controller'), (action, fields) => active?.send(action, fields));
 byId('controller').querySelector('.diagnostics').append(byId('route'));
 controller.setEnabled(false);
-byId('remote-view').addEventListener('change', () => { document.body.dataset.view = byId('remote-view').value; });
 measureTextRegions().catch(() => { document.documentElement.dataset.pretextFit = 'unavailable'; });
-if (invitation) byId('connection-status').textContent = 'Private invitation received. Requesting desktop approval…';
+if (invitation) byId('connection-status').textContent = 'Private invitation received. Enter your name to request access.';
 byId('pairing').addEventListener('submit', event => { event.preventDefault(); void connect(); });
 byId('disconnect').addEventListener('click', () => { void stop(); });
 window.addEventListener('pagehide', () => { void stop(); });
@@ -42,17 +43,17 @@ async function stop(message = 'Disconnected. Enable a fresh phone invitation in 
   invitation = null;
   controller.setEnabled(false);
   controller.clearMonitor();
-  byId('remote-view-picker').hidden = true;
   document.body.classList.remove('coupled');
   byId('pairing-note').hidden = false;
   byId('controller').hidden = true;
-  byId('participant').value = ''; byId('session').value = '';
+  controller.clearSetup();
   byId('streams').replaceChildren();
   byId('invitation').value = '';
   byId('invitation').required = true;
   byId('invitation').disabled = false;
   byId('connect').disabled = false; byId('connect').hidden = false;
   byId('invitation-field').hidden = false;
+  byId('viewer-name-field').hidden = false;
   byId('disconnect').disabled = true;
   byId('connection-status').textContent = message;
   byId('route').textContent = '';
@@ -68,11 +69,14 @@ async function stop(message = 'Disconnected. Enable a fresh phone invitation in 
 
 async function connect() {
   if (active) return;
+  const viewerName = byId('viewer-name').value.trim();
+  if (!validViewerName(viewerName)) { byId('connection-status').textContent = 'Enter a name of up to 64 characters.'; byId('viewer-name').focus(); return; }
   invitation = parseInvitation(byId('invitation').value) ?? invitation;
   if (!invitation) { byId('connection-status').textContent = 'Paste a fresh private control link from Respyra.'; return; }
   byId('invitation').value = '';
   byId('invitation-field').hidden = true;
-  const context = { route:'unknown', lastState:0, started:performance.now(), revision:0,
+  byId('viewer-name-field').hidden = true;
+  const context = { route:'unknown', name:viewerName, lastState:0, started:performance.now(), revision:0,
     monitorRevision:0, pending:new Map(), lastRenew:0 };
   active = context;
   context.send = actionQueue(async (_command, { action:payload }) => {
@@ -108,7 +112,6 @@ async function connect() {
       controller.render({ ...(value.setup || {}), phase:value.phase, message:value.message, progress:value.progress });
       controller.setEnabled(value.phase !== 'setup' || value.setup !== null);
       byId('controller').hidden = false; byId('connect').hidden = true;
-      byId('remote-view-picker').hidden = false;
       document.body.classList.add('coupled');
       byId('pairing-note').hidden = true;
       byId('route').textContent = 'Phone route: ' + context.route;
@@ -118,6 +121,7 @@ async function connect() {
     context.connection.addEventListener('state', event => state(event.detail.state));
     context.connection.addEventListener('ready', () => {
       context.approvalStarted = performance.now();
+      context.connection.sendCommand(OBSERVE_SCOPE, 'introduce', { name:context.name });
       byId('connection-status').textContent = 'Waiting for approval on the Respyra desktop…';
     });
     context.connection.addEventListener('commandapplied', event => {
@@ -156,6 +160,5 @@ async function connect() {
 
 byId('invitation').required = !invitation;
 byId('invitation-field').hidden = Boolean(invitation);
-// Opening a private QR/link requests access; the desktop still decides consent.
+// A private QR/link pre-fills the invitation. The phone enters a name before requesting access.
 // A restored base page (including Recorder's saved tabs) remains disconnected.
-if (invitation) void connect();

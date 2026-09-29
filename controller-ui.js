@@ -3,14 +3,18 @@ import { MONITOR_HTML, mountLslMonitor } from './lsl-monitor.js';
 export const CONTROL_HTML = `
   <p id="status" role="status" aria-live="polite" data-measure>Waiting for the experiment engine…</p>
   <p id="command-status" role="status" aria-live="polite" data-measure></p>
-  ${MONITOR_HTML}
   <form id="setup" autocomplete="off">
     <fieldset id="controls" disabled>
       <legend class="sr-only">Experiment setup</legend>
       <div class="fields">
-        <label><span data-measure>Participant</span><input id="participant" name="participant" maxlength="128" required spellcheck="false"></label>
+        <label><span data-measure>Participant number</span><input id="participant" name="participant" maxlength="128" required spellcheck="false" placeholder="P001"></label>
         <label><span data-measure>Session</span><input id="session" name="session" maxlength="128" required spellcheck="false"></label>
       </div>
+      <section class="custom-variables" aria-labelledby="variables-title">
+        <div class="variable-heading"><h2 id="variables-title" data-measure>Custom variables</h2><button id="add-variable" type="button" aria-label="Add custom variable">+</button></div>
+        <div class="variable-columns"><span data-measure>Variable label</span><span data-measure>Value</span></div>
+        <div id="variable-list"></div>
+      </section>
       <section aria-label="Breathing input">
         <h2 data-measure>Breathing input</h2>
         <p id="accepted" data-measure>No input accepted.</p>
@@ -41,6 +45,7 @@ export const CONTROL_HTML = `
       </div>
     </fieldset>
   </form>
+  ${MONITOR_HTML}
   <section id="observation" aria-label="Experiment monitoring">
     <h2 data-measure>Experiment status</h2>
     <dl class="progress">
@@ -77,6 +82,28 @@ export function mountController(root, send, onReady) {
   let state = { phase: 'starting' }, progress = {}, enabled = true, ready = false;
   let operation = 0, streamSignature = '', recentSignature = '';
   const edits = new Map();
+  let variables = [];
+
+  function renderVariables() {
+    const list = byId('variable-list');
+    list.replaceChildren(...variables.map((row, index) => {
+      const container = document.createElement('div'); container.className = 'variable-row';
+      for (const field of ['label', 'value']) {
+        const label = document.createElement('label');
+        const title = document.createElement('span'); title.className = 'sr-only';
+        title.textContent = `${field === 'label' ? 'Variable label' : 'Value'} ${index + 1}`;
+        const input = document.createElement('input'); input.maxLength = 128; input.spellcheck = false;
+        input.value = row[field]; input.placeholder = field === 'label' ? 'e.g. Age' : 'Enter value';
+        input.addEventListener('input', () => { row[field] = input.value; void request('field_edit', {field:'variables', value:JSON.stringify(variables)}); });
+        label.append(title, input); container.append(label);
+      }
+      const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×';
+      remove.setAttribute('aria-label', `Remove variable ${index + 1}`);
+      remove.addEventListener('click', () => { variables.splice(index, 1); renderVariables(); void request('field_edit', {field:'variables', value:JSON.stringify(variables)}); });
+      container.append(remove);
+      return container;
+    }));
+  }
 
   function availability() {
     const setup = state.phase === 'setup';
@@ -91,6 +118,8 @@ export function mountController(root, send, onReady) {
     byId('cancel').disabled = !enabled || !setup || operation > 0;
     byId('marker_name').disabled = !enabled || !setup || operation > 0;
     byId('rename').disabled = !enabled || !setup || operation > 0;
+    byId('add-variable').disabled = !enabled || !setup || operation > 0 || variables.length >= 6;
+    for (const input of byId('variable-list').querySelectorAll('input,button')) input.disabled = !enabled || !setup || operation > 0;
     byId('abort').hidden = state.phase !== 'experiment';
     byId('abort').disabled = !enabled || operation > 0 || progress.recording?.phase === 'finalizing';
     byId('close').hidden = !['finished', 'error'].includes(state.phase);
@@ -152,6 +181,10 @@ export function mountController(root, send, onReady) {
       for (const field of ['participant','session']) {
         if (!edits.has(field) && byId(field).value !== snapshot.values[field]) byId(field).value = snapshot.values[field];
       }
+      if (!edits.has('variables') && JSON.stringify(variables) !== JSON.stringify(snapshot.variables || [])) {
+        variables = (snapshot.variables || []).map(row => ({...row}));
+        renderVariables();
+      }
       byId('save_csv').checked = !!snapshot.save_csv;
       byId('record_keyboard').checked = !!snapshot.record_keyboard;
       byId('record_mouse').checked = !!snapshot.record_mouse;
@@ -196,6 +229,12 @@ export function mountController(root, send, onReady) {
     input.addEventListener('keydown', event => { void request('field_key', { field, key:event.key }); });
     input.addEventListener('input', () => { void request('field_edit', { field, value:input.value }); });
   }
+  byId('add-variable').addEventListener('click', () => {
+    if (variables.length >= 6) return;
+    variables.push({label:'', value:''}); renderVariables();
+    void request('field_edit', {field:'variables', value:JSON.stringify(variables)});
+    byId('variable-list').lastElementChild?.querySelector('input')?.focus();
+  });
   for (const action of ['scan','use','cancel','abort','close']) byId(action).addEventListener('click', () => { void request(action); });
   byId('use').addEventListener('click', () => {
     if (!document.body.classList.contains('desktop')) byId('input-details').open = false;
@@ -213,5 +252,6 @@ export function mountController(root, send, onReady) {
   if (!document.body.classList.contains('desktop')) byId('input-details').append(byId('record_keyboard').closest('.input-options'));
   return { render, setEnabled(value) { enabled = value; monitor.render(progress, enabled); availability(); },
     clearMonitor() { monitor.clear(); },
+    clearSetup() { variables = []; renderVariables(); byId('participant').value = ''; byId('session').value = ''; },
     fail(message) { enabled = false; monitor.render(progress, false); byId('command-status').textContent = message; availability(); } };
 }
