@@ -85,8 +85,11 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
 
 ## Signal boundary
 
-- Source: [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream),
-  Vernier Stream Mini. The checked contract at commit
+- Stream ecosystem: [Polar Stream Mini and Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream)
+  are the LSL applets this toolbox is currently optimized to receive. Its
+  bundled LSL recorder is designed to capture streams published by both. The
+  breathing study specifically uses Vernier Stream Mini's raw Force (N) input.
+- Study input: Vernier Stream Mini. The checked contract at commit
   `0bd0bd23f30a4f4e36e73a7907b35f2521fc0699` publishes an LSL outlet of
   type `VernierRaw` with `raw_measurement_recording` metadata, including
   GDX-RB channel 1 `Force` in `N`. Its separate `Respiration` outlet is a
