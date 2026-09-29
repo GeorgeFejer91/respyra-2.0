@@ -1,4 +1,5 @@
 """Setup authority checks use the same controller driven by the HTML form."""
+import json
 import threading
 import time
 from types import SimpleNamespace
@@ -45,12 +46,31 @@ def finish(setup):
 
 
 @pytest.fixture
-def setup(monkeypatch):
+def setup(monkeypatch, tmp_path):
     monkeypatch.delenv("RESPYRA_LSL_SOURCE_ID", raising=False)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     monkeypatch.setattr(lsl_setup, "load_force_selection", lambda: None)
     controller = lsl_setup.SourceSetup(SimpleNamespace(name="Test Study"), Collector())
     yield controller
     controller.close()
+
+
+def test_experiment_fields_save_without_a_button_and_restore_on_restart(setup):
+    send(setup, "shown")
+    send(setup, "field_edit", field="participant", value="P002")
+    send(setup, "field_edit", field="variables", value=json.dumps([{"label": "Age", "value": "28"}]))
+    stored = json.loads(lsl_setup.fields_path().read_text(encoding="utf-8"))
+    assert stored["values"]["participant"] == "P002"
+    assert stored["variables"] == [{"label": "Age", "value": "28"}]
+    restored = lsl_setup.SourceSetup(SimpleNamespace(name="Test Study"), Collector())
+    try:
+        restored.restore()
+        assert restored.snapshot()["values"]["participant"] == "P002"
+        assert restored.snapshot()["variables"] == [{"label": "Age", "value": "28"}]
+    finally:
+        restored.close()
+    with pytest.raises(lsl_setup.SetupRejected, match="Invalid custom variables"):
+        send(setup, "field_edit", field="variables", value="not json")
 
 
 @pytest.mark.parametrize("saved_state", ["none", "missing", "corrupt"])

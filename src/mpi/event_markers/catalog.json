@@ -122,7 +122,7 @@
     "participant.dialog.opened": {"when": "The participant/session dialog is requested.", "fields": []},
     "participant.dialog.shown": {"when": "The HTML participant/session form becomes enabled after recorder subscription; Python consumes its readiness action.", "fields": []},
     "participant.field.key": {"when": "An HTML keydown reaches either participant text field, including cursor and deletion keys; key uses KeyboardEvent.key.", "fields": ["field", "key"]},
-    "participant.field.edited": {"when": "An HTML input event changes either participant field; value is the full text after that edit, including pasted text.", "fields": ["field", "value"]},
+      "participant.field.edited": {"when": "An HTML input event changes a participant, session or custom-variable field; value is the full text after that edit, including pasted text. Custom variables are encoded as a bounded JSON array.", "fields": ["field", "value"]},
     "participant.button.ok.clicked": {"when": "Start Experiment is activated by mouse, keyboard, or HTML form submission; retains the original marker name.", "fields": []},
     "participant.button.cancel.clicked": {"when": "Cancel is activated by mouse, keyboard, or Escape in the setup form.", "fields": []},
     "participant.dialog.accepted": {"when": "Python accepts Start Experiment after checking participant/session values, live Force input and native recorder readiness with raw samples.", "fields": []},

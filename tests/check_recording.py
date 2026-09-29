@@ -46,7 +46,7 @@ def main():
     worker.start()
     recorder = NativeRecording(ROOT / ".for-ai-local/recorder/runtime", OUTPUT)
     try:
-        recorder.start({"participant": "native test", "session": "001"},
+        recorder.start({"participant": "P002", "session": "001", "variables": [{"label": "Age", "value": "28"}]},
                        SimpleNamespace(source_id=identity), markers)
         start = local_clock()
         markers.emit("run.started", participant="native test", session="001")
@@ -69,6 +69,10 @@ def main():
         markers.emit("recording.finalizing")
         recorder.stop()
         assert recorder.phase == "complete" and recorder.process is None
+        assert recorder.path.name.startswith("P002_Session-001_Age-28_")
+        participant = json.loads((OUTPUT / "participant-list.jsonl").read_text(encoding="utf-8").splitlines()[-1])
+        assert participant == {"xdf_file": recorder.path.name, "participant_number": "P002",
+                               "session": "001", "variables": [{"label": "Age", "value": "28"}]}
         summaries = inspect_xdf(recorder.path, [identity, late_id, markers.health_snapshot()["source_id"]])
         streams, _ = pyxdf.load_xdf(str(recorder.path))
         by_id = {s["info"]["source_id"][0] or "": s for s in streams}

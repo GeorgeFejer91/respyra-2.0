@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -13,6 +14,26 @@ import xml.etree.ElementTree as ET
 
 class RecordingError(RuntimeError):
     pass
+
+
+def _filename_part(value):
+    part = re.sub(r"-+", "-", "".join(c if c.isalnum() else "-" for c in value.strip())).strip("-")
+    if not part:
+        raise RecordingError("Participant and custom variable names need letters or numbers for the XDF filename")
+    return part
+
+
+def recording_stem(values):
+    participant = values["participant"].strip()
+    match = re.fullmatch(r"[Pp]?(\d+)", participant)
+    number = f"P{int(match.group(1)):03d}" if match else _filename_part(participant)
+    parts = [number, f"Session-{_filename_part(values['session'])}"]
+    for row in values.get("variables", []):
+        parts.append(f"{_filename_part(row['label'])}-{_filename_part(row['value'])}")
+    stem = "_".join(parts)
+    if len(stem) > 180:
+        raise RecordingError("XDF filename is too long; shorten the participant or custom variables")
+    return stem
 
 
 def _integer(handle):
@@ -88,6 +109,7 @@ class NativeRecording:
         self.summary = []
         self._lock = threading.Lock()
         self._reader = None
+        self.participant_record = None
 
     def snapshot(self):
         with self._lock:
@@ -144,6 +166,7 @@ class NativeRecording:
         if self.process is not None:
             raise RecordingError("A native recording is already active")
         self.path = None
+        self.participant_record = None
         self.phase, self.error, self.streams, self.summary = "preparing", None, {}, []
         self.data_sources = set()
         try:
@@ -151,8 +174,12 @@ class NativeRecording:
             if not executable.is_file() or not (self.runtime / "lsl.dll").is_file():
                 raise RecordingError("Native recorder is missing. Reinstall Respyra 2.0 or run pnpm prepare:recorder.")
             self.output.mkdir(parents=True, exist_ok=True)
-            safe = lambda value: re.sub(r"[^A-Za-z0-9_-]", "-", value)[:32] or "session"
-            self.path = self.output / f"respyra-{safe(values['participant'])}-{safe(values['session'])}-{uuid4().hex}.xdf.partial"
+            stem = recording_stem(values)
+            self.path = self.output / f"{stem}_{uuid4().hex}.xdf.partial"
+            self.participant_record = {"xdf_file": self.path.name.removesuffix(".partial"),
+                                       "participant_number": stem.split("_", 1)[0],
+                                       "session": values["session"],
+                                       "variables": [row.copy() for row in values.get("variables", [])]}
             self.required = (source.source_id, markers.health_snapshot()["source_id"])
             self.process = subprocess.Popen([str(executable), str(self.path.resolve())],
                 cwd=self.runtime, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
@@ -222,13 +249,23 @@ class NativeRecording:
                 raise RecordingError("Recording destination already exists")
             self.path.rename(final)
             self.path = final
+            try:
+                if self.participant_record is not None:
+                    with (self.output / "participant-list.jsonl").open("a", encoding="utf-8", newline="\n") as handle:
+                        handle.write(json.dumps(self.participant_record, ensure_ascii=False) + "\n")
+                        handle.flush()
+                        os.fsync(handle.fileno())
+            except OSError as exc:
+                self.phase = "error"
+                self.error = f"XDF saved, but participant list could not be updated: {exc}"
+                raise RecordingError(self.error) from exc
             self.phase = "complete"
         except (OSError, ValueError, ET.ParseError, RecordingError, subprocess.TimeoutExpired) as exc:
             if process.poll() is None:
                 process.kill()
                 process.wait(timeout=2)
             self.phase = "error"
-            self.error = f"{exc}. Partial recording preserved."
+            self.error = str(exc) if self.path and self.path.suffix == ".xdf" else f"{exc}. Partial recording preserved."
             raise RecordingError(self.error) from exc
         finally:
             if process.stdin and not process.stdin.closed:

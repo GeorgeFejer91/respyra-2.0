@@ -40,10 +40,10 @@ export function validCommand(command) {
   if (command.action === 'option') keys.push('field','enabled');
   const args = command.args;
   if (!exact(args, keys) || !integer(args.ui_seq, 1) || !Number.isFinite(args.ui_time_ms) || args.ui_time_ms < 0) return false;
-  if (keys.includes('field') && !(command.action === 'option' ? ['save_csv'] : ['participant','session','marker_name']).includes(args.field)) return false;
+  if (keys.includes('field') && !(command.action === 'option' ? ['save_csv'] : ['participant','session','marker_name','variables']).includes(args.field)) return false;
   if (keys.includes('enabled') && typeof args.enabled !== 'boolean') return false;
   if (keys.includes('key') && !text(args.key,128)) return false;
-  if (keys.includes('value') && !text(args.value,128)) return false;
+  if (keys.includes('value') && !text(args.value,args.field === 'variables' ? 2048 : 128)) return false;
   return !keys.includes('row') || integer(args.row);
 }
 
@@ -59,9 +59,11 @@ export function validateControllerState(value) {
     || !text(value.message) || new TextEncoder().encode(JSON.stringify(value)).length > 8192) return false;
   if (value.setup !== null) {
     const s = value.setup;
-    if (value.phase !== 'setup' || !exact(s,['phase','ui_seq','study_name','values','message','busy','can_start','can_use','selected_row','streams','source','omitted_streams','marker_name','save_csv'])
+    if (value.phase !== 'setup' || !exact(s,['phase','ui_seq','study_name','values','variables','message','busy','can_start','can_use','selected_row','streams','source','omitted_streams','marker_name','save_csv'])
       || s.phase !== 'setup' || !integer(s.ui_seq) || !text(s.study_name) || !text(s.message)
       || !exact(s.values,['participant','session']) || !text(s.values.participant,128) || !text(s.values.session,128)
+      || !Array.isArray(s.variables) || s.variables.length > 6 || s.variables.some(row =>
+        !exact(row,['label','value']) || !text(row.label,128) || !text(row.value,128))
       || !text(s.marker_name,128) || ['busy','can_start','can_use','save_csv'].some(key=>typeof s[key] !== 'boolean')
       || (s.selected_row !== null && !integer(s.selected_row)) || !integer(s.omitted_streams)
       || !Array.isArray(s.streams)) return false;

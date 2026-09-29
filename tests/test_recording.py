@@ -1,4 +1,5 @@
 """Recording failures must never masquerade as a started/saved experiment."""
+import json
 from pathlib import Path
 import struct
 import subprocess
@@ -6,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from mpi.recording import NativeRecording, RecordingError, inspect_xdf
+from mpi.recording import NativeRecording, RecordingError, inspect_xdf, recording_stem
 from mpi.lsl_setup import SourceSetup, SetupRejected
 
 
@@ -77,6 +78,43 @@ def test_complete_file_has_matching_samples_and_footer(tmp_path):
     assert inspect_xdf(path, ['raw-test'])[0]['sample_count'] == 1
 
 
+def test_filename_uses_number_and_custom_fields():
+    values = {'participant':'2', 'session':'001', 'variables':[
+        {'label':'Age', 'value':'28'}, {'label':'Study group', 'value':'Control'}]}
+    assert recording_stem(values) == 'P002_Session-001_Age-28_Study-group-Control'
+
+
+def test_participant_list_appends_only_after_verified_xdf(tmp_path):
+    recorder = NativeRecording(tmp_path, tmp_path)
+    recorder.path = tmp_path / 'P002_Session-001_Age-28_test.xdf.partial'
+    recorder.path.write_bytes(fixture_xdf())
+    recorder.required = ('raw-test',)
+    recorder.participant_record = {'xdf_file':recorder.path.name.removesuffix('.partial'),
+        'participant_number':'P002', 'session':'001', 'variables':[{'label':'Age','value':'28'}]}
+    recorder.process = SimpleNamespace(poll=lambda: 0, wait=lambda **_: 0,
+        stdin=SimpleNamespace(closed=True), stderr=SimpleNamespace(close=lambda: None))
+    recorder.stop()
+    assert recorder.phase == 'complete' and recorder.path.suffix == '.xdf'
+    assert json.loads((tmp_path / 'participant-list.jsonl').read_text(encoding='utf-8').strip()) == recorder.participant_record
+    assert not (tmp_path / 'P002_Session-001_Age-28_test.xdf.partial').exists()
+
+
+def test_list_failure_keeps_verified_xdf_and_reports_it(tmp_path):
+    recorder = NativeRecording(tmp_path, tmp_path)
+    recorder.path = tmp_path / 'P002_test.xdf.partial'
+    recorder.path.write_bytes(fixture_xdf())
+    recorder.required = ('raw-test',)
+    recorder.participant_record = {'xdf_file':'P002_test.xdf', 'participant_number':'P002',
+                                   'session':'001', 'variables':[]}
+    (tmp_path / 'participant-list.jsonl').mkdir()
+    recorder.process = SimpleNamespace(poll=lambda: 0, wait=lambda **_: 0,
+        stdin=SimpleNamespace(closed=True), stderr=SimpleNamespace(close=lambda: None))
+    with pytest.raises(RecordingError, match='XDF saved, but participant list'):
+        recorder.stop()
+    assert recorder.path == tmp_path / 'P002_test.xdf' and recorder.path.exists()
+    assert recorder.phase == 'error' and 'Partial recording preserved' not in recorder.error
+
+
 def test_missing_native_bundle_reports_failure_without_starting(tmp_path):
     recorder = NativeRecording(tmp_path, tmp_path)
     with pytest.raises(RecordingError, match='Native recorder is missing'):
@@ -97,3 +135,4 @@ def test_failed_child_cannot_promote_a_closed_looking_file(tmp_path):
         recorder.stop()
     assert recorder.phase == 'error' and recorder.process is None
     assert recorder.path.exists() and not recorder.path.with_suffix('').exists()
+    assert not (tmp_path / 'participant-list.jsonl').exists()

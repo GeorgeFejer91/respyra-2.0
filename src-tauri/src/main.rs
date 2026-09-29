@@ -53,6 +53,7 @@ enum Field {
     Participant,
     Session,
     MarkerName,
+    Variables,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -130,9 +131,14 @@ fn encode_action(action: &Action) -> Result<Vec<u8>, String> {
         return Err("Invalid UI sequence or timestamp".into());
     }
     for key in ["key", "value"] {
+        let limit = if key == "value" && value["field"] == "variables" {
+            2048
+        } else {
+            128
+        };
         if value[key]
             .as_str()
-            .is_some_and(|text| text.chars().count() > 128)
+            .is_some_and(|text| text.chars().count() > limit)
         {
             return Err("Participant input is too long".into());
         }

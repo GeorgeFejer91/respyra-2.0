@@ -12,6 +12,14 @@ p { line-height: 1.5; margin: 8px 0 16px; }
 #status { padding: 12px 0; border-bottom: 1px solid #d0d7de; white-space: pre-wrap; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.custom-variables { min-width: 0; }
+.variable-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.variable-heading h2 { margin: 0; }
+.variable-columns, .variable-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px; gap: 8px; align-items: center; }
+.variable-columns { color: #57606a; font-size: .875rem; }
+.variable-row { margin-top: 6px; }
+.variable-row button, #add-variable { width: 36px; min-height: 36px; padding: 4px; }
+.variable-row input { min-height: 36px !important; }
 label { min-width: 0; }
 label > span { display: block; margin-bottom: 6px; line-height: 1.5; }
 input[type=text], input:not([type]) { display: block; width: 100%; min-width: 0; min-height: 44px; border: 1px solid #8c959f; border-radius: 4px; padding: 8px 10px; font: inherit; line-height: 1.5; background: #fff; color: inherit; }
@@ -88,6 +96,7 @@ details > label { display: block; }
 .desktop #setup { order: 1; }
 .desktop #controls { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 16px; align-items: center; }
 .desktop .fields { margin: 0; }
+.desktop .custom-variables { grid-column: 1; }
 .desktop #input-settings { grid-column: 2; grid-row: 1; }
 .desktop .input-options { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
 .input-scope { color: #57606a; font-size: .875rem; }
@@ -158,6 +167,12 @@ details > label { display: block; }
 .desktop #recorded-streams { padding-left: 20px; }
 .desktop #recorded-streams li { white-space: pre-wrap; }
 .desktop #recording-file:empty { display: none; }
+@media (max-height: 700px) {
+  .desktop main { gap: 8px; padding-block: 8px; }
+  .desktop .variable-columns { display: none; }
+  .desktop .variable-row { margin-top: 2px; }
+  .desktop #stream-overview, .desktop #action-bar { padding-top: 8px; }
+}
 
 #lsl-monitor select { font: inherit; width: 100%; min-height: 44px; border: 1px solid #8c959f; border-radius: 4px; background: #fff; color: inherit; padding: 8px; }
 #monitor-trace { width: 100%; height: 140px; display: block; }

@@ -37,6 +37,9 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
   user text enlargement. Impossible fits require an explicit no-fit outcome.
 - Python retains Start prerequisites, study timing, input and marker authority.
   Layout work must preserve existing remote contracts.
+- The setup form saves participant/session and custom variable entries on edits;
+  do not add a Save field labels button. The labels and values are restored on
+  launch and must fit the compact local and phone controls.
 
 ## Restrained utility design
 

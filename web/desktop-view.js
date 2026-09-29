@@ -49,7 +49,7 @@ export function mountDesktop() {
   const settingsTitle = document.createElement('summary');
   settingsTitle.dataset.measure = ''; settingsTitle.textContent = 'Settings';
   document.querySelector('#controls').append(settings);
-  settings.append(settingsTitle, document.querySelector('#controls > section'), document.querySelector('#save_csv').closest('label'));
+  settings.append(settingsTitle, document.querySelector('#controls > section[aria-label="Breathing input"]'), document.querySelector('#save_csv').closest('label'));
   const observation = document.querySelector('#observation');
   settings.append(observation.querySelector('.diagnostics'));
   const actions = document.createElement('div'); actions.className = 'actions';

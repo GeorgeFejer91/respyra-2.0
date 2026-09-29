@@ -14,7 +14,7 @@ from collections import deque
 
 
 PREFIX = "RESPYRA/1 "
-FIELDS = {"participant", "session", "marker_name"}
+FIELDS = {"participant", "session", "marker_name", "variables"}
 ACTION_FIELDS = {
     "shown": set(), "field_key": {"field", "key"},
     "field_edit": {"field", "value"}, "scan": set(), "select": {"row"},
@@ -66,7 +66,8 @@ def validate_action(action):
     if "enabled" in action and type(action["enabled"]) is not bool:
         raise ValueError("Invalid recording option")
     for key in ("key", "value"):
-        if key in action and (not isinstance(action[key], str) or len(action[key]) > 128):
+        limit = 2048 if key == "value" and action.get("field") == "variables" else 128
+        if key in action and (not isinstance(action[key], str) or len(action[key]) > limit):
             raise ValueError("Invalid participant input")
     if "row" in action and (type(action["row"]) is not int or action["row"] < 0):
         raise ValueError("Invalid stream row")

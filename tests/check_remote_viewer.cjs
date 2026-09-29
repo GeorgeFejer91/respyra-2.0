@@ -19,7 +19,7 @@ const path = require('node:path');
     message:'Marker outlet online', setup:null, progress:null,
   };
   const setup = { phase:'setup',ui_seq:0,study_name:'Respyra breathing validation',
-    values:{participant:'',session:'001'},message:'Choose a Force stream',busy:false,
+    values:{participant:'',session:'001'},variables:[],message:'Choose a Force stream',busy:false,
     can_start:false,can_use:false,selected_row:null,streams:[],source:null,omitted_streams:0,
     marker_name:'Respyra-Events',save_csv:false };
   let mutations = 0, ownerClaimed = false, approvalPending = false;
@@ -74,13 +74,13 @@ const path = require('node:path');
         mutations++;
         setup.ui_seq++;
         const a=command.args;
-        if(command.action==='field_edit') setup.values[a.field]=a.value;
+        if(command.action==='field_edit') { if(a.field==='variables') setup.variables=JSON.parse(a.value); else setup.values[a.field]=a.value; }
         if(command.action==='scan') setup.streams=[
           {row:0,source_id:'processed',stream_name:'Normalized breathing',stream_type:'Respiration',compatible:false,reason:'Requires raw Force in N',force_channel_index:null},
           {row:1,source_id:'polar-stream-vernier-raw-'+ 'device'.repeat(25),stream_name:'Synthetic raw Force',stream_type:'VernierRaw',compatible:true,reason:'Compatible raw Force (N)',force_channel_index:1}];
         if(command.action==='select') {setup.selected_row=a.row;setup.can_use=setup.streams[a.row].compatible;}
         if(command.action==='use') setup.source={source_id:setup.streams[setup.selected_row].source_id,stream_name:'Synthetic raw Force'};
-        setup.can_start=!!setup.source && Object.values(setup.values).every(value=>value.trim());
+        setup.can_start=!!setup.source && Object.values(setup.values).every(value=>value.trim()) && setup.variables.every(v=>v.label.trim()&&v.value.trim());
         snapshot.revision++;snapshot.monitorRevision++;
         if(command.action==='start') {snapshot.phase='experiment';snapshot.setup=null;}
         if(command.action==='abort') {snapshot.phase='finished';snapshot.setup=null;}
@@ -167,6 +167,9 @@ const path = require('node:path');
     await child.locator('#participant').fill('synthetic-phone');
     await child.locator('#participant').press('ArrowLeft');
     await child.locator('#session').fill('002');
+    await child.locator('#add-variable').click();
+    await child.locator('#variable-list input').first().fill('Age');
+    await child.locator('#variable-list input').nth(1).fill('28');
     await child.locator('#input-details summary').click();
     await child.locator('#scan').click();
     await child.locator('input[value="0"]').click();
@@ -178,6 +181,7 @@ const path = require('node:path');
     await child.waitForFunction(()=>!document.getElementById('start').disabled);
     assert.equal(setup.values.participant,'synthetic-phone');
     assert.equal(setup.values.session,'002');
+    assert.deepEqual(setup.variables,[{label:'Age',value:'28'}]);
     assert.equal(await child.locator('#battery').textContent(),'Not reported');
     await child.locator('#start').click();
     await child.locator('#phase').getByText('Running', {exact:true}).waitFor();

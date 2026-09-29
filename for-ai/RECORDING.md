@@ -32,6 +32,12 @@ Source/provenance is in `native/recorder/README.md`.
   only on success. Preserve failures; never report an outlet/subscriber as disk evidence.
 - Installed XDF/optional original CSV files use the writable user data folder,
   survive uninstall, and never enter Git/Pages. CSV remains opt-in and unchanged.
+- Participant/session and up to six custom label/value pairs are saved atomically
+  on setup edits in local user settings and restored on launch. Numeric participant
+  entries render as `P001`, `P002`, etc. in XDF names; session and label-value pairs
+  form underscore-separated filename parts before the unique suffix. Python appends
+  a `participant-list.jsonl` record with full values only after XDF verification
+  and promotion. A list-write failure reports an error while preserving the closed XDF.
 - Local `mpi.lsl_viewer.LSLViewer` owns separate display-only subscriptions to all
   visible numeric and string streams, with UID identity, full channel metadata
   and late discovery. The study's Force inlet remains its only acquisition and

@@ -46,7 +46,7 @@ async function stop(message = 'Disconnected. Enable a fresh phone invitation in 
   document.body.classList.remove('coupled');
   byId('pairing-note').hidden = false;
   byId('controller').hidden = true;
-  byId('participant').value = ''; byId('session').value = '';
+  controller.clearSetup();
   byId('streams').replaceChildren();
   byId('invitation').value = '';
   byId('invitation').required = true;

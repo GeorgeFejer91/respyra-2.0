@@ -15,7 +15,9 @@ QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and
 therefore still needs Internet access. Hardware acquisition remains a separate
 Vernier Stream Mini program. Respyra 2.0 owns recording; a separate LSL recorder is unnecessary.
 
-Open Respyra 2.0 to use **Experiment control**. Enter participant/session; a unique
+Open Respyra 2.0 to use **Experiment control**. Enter participant/session and any
+custom variable labels and values. These fields save automatically and reload on the
+next launch; there is no separate Save button. A unique
 live raw Force LSL stream connects automatically (ambiguous choices are in
 **Settings**). The middle panel includes all streams and stacked live channel
 previews in one plot with stream tabs and event-marker lines. The red **Start Experiment** button waits for native
@@ -25,6 +27,12 @@ shows the file, subscribed sources and saved/failed status. PsychoPy owns partic
 and optional QR-linked phone retain the established controls and monitoring.
 
 XDFs are always saved in `%LOCALAPPDATA%\Respira\data`, with unique filenames.
+Numeric participant entries become `P001`, `P002`, and so on in the filename;
+session and each filled `label-value` pair follow as underscore-separated parts,
+then a unique suffix. After a verified XDF closes, Respyra appends its filename,
+participant number, session and full custom variables to `participant-list.jsonl`
+in the same folder. Setup memory is stored locally in
+`%LOCALAPPDATA%\Respyra\experiment-fields.json`.
 The data folder keeps its previous name so existing recordings stay in place.
 **Saved** means required stream data and closed XDF footers passed verification.
 Failures preserve `.xdf.partial` files. The phone opens a live LSL channel/marker

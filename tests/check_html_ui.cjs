@@ -21,7 +21,7 @@ const assert = require('node:assert/strict');
   page.on('pageerror', e => errors.push(String(e)));
   await page.addInitScript(() => {
     let listener;
-    const state = { phase:'setup', ui_seq:0, study_name:'Respyra breathing validation', values:{participant:'',session:'001'}, marker_name:'Respyra-Events',save_csv:false, message:'No breathing input selected.', busy:false, can_start:false, can_use:false, selected_row:null, streams:[], source:null };
+    const state = { phase:'setup', ui_seq:0, study_name:'Respyra breathing validation', values:{participant:'',session:'001'}, variables:[], marker_name:'Respyra-Events',save_csv:false, message:'No breathing input selected.', busy:false, can_start:false, can_use:false, selected_row:null, streams:[], source:null };
     window.testActions = [];
     window.testProgress = progress => {
       state.progress = {...state.progress,...progress};
@@ -33,12 +33,12 @@ const assert = require('node:assert/strict');
       if(command === 'launch_backend') return structuredClone(state);
       if(command === 'close_app') return;
       const a=args.action; window.testActions.push(a); state.ui_seq=a.ui_seq;
-      if(a.action==='field_edit') state.values[a.field]=a.value;
+      if(a.action==='field_edit') { if(a.field==='variables') state.variables=JSON.parse(a.value); else state.values[a.field]=a.value; }
       if(a.action==='option') state[a.field]=a.enabled;
       if(a.action==='scan') {state.selected_row=null;state.can_use=false;state.streams=[{source_id:'processed',stream_name:'Normalized breathing',stream_type:'Respiration',compatible:false,reason:'Requires raw Force in N'}, {source_id:'polar-stream-vernier-raw-'+ 'device'.repeat(25), stream_name:'Synthetic Vernier Force',stream_type:'VernierRaw',compatible:true,reason:'Compatible: raw Force (N)',force_channel_index:1}];}
       if(a.action==='select') {state.selected_row=a.row; state.can_use=state.streams[a.row].compatible;}
       if(a.action==='use') {state.source={source_id:state.streams[state.selected_row].source_id,stream_name:state.streams[state.selected_row].stream_name};state.message='Ready for this experiment.';}
-      state.can_start=!!state.source && Object.values(state.values).every(v=>v.trim());
+      state.can_start=!!state.source && Object.values(state.values).every(v=>v.trim()) && state.variables.every(v=>v.label.trim()&&v.value.trim());
       if(a.action==='start') {state.phase='experiment';state.message='Experiment running in PsychoPy.';}
       if(a.action==='cancel') {state.phase='finished';state.message='Experiment ended.';}
       listener({payload:structuredClone(state)});
@@ -53,6 +53,11 @@ const assert = require('node:assert/strict');
   await page.locator('#participant').fill('synthetic participant');
   await page.locator('#participant').press('ArrowLeft');
   await page.locator('#session').fill('002');
+  await page.locator('#add-variable').click();
+  await page.locator('#variable-list .variable-row input').first().fill('Age');
+  await page.locator('#variable-list .variable-row input').nth(1).fill('28');
+  await page.waitForFunction(() => window.testActions.some(a=>a.field==='variables'&&a.value.includes('Age')));
+  assert.equal(await page.locator('#save-fields').count(), 0);
   await page.locator('#record_keyboard').check();
   await page.locator('#record_mouse').check();
   await page.locator('#input-settings > summary').click();

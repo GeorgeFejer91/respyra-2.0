@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import os
+import json
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from mpi.desktop_bridge import DesktopCancelled, validate_action
 from mpi.recording import RecordingError
@@ -18,11 +21,55 @@ class SetupRejected(ValueError):
     """A valid command no longer meets the current setup preconditions."""
 
 
+def fields_path():
+    return Path(os.environ.get("LOCALAPPDATA", Path.home() / ".config")) / "Respyra" / "experiment-fields.json"
+
+
+def valid_variables(variables):
+    return (isinstance(variables, list) and len(variables) <= 6
+            and all(isinstance(row, dict) and row.keys() == {"label", "value"}
+                    and all(isinstance(row[key], str) and len(row[key]) <= 128 for key in ("label", "value"))
+                    for row in variables))
+
+
+def save_fields(values, variables):
+    path = fields_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
+                                         prefix="experiment-fields-", suffix=".tmp", delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump({"version": 1, "values": values, "variables": variables}, handle, ensure_ascii=False)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def load_fields():
+    path = fields_path()
+    if not path.exists():
+        return None
+    try:
+        saved = json.loads(path.read_text(encoding="utf-8"))
+        values = saved["values"]
+        if (saved["version"] != 1 or not isinstance(values, dict)
+                or values.keys() != {"participant", "session"}
+                or any(not isinstance(value, str) or len(value) > 128 for value in values.values())
+                or not valid_variables(saved["variables"])):
+            raise ValueError("Invalid experiment fields")
+        return values, saved["variables"]
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise SetupRejected("Saved experiment fields are invalid; edit them again") from exc
+
+
 class SourceSetup:
     def __init__(self, cfg, markers, recorder=None, cancel_check=lambda: None):
         self.cfg, self.markers = cfg, markers
         self.recorder, self.cancel_check = recorder, cancel_check
         self.values = {"participant": "", "session": "001"}
+        self.variables = []
         self.save_csv = False
         self.record_keyboard = self.record_mouse = False
         self.automatic = False
@@ -38,6 +85,12 @@ class SourceSetup:
 
     def restore(self):
         self.automatic = True
+        try:
+            saved_fields = load_fields()
+            if saved_fields:
+                self.values, self.variables = saved_fields
+        except SetupRejected as exc:
+            self.message = str(exc)
         try:
             saved = load_force_selection()
         except LSLForceError as exc:
@@ -66,11 +119,14 @@ class SourceSetup:
     def snapshot(self):
         selected = self.candidates[self.row] if self.row is not None else None
         return {"phase": "setup", "ui_seq": self.sequence, "study_name": self.cfg.name, "values": self.values.copy(),
+                "variables": [row.copy() for row in self.variables],
                 "marker_name": self.markers.name, "save_csv": self.save_csv,
                 "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
                 "message": self.message, "busy": self.pending is not None,
                 "can_start": bool(self.source and not self.pending and
-                                  all(v.strip() for v in self.values.values())),
+                                  all(v.strip() for v in self.values.values()) and
+                                  all(row["label"].strip() and row["value"].strip() for row in self.variables) and
+                                  len({row["label"].strip().casefold() for row in self.variables}) == len(self.variables)),
                 "can_use": bool(selected and selected.force_index is not None and not self.pending),
                 "selected_row": self.row, "streams": self.rows(),
                 "source": ({"source_id": self.source.source_id,
@@ -101,7 +157,25 @@ class SourceSetup:
                 except ValueError as exc:
                     raise SetupRejected(str(exc)) from exc
             else:
-                self.values[action["field"]] = action["value"]
+                if action["field"] == "variables":
+                    try:
+                        variables = json.loads(action["value"])
+                    except ValueError as exc:
+                        raise SetupRejected("Invalid custom variables") from exc
+                    if not valid_variables(variables):
+                        raise SetupRejected("Use at most six custom variables with labels and values up to 128 characters")
+                    try:
+                        save_fields(self.values, variables)
+                    except OSError as exc:
+                        raise SetupRejected("Experiment fields could not be saved") from exc
+                    self.variables = variables
+                else:
+                    values = {**self.values, action["field"]: action["value"]}
+                    try:
+                        save_fields(values, self.variables)
+                    except OSError as exc:
+                        raise SetupRejected("Experiment fields could not be saved") from exc
+                    self.values = values
             emit("participant.field.edited", field=action["field"], value=action["value"], **ui)
         elif kind == "option":
             setattr(self, action["field"], action["enabled"])
@@ -136,7 +210,7 @@ class SourceSetup:
                 raise SetupRejected("Participant, session and live Force input are required")
             if self.recorder is not None:
                 try:
-                    self.recorder.start(self.values, self.source, self.markers, self.cancel_check)
+                    self.recorder.start({**self.values, "variables": self.variables}, self.source, self.markers, self.cancel_check)
                 except (RecordingError, OSError) as exc:
                     self.message = ("Recording could not start. Check the local recording view."
                                     if isinstance(exc, OSError) else str(exc))
@@ -289,7 +363,7 @@ def run_source_setup(cfg, markers, bridge=None):
                 else:
                     bridge.send(setup.snapshot())
                     bridge.reply(action)
-        return ({**setup.values, "save_csv": setup.save_csv,
+        return ({**setup.values, "variables": setup.variables, "save_csv": setup.save_csv,
                  "record_keyboard": setup.record_keyboard, "record_mouse": setup.record_mouse}, setup.source) if setup.accepted else (None, None)
     except DesktopCancelled:
         setup.reject()
