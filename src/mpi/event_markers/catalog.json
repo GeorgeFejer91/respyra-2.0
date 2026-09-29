@@ -92,7 +92,7 @@
     "recording.finalizing": {"when": "Study cleanup has finished; the recorder will drain pending samples, close and verify the XDF. This event is inside the recording; the final HTML result/Close markers are outside it.", "fields": []},
     "recording.option.changed": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "Python observes a recording-option checkbox change."},
     "recording.stream.changed": {"fields": ["uid", "enabled", "ui_seq", "ui_time_ms"], "when": "Python observes a stream Record checkbox change before Start."},
-    "run.recorder_connected": {"when": "Legacy event from the former setup subscriber gate; no longer emitted. Use recording.started for the native recorder gate.", "fields": []},
+    "run.recorder_connected": {"when": "Legacy event from the former setup subscriber gate; no longer emitted. Use recording.started for the native recorder gate.", "fields": [], "active": false},
     "run.configured": {"when": "Study timing and feedback settings are fixed before the first screen.", "fields": ["study_name", "range_cal_s", "baseline_s", "countdown_s", "tracking_s", "dot_feedback_mode", "range_percentiles", "range_scale"]},
     "run.started": {"when": "Instructions are accepted and the experiment begins.", "fields": ["participant", "session"]},
     "run.completed": {"when": "The final screen is dismissed after all trials.", "fields": ["trials_completed"]},

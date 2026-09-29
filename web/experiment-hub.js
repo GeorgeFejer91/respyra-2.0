@@ -1,5 +1,6 @@
 import { measureTextRegions } from './text-fit.js';
 import { actionQueue } from './action-queue.js';
+import { EVENT_MARKERS } from './marker-catalog.js';
 
     import { prepareWithSegments, measureLineStats, measureNaturalWidth, setLocale } from './vendor/pretext/layout.js';
 
@@ -60,6 +61,31 @@ import { actionQueue } from './action-queue.js';
     let selectionShare = Number.isFinite(savedLayout?.selection) ? savedLayout.selection : .30;
     let preferredSelectionShare = selectionShare;
     let scheduleTextMeasurement = () => {};
+    function renderMarkerInventory() {
+      const query = $('marker-inventory-search').value.trim().toLowerCase();
+      const matches = EVENT_MARKERS.filter(({ name, when }) => `${name} ${when || ''}`.toLowerCase().includes(query));
+      $('marker-inventory-count').textContent = `${matches.length} of ${EVENT_MARKERS.length} marker types`;
+      $('marker-inventory-list').replaceChildren(...matches.map(({ name, when }) => {
+        const row = document.createElement('li');
+        const title = document.createElement('strong'); title.dataset.measure = ''; title.textContent = name;
+        const detail = document.createElement('span'); detail.dataset.measure = ''; detail.textContent = when || '';
+        row.append(title, detail);
+        return row;
+      }));
+      if (!matches.length) {
+        const empty = document.createElement('li'); empty.dataset.measure = ''; empty.textContent = 'No matching markers.';
+        $('marker-inventory-list').append(empty);
+      }
+      scheduleTextMeasurement();
+    }
+    $('marker-inventory-open').addEventListener('click', () => {
+      $('marker-inventory-search').value = '';
+      renderMarkerInventory();
+      $('marker-inventory-dialog').showModal();
+      $('marker-inventory-search').focus();
+    });
+    $('marker-inventory-close').addEventListener('click', () => $('marker-inventory-dialog').close());
+    $('marker-inventory-search').addEventListener('input', renderMarkerInventory);
     const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
     const saveLayout = () => { preferredSelectionShare = selectionShare; localStorage.setItem('respyra-preview-layout', JSON.stringify({ hub: hubShare, selection: selectionShare })); };
 

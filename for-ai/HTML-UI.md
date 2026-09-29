@@ -26,6 +26,10 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
   streams unless their current LSL UID was unchecked before Start. The remote button opens a
   QR popup with desktop Approve/Reject on an authenticated request. Settings
   contains the pre-recording marker name and optional original CSV export.
+  Marker inventory opens a searchable dialog populated by `prepare-web.mjs` from
+  active entries in the Python event catalog. Its own content can scroll; the
+  main panel still cannot. It lists possible event types, not a claim that each
+  event occurs in every run or lands in the XDF outside recorder lifetime.
 - Start prepares the derived outlet, launches respyrecorder, and verifies exact
   Force/marker/derived subscriptions and samples before opening PsychoPy.
   Before calibration, the normalized derived channel contains NaN. After

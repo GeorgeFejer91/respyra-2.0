@@ -61,7 +61,7 @@
 
         </section>
 
-        <section class="section stream-section" aria-labelledby="record-title"><div class="section-head"><h2 id="record-title" data-measure>Available streams</h2><div class="marker-options" role="group" aria-label="Input markers"><label class="keyboard"><input id="include-keyboard-markers" type="checkbox" aria-label="Include keyboard markers"><span data-measure>Keyboard markers</span></label><label class="mouse"><input id="include-mouse-markers" type="checkbox" aria-label="Include mouse markers"><span data-measure>Mouse markers</span></label></div></div>
+        <section class="section stream-section" aria-labelledby="record-title"><div class="section-head"><h2 id="record-title" data-measure>Available streams</h2><button id="marker-inventory-open" type="button" data-measure>Marker inventory</button><div class="marker-options" role="group" aria-label="Input markers"><label class="keyboard"><input id="include-keyboard-markers" type="checkbox" aria-label="Include keyboard markers"><span data-measure>Keyboard markers</span></label><label class="mouse"><input id="include-mouse-markers" type="checkbox" aria-label="Include mouse markers"><span data-measure>Mouse markers</span></label></div></div>
           <div id="stream-list"></div>
           <div class="pager" id="stream-pager"><button id="stream-prev" type="button" data-measure>Previous</button><span id="stream-page-count" data-measure></span><button id="stream-next" type="button" data-measure>Next</button></div>
         </section>
@@ -91,6 +91,15 @@
     <label><span data-measure>Event marker stream name</span><input id="marker-name" type="text" maxlength="128" spellcheck="false"></label>
     <label class="settings-check"><input id="save-csv" type="checkbox"><span data-measure>Save original CSV files locally</span></label>
     <div class="remote-preview-actions"><button id="settings-done" type="button" data-measure>Done</button></div>
+  </dialog>
+
+  <dialog id="marker-inventory-dialog" aria-labelledby="marker-inventory-title" aria-describedby="marker-inventory-note">
+    <div class="inventory-head"><h2 id="marker-inventory-title" data-measure>Marker inventory</h2><button id="marker-inventory-close" type="button" data-measure>Close</button></div>
+    <p id="marker-inventory-note" data-measure>These event types cover experiment phases, trials, screens and controls. Each occurs only when its condition is met. The XDF saves markers emitted while recording is active; continuous signal samples stay in their LSL streams.</p>
+    <label for="marker-inventory-search" data-measure>Find a marker</label>
+    <input id="marker-inventory-search" type="search" autocomplete="off" spellcheck="false">
+    <p id="marker-inventory-count" role="status" aria-live="polite" data-measure></p>
+    <ul id="marker-inventory-list" aria-label="Possible experiment event markers"></ul>
   </dialog>
 
   <dialog id="viewer-dialog" aria-labelledby="viewer-title">

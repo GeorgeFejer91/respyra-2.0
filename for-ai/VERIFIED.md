@@ -46,7 +46,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Signal stitching and rise/fall waveforms: `src/mpi/signal.py` | `tests/test_signal.py` | unrecorded | Signal functions, input assumptions or numeric dependencies change. |
 | Raw Force metadata/units, finite samples, duplicate identities and saved selection: `src/mpi/lsl_force.py` | `tests/test_lsl_force.py` | verified for current inputs; see hub/recorder receipt | Force validation, source identity/storage, freshness or producer metadata contract changes. |
 | Automatic discovery, exact reconnect, loss/retry, saved fields and cancelled selection: `src/mpi/lsl_setup.py` (`SourceSetup`) | `tests/test_lsl_setup.py` | verified for current inputs; see hub/recorder receipt | Setup state transitions, source selection, remembered identity or Start prerequisites change. |
-| Marker payload/catalog, renaming, key timing and flip alignment: `src/mpi/event_markers/` | `tests/test_event_markers.py` | verified for current inputs; see hub/recorder receipt | Event owner/catalog, timing, phase wrappers or payload consumers change. |
+| Marker payload/catalog, renaming, key timing and flip alignment: `src/mpi/event_markers/` | `tests/test_event_markers.py` | verified for current inputs; see hub/recorder and marker inventory receipts | Event owner/catalog, timing, phase wrappers or payload consumers change. |
 | Short study completion/abort/error, no-data calibration and original CSV modes: `scripts/run_experiment.py`, `src/mpi/validation_study_jenny.py` | `tests/test_experiment_flow.py` | verified for current focused inputs; full GUI study NOT RUN | Study flow, calibrated input, marker contract, logging schema or installed `respyra` APIs change. |
 | Closed actions, ordered bounded pipe, public snapshots and Stop receipts: `src/mpi/desktop_bridge.py` | `tests/test_desktop_bridge.py` | verified for current inputs; see hub/recorder receipt | Action validation, sequence/framing/queue limits, projection or cleanup receipts change. |
 | Real engine startup/import isolation and marker lifetime through Close: `scripts/run_experiment.py`, desktop bridge | `tests/test_desktop_process.py` | verified for current focused inputs; see hub/recorder receipt | Launcher/imports, inherited stdio, pipe contracts or engine lifetime change. |
@@ -58,7 +58,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | reusable; see experiment fields receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
-| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for current inputs; see hub/recorder receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
+| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for current inputs; see marker inventory receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
 | Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for mocked current inputs; see hub/recorder receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | verified for current inputs; see hub/recorder receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | reusable; see remote approval receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
@@ -130,6 +130,30 @@ entry; it never updates the execution date or pretends the check ran again.
   `NOT RUN: isolated GUI desktop unavailable`. Physical belt, phone camera,
   scientific timing and a new installer remain unverified. The old installed
   app does not contain these source changes.
+- UI state: its HTML evidence is superseded by the marker inventory receipt
+  below; the named backend, recorder, Rust and build checks remain unchanged.
+
+### Marker inventory in the experiment hub
+
+- Result/date: `VERIFIED` for the headless browser and marker catalog checks,
+  2026-09-30. Base commit `a90bfea90f8191468f4fb45a752b5246db38fa7c`
+  plus scoped source, generated catalog, test, font and lock hashes in ignored
+  `.for-ai-local/marker-inventory-inputs-20260930.json` (SHA-256
+  `24c6ec5534c3e7fe45e116888586bb04ad9851b2df284b312a875cf280893ccc`).
+- Checks: `pnpm check:ui` passed 8 main layouts, 12 ordered actions, setup and
+  running-state popup access, all 89 active catalog entries in source order,
+  search/no-match/Close, 390 px dialog bounds and 320×480 enlarged-text dialog
+  bounds without horizontal overflow or clipped labels, with zero browser
+  errors. Inspected `.for-ai-local/marker-inventory-390.png` and
+  `marker-inventory-320-large.png`. `tests/test_event_markers.py` passed 8 tests;
+  `node --check web/experiment-hub.js` and `git diff --check` passed.
+- Scope: the popup uses the generated browser catalog from the Python marker
+  catalog; the retired `run.recorder_connected` entry is explicitly inactive
+  and excluded from both browser inventories. No marker publication or study
+  timing behavior changed. Node 24.19.0, pnpm 11.19.0.
+- Limits: Chrome was headless and Tauri IPC was mocked. A current native
+  WebView, full study, installed runtime and physical belt were `NOT RUN`;
+  earlier recording/XDF evidence is unchanged by this catalog presentation.
 
 ### Compact live LSL design preview
 
