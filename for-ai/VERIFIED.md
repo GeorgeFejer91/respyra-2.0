@@ -102,6 +102,23 @@ entry; it never updates the execution date or pretends the check ran again.
 
 ## Retained baseline evidence
 
+### Compact live LSL design preview
+
+- Result/date: `VERIFIED`, 2026-09-29, headless Chrome in a separate Playwright context.
+- Scope: `web/experiment-hub-preview.html` with live-discovery fixtures: compact outlet labels, raw/Respyra entries first and automatically recorded, a shared bounded viewer with input markers, responsive no-scroll layout, adjustable splitters, and a Remote Viewer dialog that honestly identifies the browser preview as unable to issue a private QR. This is a design preview, not the shipped experiment UI or recorder.
+- Checks: `node tests/check_experiment_preview.cjs` and `node tests/check_preview_splitters.cjs` passed. `pnpm check:ui` passed (17 actions, 5 reflow and 2 control-center layouts, no clipping or page errors). `.venv/Scripts/python.exe tests/check_preview_discovery.py` discovered a live synthetic Force (N) outlet in a private LSL session. Inspected `.for-ai-local/remote-viewer-preview-dialog.png` from the headless run.
+- Inputs: HEAD `d2d8a349d82d91bb20fa26c645e747fb14c96129`; untracked preview SHA-256 `5c316f0a40e154f07b7d1dbb99f1a719e117b16544e8aa3dff4cefe93888beb8`; preview check SHA-256 `ab622a8c957f6c637540f045633be4efc05a65a1e88b3607b112eb092e35fdb2`; splitter check SHA-256 `4629094eb303c6804ee58a51b8ef76554164cc6e458ca6938aa46358445d7db3`; shared `web/text-fit.js` SHA-256 `fbc1b1d8b1586e0f29ab09e0dc5aae22abea1024875995d10a46c85d43c40951`.
+- Discovery check inputs: `scripts/preview_lsl_ui.py` SHA-256 `a6ab0766373bda8dfe68f3dba17cbe0f4582024146447da1266403ebab1009c7`; `tests/check_preview_discovery.py` SHA-256 `92485f763f596b952476d090c797945d4b7e57fffb2065d9361ced7d26313cfb`.
+- Limits: synthetic discovered outlets in preview tests; no foreground/native WebView run, physical LSL source, XDF recording, or calibration execution.
+
+### Name-gated Remote Viewer
+
+- Result/date: `VERIFIED`, 2026-09-29. Captured CLI and headless Chrome on Windows.
+- Scope: the desktop's small Remote Viewer button creates its private QR; a phone must enter a bounded name before sending an authenticated BRSP introduction. Rust binds that name to the single pending request, and the desktop displays it for local Approve/Reject. No state or Start control is available before approval. The approved phone has setup, LSL monitoring and run controls on one responsive page.
+- Checks: `pnpm test:web` (6 pass); `pnpm check:ui` (17 actions, 5 reflow and 2 control-center layouts, no clipping/page errors); `node tests/check_remote_viewer.cjs` with configured Recorder companion (12 layouts, 12 mocked native mutations, opaque iframe); the same test with `RESPYRA_REAL_VDO=1` (public VDO signaling, observed direct route, same 12 mutations); Rust fmt check, 5 viewer unit tests and clippy `-D warnings` passed. OpenCV decoded the QR pixels from `.for-ai-local/remote-viewer-qr.png` to a private-link shape. Inspected headless name, approval, phone, QR and preview dialog screenshots.
+- Inputs: base `d2d8a349d82d91bb20fa26c645e747fb14c96129` plus scoped source/test hashes in `.for-ai-local/remote-viewer-inputs.json` (SHA-256 `cc77a8936ccdaf00a95de5e025e5f65ab73dd7eedaa8850c213517f94f203008`).
+- Limits: native authorization and real VDO were checked separately; the VDO browser test mocked Rust/Python, and the Rust tests did not run a native WebView. No isolated native GUI, physical phone/camera, new installer, or updated public phone deployment was tested. The public site and installed app still serve the previously published version until separately updated.
+
 ### Experiment field memory and recording names
 
 - Result/date: `VERIFIED`, 2026-09-29. Captured CLI and headless Chrome on Windows.

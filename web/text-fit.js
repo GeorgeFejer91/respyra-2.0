@@ -45,4 +45,5 @@ export async function measureTextRegions(root = document) {
   new MutationObserver(schedule).observe(root, { childList: true, characterData: true, subtree: true });
   window.addEventListener('resize', schedule);
   schedule();
+  return schedule;
 }
