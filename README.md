@@ -1,9 +1,11 @@
 # Respyra 2.0
 
-HTML/Tauri experiment controller for a Python breathing-belt validation study. The PsychoPy task asks
+HTML/Tauri experiment controller for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
-amplified, attenuated, or absent. Vernier Stream Mini publishes the raw belt
-signal through LSL; Respyra publishes an event-marker stream and records LSL to XDF automatically.
+amplified, attenuated, or absent. Vernier Stream Mini can publish raw belt Force;
+Polar Stream Mini can publish two signed ACC-derived breathing candidates.
+Respyra accepts either source through LSL, publishes an event-marker stream,
+and records LSL to XDF automatically.
 
 The importable Python package keeps its original name, `mpi`.
 
@@ -35,12 +37,14 @@ it uses the checkout's `.venv`. For the standalone release installer, run
 `pnpm package:windows`. Release builds require the packaged engine and never
 fall back to development Python.
 
-Running the experiment requires Vernier Stream Mini from
-[Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream) publishing
-its **Separate Streams** raw Vernier LSL outlet and a working PsychoPy display.
+Running the experiment requires a working PsychoPy display and one accepted
+breathing input from [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream):
+Vernier's raw Force outlet or Polar's signed PCA or signed Phan outlet in
+**Separate Streams** mode. [Polar input contracts](docs/polar-input-contracts.md)
+describe the exact waveform metadata, validity companions and calibration.
 Launch Respyra; its **Respyra-Events** outlet (type **Markers**) is advertised
 at Python-engine startup, before breathing-input selection or PsychoPy initialization.
-**Start Experiment** starts the bundled **respyrecorder** and requires raw Force
+**Start Experiment** starts the bundled **respyrecorder** and requires selected input
 samples and actual marker reception by the recorder before opening PsychoPy.
 Recording includes calibration and study cleanup. Additional LSL streams join
 when discovered, including streams started later. No separate recorder is required.
@@ -54,19 +58,18 @@ study session, then Start. The default session is 001; its parity determines
 the study's counterbalancing.
 
 Respyra automatically discovers and connects a unique compatible breathing
-belt. If several belts are available, choose one in **Settings** using
-**Scan streams** / **Use stream**. Discovery
-lists visible streams and reasons for rejecting incompatible study inputs. It
-requires the Vernier Stream Mini raw outlet, its metadata-identified Force
-channel in **N**, floating-point samples, and a unique stable source ID. Live
-Force values are checked before **Start Experiment** becomes available.
-The streamer's processed 0–1 breathing outlet is not used because the study's
-targets and errors are in Newtons.
-The run stops if no Force samples arrive during calibration or if the live
-Force stream stalls.
+input. The adjacent Vernier and Polar dropdowns show compatible streams found
+by the LSL scan; choosing one makes it the study input. Discovery lists visible
+streams and reasons for rejecting incompatible study inputs. It
+requires Vernier's metadata-identified Force channel in **N**, or one of the
+two exact Polar contracts with its live validity flags. All require floating-point
+samples and a unique stable source ID. Polar also requires the experimenter to
+choose whether inhalation raises or lowers the waveform. The run stops if valid
+samples disappear.
 
-After calibration, **Respyra-Calibrated-Breathing** publishes
-`(force_n - center_n) / amplitude_n`, retaining the raw inlet's synchronized
+**Respyra-Calibrated-Breathing** is advertised before recording and contains
+NaN until calibration. It then publishes the selected signal centered and
+scaled by its calibrated amplitude, retaining the raw inlet's synchronized
 timestamps and calibration metadata. Values are not clipped or adjusted by
 condition feedback gain. The recorder must receive this stream before trials
 begin, and final XDF verification requires its samples. Its compact indicator
@@ -85,7 +88,7 @@ automatically reconnect that exact source and recheck metadata and live data;
 no repeated scan or acceptance is needed. Missing, changed, duplicate, or
 incompatible outlets keep Start unavailable; missing/restarted outlets retry
 automatically. There is no automatic switch to
-another belt. Each accepted inlet stays pinned to that outlet; a streamer
+another source. Each accepted inlet stays pinned to that outlet; a streamer
 restart is revalidated before connection. Settings contain only source
 identity/name, never breathing samples or participant details.
 `RESPYRA_LSL_SOURCE_ID`, when set, overrides

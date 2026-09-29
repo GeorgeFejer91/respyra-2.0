@@ -72,6 +72,8 @@ class SourceSetup:
         self.variables = []
         self.save_csv = False
         self.record_keyboard = self.record_mouse = False
+        self.polar_inverted = self.polar_direction_set = False
+        self.excluded_streams = set()
         self.automatic = False
         self.identity = None
         self.next_scan = 0
@@ -80,7 +82,7 @@ class SourceSetup:
         self.row = None
         self.sequence = 0
         self.shown = self.done = self.accepted = False
-        self.message = "Waiting for a live VernierRaw Force stream."
+        self.message = "Waiting for a live Vernier Force or Polar breathing waveform."
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="respyra-lsl-setup")
 
     def restore(self):
@@ -105,7 +107,8 @@ class SourceSetup:
             origin = "environment" if os.environ.get("RESPYRA_LSL_SOURCE_ID") else "memory"
             self.message = "Reconnecting the previously configured LSL source…"
             self.markers.emit("source.connection.started", source_id=identity, origin=origin)
-            self._submit(origin, lambda: connect_force_source(source_id=identity), identity)
+            contract = saved.get("contract_id") if saved and not os.environ.get("RESPYRA_LSL_SOURCE_ID") else None
+            self._submit(origin, lambda: connect_force_source(source_id=identity, **({"contract_id": contract} if contract else {})), identity)
 
     def _submit(self, kind, work, identity=None):
         self.pending = (self.executor.submit(work), kind, identity)
@@ -122,15 +125,20 @@ class SourceSetup:
                 "variables": [row.copy() for row in self.variables],
                 "marker_name": self.markers.name, "save_csv": self.save_csv,
                 "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
+                "polar_inverted": self.polar_inverted,
+                "polar_direction_set": self.polar_direction_set,
+                "excluded_streams": sorted(self.excluded_streams),
                 "message": self.message, "busy": self.pending is not None,
                 "can_start": bool(self.source and not self.pending and
+                                  (not getattr(self.source, "contract_id", None) or self.polar_direction_set) and
                                   all(v.strip() for v in self.values.values()) and
                                   all(row["label"].strip() and row["value"].strip() for row in self.variables) and
                                   len({row["label"].strip().casefold() for row in self.variables}) == len(self.variables)),
                 "can_use": bool(selected and selected.force_index is not None and not self.pending),
                 "selected_row": self.row, "streams": self.rows(),
                 "source": ({"source_id": self.source.source_id,
-                            "stream_name": self.source.stream_name} if self.source else None)}
+                            "stream_name": self.source.stream_name,
+                            "contract_id": getattr(self.source, "contract_id", "vernier-force/1")} if self.source else None)}
 
     def command(self, action):
         validate_action(action)
@@ -178,8 +186,22 @@ class SourceSetup:
                     self.values = values
             emit("participant.field.edited", field=action["field"], value=action["value"], **ui)
         elif kind == "option":
+            if action["field"] == "polar_inverted":
+                if self.source is None or not getattr(self.source, "contract_id", None):
+                    raise SetupRejected("Choose a Polar breathing input before setting inhale direction")
+                self.polar_direction_set = True
+                self.source.polarity = -1 if action["enabled"] else 1
             setattr(self, action["field"], action["enabled"])
-            emit("recording.option.changed", field=action["field"], enabled=action["enabled"], **ui)
+            emit("source.polarity.set" if action["field"] == "polar_inverted" else "recording.option.changed",
+                 field=action["field"], enabled=action["enabled"], **ui)
+        elif kind == "record_stream":
+            if action["enabled"]:
+                self.excluded_streams.discard(action["uid"])
+            elif len(self.excluded_streams) < 128:
+                self.excluded_streams.add(action["uid"])
+            else:
+                raise SetupRejected("Too many excluded LSL streams")
+            emit("recording.stream.changed", uid=action["uid"], enabled=action["enabled"], **ui)
         elif kind == "scan":
             if self.pending:
                 raise SetupRejected("Source operation is already in progress")
@@ -201,24 +223,26 @@ class SourceSetup:
             identity = candidate.info.source_id()
             emit("source.ui.use.clicked", source_id=identity, stream_name=candidate.info.name(), **ui)
             emit("source.connection.started", source_id=identity, origin="selection")
-            self.message = "Checking channel metadata and live Force samples…"
+            self.message = "Checking source metadata and live breathing samples…"
             self._submit("selection", lambda: open_force_source(candidate.info), identity)
         elif kind == "start":
             emit("participant.button.ok.clicked", **ui)
             self.poll()
             if not self.snapshot()["can_start"]:
-                raise SetupRejected("Participant, session and live Force input are required")
+                raise SetupRejected("Participant, session and a calibrated-ready breathing input are required")
             if self.recorder is not None:
                 try:
-                    self.recorder.start({**self.values, "variables": self.variables}, self.source, self.markers, self.cancel_check)
-                except (RecordingError, OSError) as exc:
+                    self.source.start_derived(self.markers.run_id)
+                    self.recorder.start({**self.values, "variables": self.variables}, self.source, self.markers,
+                                        self.cancel_check, self.excluded_streams)
+                except (RecordingError, LSLForceError, OSError) as exc:
                     self.message = ("Recording could not start. Check the local recording view."
                                     if isinstance(exc, OSError) else str(exc))
                     raise SetupRejected(self.message) from exc
                 self.poll()  # Drain setup samples and recheck input after recorder startup.
                 if not self.snapshot()["can_start"]:
                     self.recorder.stop()
-                    raise SetupRejected("Force input was lost while starting the recorder")
+                    raise SetupRejected("Breathing input was lost while starting the recorder")
             self.markers.name_locked = True
             emit("participant.dialog.accepted")
             emit("participant.dialog.hidden")
@@ -279,7 +303,7 @@ class SourceSetup:
             self.candidates, self.row = result, None
             eligible = sum(c.force_index is not None for c in result)
             self.message = (f"Found {len(result)} streams; {eligible} compatible. Select a row and use it."
-                            if eligible else "No compatible raw Force (N) stream. Start Vernier Stream Mini, then scan again.")
+                            if eligible else "No compatible breathing input. Start a Mini streamer and select an eligible output.")
             emit("source.scan.completed", streams=[{k: v for k, v in row.items() if k != "force_channel_index"}
                                                    for row in self.rows()])
             if kind == "automatic_scan":
@@ -292,16 +316,19 @@ class SourceSetup:
                     self._submit("memory" if self.identity else "automatic", lambda: open_force_source(candidate.info), candidate.info.source_id())
                     self.message = "Checking live breathing samples…"
                 else:
-                    self.message = ("Several breathing belts are available. Choose the study belt in Settings."
-                                    if len(eligible) > 1 else "Waiting for Vernier Stream Mini’s raw Force stream (Separate Streams mode).")
+                    self.message = ("Several breathing inputs are available. Choose one in the LSL streams panel."
+                                    if len(eligible) > 1 else "Waiting for a compatible Vernier Force or Polar waveform outlet.")
         else:
             previous, self.source = self.source, result
+            self.polar_direction_set = False
+            self.polar_inverted = False
             if previous is not None:
                 previous.stop()
                 emit("source.disconnected")
             self.message = "Ready for this experiment."
             emit("source.connected", source_id=result.source_id, stream_name=result.stream_name,
-                 force_channel_index=result.force_index)
+                 force_channel_index=(None if getattr(result, "contract_id", None) else result.force_index),
+                 input_contract=getattr(result, "contract_id", "vernier-force/1"))
             emit("source.connection.accepted", source_id=result.source_id, origin=kind)
             self.identity = result.source_id
             if kind in {"selection", "automatic"}:

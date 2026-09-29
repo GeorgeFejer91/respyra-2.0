@@ -44,25 +44,26 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Behavior / owner | Focused check | Recorded evidence state | Invalidate / rerun when |
 | --- | --- | --- | --- |
 | Signal stitching and rise/fall waveforms: `src/mpi/signal.py` | `tests/test_signal.py` | unrecorded | Signal functions, input assumptions or numeric dependencies change. |
-| Raw Force metadata/units, finite samples, duplicate identities and saved selection: `src/mpi/lsl_force.py` | `tests/test_lsl_force.py` | unrecorded | Force validation, source identity/storage, freshness or producer metadata contract changes. |
-| Automatic discovery, exact reconnect, loss/retry, saved fields and cancelled selection: `src/mpi/lsl_setup.py` (`SourceSetup`) | `tests/test_lsl_setup.py` | reusable; see experiment fields receipt | Setup state transitions, source selection, remembered identity or Start prerequisites change. |
-| Marker payload/catalog, renaming, key timing and flip alignment: `src/mpi/event_markers/` | `tests/test_event_markers.py` | unrecorded | Event owner/catalog, timing, phase wrappers or payload consumers change. |
-| Short study completion/abort/error, no-data calibration and original CSV modes: `scripts/run_experiment.py`, `src/mpi/validation_study_jenny.py` | `tests/test_experiment_flow.py` | unrecorded | Study flow, calibrated input, marker contract, logging schema or installed `respyra` APIs change. |
-| Closed actions, ordered bounded pipe, public snapshots and Stop receipts: `src/mpi/desktop_bridge.py` | `tests/test_desktop_bridge.py` | reusable; see experiment fields receipt | Action validation, sequence/framing/queue limits, projection or cleanup receipts change. |
-| Real engine startup/import isolation and marker lifetime through Close: `scripts/run_experiment.py`, desktop bridge | `tests/test_desktop_process.py` | unrecorded | Launcher/imports, inherited stdio, pipe contracts or engine lifetime change. |
+| Raw Force metadata/units, finite samples, duplicate identities and saved selection: `src/mpi/lsl_force.py` | `tests/test_lsl_force.py` | verified for current inputs; see hub/recorder receipt | Force validation, source identity/storage, freshness or producer metadata contract changes. |
+| Polar PCA/signed Phan contracts, validity, direction, calibration and native XDF: `src/mpi/lsl_polar.py`, `polar_calibration.py` | `tests/test_lsl_polar.py`, `tests/check_polar_lsl.py`, `tests/check_polar_recording.py` | verified for unchanged synthetic signal/recording inputs; UI has newer selector receipt | Producer metadata, companion timing, source selection, study calibration, recorder or derived formula changes. |
+| Automatic discovery, exact reconnect, loss/retry, saved fields and cancelled selection: `src/mpi/lsl_setup.py` (`SourceSetup`) | `tests/test_lsl_setup.py` | verified for current inputs; see hub/recorder receipt | Setup state transitions, source selection, remembered identity or Start prerequisites change. |
+| Marker payload/catalog, renaming, key timing and flip alignment: `src/mpi/event_markers/` | `tests/test_event_markers.py` | verified for current inputs; see hub/recorder receipt | Event owner/catalog, timing, phase wrappers or payload consumers change. |
+| Short study completion/abort/error, no-data calibration and original CSV modes: `scripts/run_experiment.py`, `src/mpi/validation_study_jenny.py` | `tests/test_experiment_flow.py` | verified for current focused inputs; full GUI study NOT RUN | Study flow, calibrated input, marker contract, logging schema or installed `respyra` APIs change. |
+| Closed actions, ordered bounded pipe, public snapshots and Stop receipts: `src/mpi/desktop_bridge.py` | `tests/test_desktop_bridge.py` | verified for current inputs; see hub/recorder receipt | Action validation, sequence/framing/queue limits, projection or cleanup receipts change. |
+| Real engine startup/import isolation and marker lifetime through Close: `scripts/run_experiment.py`, desktop bridge | `tests/test_desktop_process.py` | verified for current focused inputs; see hub/recorder receipt | Launcher/imports, inherited stdio, pipe contracts or engine lifetime change. |
 | Optional Windows hooks and shutdown: `src/mpi/input_capture.py` | `tests/test_input_capture.py` | unrecorded | Hook registration, filtering, queues, drain/cleanup or marker handoff changes. |
-| Recorder readiness, missing/failed/hung child, participant list, partial files and XDF completeness: `src/mpi/recording.py` | `tests/test_recording.py` | reusable; see experiment fields receipt | `NativeRecording`, `inspect_xdf`, child/readiness protocol or XDF validation changes. |
-| Native XDF persistence, calibration/cleanup markers, late/source-less streams and Unicode paths: `native/recorder/`, recording owner | `tests/check_recording.py` | reusable for current output contract; see experiment fields receipt | Recorder source/binary/DLLs, supervision or serialized data/marker contract changes. |
-| All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | historical-unbound; covered by full-study receipt below | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
+| Recorder readiness, missing/failed/hung child, participant list, partial files and XDF completeness: `src/mpi/recording.py` | `tests/test_recording.py` | verified for current inputs; see hub/recorder receipt | `NativeRecording`, `inspect_xdf`, child/readiness protocol or XDF validation changes. |
+| Native XDF persistence, calibration/cleanup markers, late/source-less streams and Unicode paths: `native/recorder/`, recording owner | `tests/check_recording.py` | verified for current inputs; see hub/recorder receipt | Recorder source/binary/DLLs, supervision or serialized data/marker contract changes. |
+| All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | verified for current inputs; see hub/recorder receipt | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
 | Complete 48-trial synthetic study: study/calibration/recording owners | `tests/check_control_center.py --full-study` | historical-unbound; see full-study receipt below | Complete-study triggers in `VERIFICATION.md`; panel presentation does not invalidate it. |
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | reusable; see experiment fields receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
-| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `style.css`, controller/desktop/text-fit modules | `pnpm check:ui` plus inspect changed area | reusable; see experiment fields receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
-| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | reusable; see experiment fields receipt for shared controls and remote approval receipt for native ownership | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
-| Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | reusable; see experiment fields receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
+| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for dual-source selector inputs; see 2026-09-30 receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
+| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for mocked current inputs; see hub/recorder receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
+| Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | verified for current inputs; see hub/recorder receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | reusable; see remote approval receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
-| Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/check_native_lsl.py` after a matching native build | historical-unbound; see native receipt below | Native/pipe/lifecycle/remote contracts or consuming runtime change; UI-sensitive changes need focused WebView evidence rather than automatically this whole harness. |
+| Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/check_native_lsl.py` after a matching native build | NOT RUN for current inputs: isolated GUI runner unavailable; historical native receipt below | Native/pipe/lifecycle/remote contracts or consuming runtime change; UI-sensitive changes need focused WebView evidence rather than automatically this whole harness. |
 | Current public phone page pairing and published byte parity | Published mode in `tests/check_native_lsl.py`; deployment/parity readback | see published approval receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
 | Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | partial local install; see naming/install receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
 | Windows shortcut icon transparency and circle tint: `assets/icon.svg`, packaging generator, PNG/ICO | Direct SVG icon generation, alpha/color assertions and 48 px preview | reusable; see shortcut icon receipt | SVG, icon generation, generated PNG/ICO or icon tooling changes. A new installer has its own packaging gate. |
@@ -102,6 +103,33 @@ entry; it never updates the execution date or pretends the check ran again.
 
 ## Retained baseline evidence
 
+### Two-segment hub, early derived stream and recording choices
+
+- Result/date: `VERIFIED` for the named headless/CLI surfaces, 2026-09-29.
+  Base commit `74f234d660a81dca06b94352a04dbb271468ccce` plus changed source,
+  tests, locks, rebuilt recorder and debug app hashes in ignored
+  `.for-ai-local/verification-inputs-20260929.json` (SHA-256
+  `3387e23b6ccde5fd07c4c6603d4f03d9dd232316651572d4f85aca0896945bb0`).
+- UI: `pnpm check:ui` passed 12 ordered actions, Start/Stop, Record/View choices,
+  Settings, four layouts and zero browser errors/clipped text. Preview discovery,
+  splitter and live LSL checks passed. `pnpm check:remote` passed 12 phone layouts
+  and 12 mocked mutations; `pnpm test:web` passed 6 tests.
+- Backend: 62 focused Python tests passed. `tests/check_control_center.py`
+  independently decoded an XDF with raw Force, markers, early NaN and later
+  finite Respyra samples, and a late stream; it waited for the native recorder's
+  first-finite receipt before proceeding. `tests/check_recording.py`
+  independently decoded a five-stream XDF: mandatory raw/derived/markers survived
+  submitted exclusions, an unchecked auxiliary UID was absent, and late streams
+  joined. Both checks ran in private LSL sessions through captured CLI.
+- Build: `pnpm prepare:recorder`, Cargo fmt check, 9 Rust tests, clippy with
+  warnings denied, and `pnpm tauri build --debug --no-bundle` passed. The context
+  checker passed with expected branch/dirty warnings; `git diff --check` passed.
+- Limits: browser tests mocked Tauri; CLI XDF checks used synthetic LSL. The
+  current native WebView/PsychoPy full study and installed-runtime checks were
+  `NOT RUN: isolated GUI desktop unavailable`. Physical belt, phone camera,
+  scientific timing and a new installer remain unverified. The old installed
+  app does not contain these source changes.
+
 ### Compact live LSL design preview
 
 - Result/date: `VERIFIED`, 2026-09-29, headless Chrome in a separate Playwright context.
@@ -109,7 +137,9 @@ entry; it never updates the execution date or pretends the check ran again.
 - Checks: `node tests/check_experiment_preview.cjs` and `node tests/check_preview_splitters.cjs` passed. `pnpm check:ui` passed (17 actions, 5 reflow and 2 control-center layouts, no clipping or page errors). `.venv/Scripts/python.exe tests/check_preview_discovery.py` discovered a live synthetic Force (N) outlet in a private LSL session. Inspected `.for-ai-local/remote-viewer-preview-dialog.png` from the headless run.
 - Inputs: HEAD `d2d8a349d82d91bb20fa26c645e747fb14c96129`; untracked preview SHA-256 `5c316f0a40e154f07b7d1dbb99f1a719e117b16544e8aa3dff4cefe93888beb8`; preview check SHA-256 `ab622a8c957f6c637540f045633be4efc05a65a1e88b3607b112eb092e35fdb2`; splitter check SHA-256 `4629094eb303c6804ee58a51b8ef76554164cc6e458ca6938aa46358445d7db3`; shared `web/text-fit.js` SHA-256 `fbc1b1d8b1586e0f29ab09e0dc5aae22abea1024875995d10a46c85d43c40951`.
 - Discovery check inputs: `scripts/preview_lsl_ui.py` SHA-256 `a6ab0766373bda8dfe68f3dba17cbe0f4582024146447da1266403ebab1009c7`; `tests/check_preview_discovery.py` SHA-256 `92485f763f596b952476d090c797945d4b7e57fffb2065d9361ced7d26313cfb`.
-- Limits: synthetic discovered outlets in preview tests; no foreground/native WebView run, physical LSL source, XDF recording, or calibration execution.
+- Limits/state: superseded by the current hub/recorder receipt above. Its
+  synthetic preview evidence remains historical and does not qualify the shipped
+  page, physical LSL source or installed app.
 
 ### Name-gated Remote Viewer
 
@@ -260,3 +290,55 @@ the respective scope needs current evidence; panel styling does not need it.
   were not retained. No new recorder execution in this policy edit.
 - Limits: synthetic local LSL and independent PyXDF decoding; no physical belt
   or installed-runtime qualification.
+
+### Polar PCA and signed Phan study inputs
+
+- Result/date: `VERIFIED` for synthetic software paths, 2026-09-29.
+- Inputs: Respyra base `74f234d660a81dca06b94352a04dbb271468ccce`
+  plus changed/untracked product and test hashes in ignored
+  `.for-ai-local/polar-contract-inputs.json` (SHA-256
+  `8d04c16050fd710a74c8cd12abeecbcdbfdc563a0389dc6fc149faaa769440dc`).
+  Polar Mini base `440ca293e4051b840a310583652b0deed332fac4`
+  plus `.for-ai-local/polar-respyra-contract-inputs.json` (SHA-256
+  `75f4b07aeba31606d486a4ac7f7971718c99ffd5b83e2dd0c92e395db4f60b02`).
+- Checks: Polar `cargo fmt --all -- --check`, `cargo test -p polar-h10-output --locked`
+  (46 pass), `cargo clippy -p polar-h10-output --all-targets --locked -- -D warnings`,
+  `npm run validate:docs`; real metric engine and bundled liblsl producer with
+  official pylsl receiver in `separate`, `single`, `both` modes passed. The
+  `separate` producer also passed Respyra `tests/check_polar_lsl.py` for both
+  exact contracts. Respyra focused pytest including input, setup, study, marker,
+  desktop bridge/process and recording tests passed after the final study-text
+  correction (68 tests overall; invalidated files rerun); `pnpm check:ui`
+  passed source switching, direction gate and fit checks; `pnpm test:web` passed
+  6. Rust fmt/test (9 pass)/clippy and `pnpm tauri build --debug --no-bundle`
+  passed (debug executable SHA-256
+  `c061c70b6b68abb73246cffd1b4267a9932ca76925957bf7e44b9912a71a181b`). `pnpm prepare:recorder`,
+  `tests/check_recording.py`, `tests/check_control_center.py` and
+  `tests/check_polar_recording.py` passed. The last check independently decoded
+  XDF for each Polar contract and confirmed raw/companion/marker/derived samples,
+  missing values before calibration, finite values afterward and signed formula.
+- Evidence: captured command results, Polar `.for-ai-local/adr-receiver-final.out`,
+  `adr-respyra-single.json`, `adr-respyra-both.json`, and Respyra ignored
+  `.for-ai-local/polar-recording-0b8898ca894d464f9525ce6a57e3d797/` XDFs.
+- Limits: headless browser and synthetic LSL/XDF on Windows. Native WebView,
+  real PsychoPy display, full 48-trial run, physical Polar/Vernier paired data,
+  respiratory agreement and packaged installer behavior were not run for these
+  inputs. An isolated GUI runner is unavailable under the standing background
+  verification rule.
+
+### Separate Vernier and Polar source dropdowns
+
+- Result/date: `VERIFIED` for headless browser behavior and layout, 2026-09-30.
+- Inputs: base `74f234d660a81dca06b94352a04dbb271468ccce` plus changed
+  frontend/test hashes in ignored `.for-ai-local/dual-input-ui-inputs.json`
+  (SHA-256 `aceee33081a4a138e844c00f3b3e54410d1b2e7d7f7c481a63f9f51c36c950af`).
+- Checks: `pnpm check:ui` passed separate device lists, one active dropdown,
+  Vernier-to-Polar switching, Polar direction gate, remembered-source projection,
+  compact and enlarged-text fit; `node tests/check_experiment_preview.cjs`
+  passed automatic unique Vernier selection, later source choice and loss;
+  `pnpm test:web` passed 6 and `node --check tests/check_native_ui.cjs` passed.
+- Evidence: captured command output and inspected headless screenshots
+  `.for-ai-local/polar-hub-820.png`, `polar-hub-390.png`, `hub-390.png`.
+- Limits: Chromium mock/native-bridge and browser preview. Actual WebView2 and
+  PsychoPy windows were `NOT RUN: isolated test desktop unavailable`; the
+  selector change did not alter Python, Rust or recording contracts.

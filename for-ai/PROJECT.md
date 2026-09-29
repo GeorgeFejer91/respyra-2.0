@@ -2,12 +2,12 @@
 
 ## Purpose
 
-A Python workspace for researchers to run and analyze a PsychoPy breathing-belt validation study with normal, amplified, and attenuated visual feedback. Vernier Stream Mini owns belt acquisition and publishes LSL; this project consumes its raw Force (N) stream.
+A Python workspace for researchers to run and analyze a PsychoPy breathing target-tracking study with normal, amplified, and attenuated visual feedback. It accepts Vernier Stream Mini's raw Force (N) outlet or either of two signed Polar Stream Mini ACC-derived waveforms. Both Mini apps own acquisition and publish LSL; this project consumes their checked outlets.
 
 ## Primary goal
 
 Run the configured breathing target-tracking study with its own bundled native
-LSL/XDF recorder, capturing raw Force and markers before calibration and through
+LSL/XDF recorder, capturing the selected raw input and markers before calibration and through
 cleanup, and discovering later streams. Optimize the remote view for LSL channel
 data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
 
@@ -35,13 +35,16 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   `pyproject.toml` and resolved in `uv.lock`.
 - `src/mpi/validation_study_jenny.py` defines study conditions and trial order;
   `src/mpi/signal.py` provides signal helpers.
-- `src/mpi/lsl_force.py` discovers and validates the Vernier Stream Mini raw
-  Force (N) LSL outlet and stores accepted source identity. `src/mpi/lsl_setup.py`
+- `src/mpi/lsl_force.py` discovers the three supported input contracts and
+  validates the Vernier raw Force (N) LSL outlet. `src/mpi/lsl_polar.py`
+  validates and consumes the two Polar ACC-derived outlets and their validity
+  companions; `src/mpi/polar_calibration.py` calibrates their signed g values.
+  The input owner stores accepted source identity. `src/mpi/lsl_setup.py`
   owns discovery/selection for the HTML participant/session form,
   reconnects saved input, and gates Start on a live accepted source plus native
   recording readiness. `src/mpi/recording.py` supervises the pinned LabRecorder
   adapter under `native/recorder/` and verifies XDF completion.
-  The same Force source exports the accepted study calibration; `lsl_viewer.py`
+  The selected source exports the accepted study calibration; `lsl_viewer.py`
   owns display-only all-stream subscriptions. `input_capture.py` owns optional
   Windows input hooks; the study owner publishes their queued marker events.
   `src/mpi/event_markers/` owns the LSL marker publisher
@@ -79,52 +82,64 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   `tests/test_desktop_process.py`,
   `tests/test_lsl_setup.py`, and
   `tests/test_signal.py` cover the local logic and a short simulated study run.
-  Vernier Stream Mini in
-  **Separate Streams** mode and a display are needed to
-  verify the full experiment.
+  A selected Mini input, its validity companions when Polar is chosen, and an
+  isolated display test environment are needed to verify the full experiment.
 
 ## Signal boundary
 
 - Stream ecosystem: [Polar Stream Mini and Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream)
   are the LSL applets this toolbox is currently optimized to receive. Its
   bundled LSL recorder is designed to capture streams published by both. The
-  breathing study specifically uses Vernier Stream Mini's raw Force (N) input.
-- Study input: Vernier Stream Mini. The checked contract at commit
+  breathing study can use Vernier raw Force (N) or either exact Polar candidate.
+- Study input: Vernier Stream Mini raw Force or the exact Polar PCA/signed Phan
+  contracts in [`docs/polar-input-contracts.md`](../docs/polar-input-contracts.md).
+  Vernier's checked contract at commit
   `0bd0bd23f30a4f4e36e73a7907b35f2521fc0699` publishes an LSL outlet of
   type `VernierRaw` with `raw_measurement_recording` metadata, including
   GDX-RB channel 1 `Force` in `N`. Its separate `Respiration` outlet is a
   processed 0–1 waveform and is not interchangeable with force in Newtons.
-- Respyra owns only the study's range calibration, target generation, visual
-  gain, performance error, and discrete event markers. Keep target/error units
-  in N; do not silently replace raw Force with the normalized 0–1 outlet.
-- The first UI is Experiment control, with compact participant/session setup.
-  Input selection, marker naming, XDF recording, LSL monitoring and phone pairing use separate
-  desktop views of the same viewport; stream/event lists paginate. See
+- Respyra owns the study's range calibration, target generation, visual
+  gain, performance error, and discrete event markers. Keep Vernier target/error
+  units in N; use native g for the selected Polar projection. Both paths
+  advertise a separate normalized derived outlet before calibration and publish
+  finite values afterward. Never reinterpret a
+  Polar projection as force or silently replace raw Force with the normalized
+  Vernier 0–1 outlet.
+- The opening desktop UI is one two-segment Experiment hub and LSL streams page.
+  It shows participant number and remembered custom variables beside compatible
+  input selection, compact stream rows and a shared live plot. The Remote Viewer
+  popup pairs the phone. A legacy session value remains internal. See
   `HTML-UI.md` for the no-scroll and explicit no-fit contract.
   Discovery lists visible outlets with compatibility
-  reasons; only raw Force (N) with the producer contract, numeric float format,
-  and unique source_id can be selected. Connection requires fresh finite Force
-  samples. Setup discovery/connection uses one worker, without adding an
+  reasons; only raw Force (N) or the two exact signed Polar waveforms with their
+  producer contracts, numeric float format, and unique source_id can be selected.
+  Polar also requires its validity companions and an explicit inhale direction.
+  Connection requires fresh finite valid samples. Setup discovery/connection uses one worker, without adding an
   experiment-time background service.
 - Save only accepted source_id/name in local user settings, atomically. Later
   launches reconnect and validate that exact identity; the environment override
   `RESPYRA_LSL_SOURCE_ID` takes precedence. Missing/incompatible memory keeps
   the setup UI available, with Start disabled until a valid source is accepted.
-  Never silently substitute another belt. Keep the accepted inlet drained
+  Never silently substitute another source. Keep the accepted inlet drained
   during setup and disable Start on signal loss; in-experiment loss fails the
   run. Disable automatic inlet recovery so an outlet restart cannot reuse
   stale channel metadata. Settings are identity memory, not a persisted signal
   buffer.
 - The bundled native recorder owns persisted samples. Respyra's marker stream uses one JSON
   string per event. Its outlet is advertised at desktop Python-engine startup,
-  before study/PsychoPy imports or Force selection. Setup needs no external
-  subscriber; Start requires native subscription and raw-data readiness.
+  before study/PsychoPy imports or breathing-input selection. Setup needs no external
+  subscriber; Start requires native subscription and raw, derived and marker
+  sample readiness.
   Marker pushes do not require a subscriber. Keep the run's outlet through final
   Close; its default name may change during setup before subscription or Start. Markers use a
   shared run UUID, monotonic sequence, LSL timestamp, and
   trial/condition/phase/screen context. The catalog is the authority for every
-  emitted marker name and its timing meaning. Record both LSL streams from
-  before calibration through final cleanup. The force inlet
+  emitted marker name and its timing meaning. Advertise the derived breathing
+  outlet before recording starts, emit NaN until calibration, then finite
+  normalized values on the same outlet. Record raw, derived and marker streams
+  from Start through final cleanup. Additional visible and late streams record
+  by default; a stream unchecked for recording before Start is excluded by its
+  current LSL UID. The selected study inlet
   enables LSL clock synchronization so source and marker timestamps can be
   compared in the local LSL clock domain. Setup events sent before recording may
   be absent from the file. Only inspection of the recorder output verifies persistence.
@@ -141,7 +156,7 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   Continuous
   waveform/animation frames are represented by the Vernier stream plus phase,
   condition, and target-parameter markers.
-- Monitoring reports actual finite Force-sample reception age, not physical
+- Monitoring reports actual finite accepted-sample reception age, not physical
   belt contact or physiological quality. Blocking instruction/assessment waits
   drain the accepted inlet; active study phases keep their existing reads.
   The current raw Force contract provides no battery telemetry; do not invent it.

@@ -62,6 +62,7 @@ enum RecordingOption {
     SaveCsv,
     RecordKeyboard,
     RecordMouse,
+    PolarInverted,
 }
 
 #[derive(Deserialize)]
@@ -94,6 +95,12 @@ enum Action {
         ui_seq: u64,
         ui_time_ms: f64,
         field: RecordingOption,
+        enabled: bool,
+    },
+    RecordStream {
+        ui_seq: u64,
+        ui_time_ms: f64,
+        uid: String,
         enabled: bool,
     },
     Scan {
@@ -142,6 +149,15 @@ fn encode_action(action: &Action) -> Result<Vec<u8>, String> {
         {
             return Err("Participant input is too long".into());
         }
+    }
+    if let Some(uid) = value["uid"].as_str()
+        && (uid.len() > 128
+            || uid.is_empty()
+            || !uid
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c)))
+    {
+        return Err("Invalid LSL stream identity".into());
     }
     let mut bytes = serde_json::to_vec(action).map_err(|e| e.to_string())?;
     bytes.push(b'\n');
@@ -256,7 +272,10 @@ fn launch_backend(
         .lock()
         .map_err(|_| "Desktop state lock failed")?;
     if state.launched {
-        return Ok(state.snapshot.clone());
+        let mut snapshot = state.snapshot.clone();
+        snapshot["progress"] = state.progress.clone();
+        snapshot["revision"] = json!(state.control_revision);
+        return Ok(snapshot);
     }
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -579,7 +598,14 @@ fn remote_action(command: &viewer::RemoteCommand) -> Result<Action, String> {
     let permitted = match command.scope.as_str() {
         "experiment.setup" => matches!(
             command.action.as_str(),
-            "field_key" | "field_edit" | "option" | "scan" | "select" | "use" | "cancel"
+            "field_key"
+                | "field_edit"
+                | "option"
+                | "record_stream"
+                | "scan"
+                | "select"
+                | "use"
+                | "cancel"
         ),
         "experiment.run" => matches!(command.action.as_str(), "start" | "abort"),
         _ => false,
@@ -794,6 +820,15 @@ mod tests {
                 ui_time_ms: 1.0,
                 field: Field::Participant,
                 value: "x".repeat(129)
+            })
+            .is_err()
+        );
+        assert!(
+            encode_action(&Action::RecordStream {
+                ui_seq: 1,
+                ui_time_ms: 1.0,
+                uid: "x' or true()".into(),
+                enabled: false,
             })
             .is_err()
         );

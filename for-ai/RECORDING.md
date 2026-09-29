@@ -9,20 +9,31 @@ Source/provenance is in `native/recorder/README.md`.
   `mpi.recording.NativeRecording` owns the native child's private pipes, output,
   readiness, stop and file completion. HTML/phone Start uses the existing action
   path; neither may select an executable, arbitrary path or shell command.
-- Start requires the exact raw Force and marker subscriptions and actual samples
-  from both before participant setup acceptance or PsychoPy creation. Failure rejects
-  Start. Calibration changes study parameters; it never delays or rewrites raw
-  capture. Calibration result markers retain the parameters used for later analysis.
-- The accepted study calibration creates `Respyra-Calibrated-Breathing`, with
-  `(force_n - center_n) / amplitude_n`, synchronized inlet timestamps, original
-  source identity and calibration parameters in its metadata. No clipping or
-  condition feedback gain applies. Wait for native data reception before trials;
-  add this identity to final nonempty-stream verification only after calibration.
+- Start prepares `Respyra-Calibrated-Breathing` before launching the recorder and
+  requires the exact selected raw input, marker and derived subscriptions plus actual samples
+  from each before participant setup acceptance or PsychoPy creation. Failure
+  rejects Start. Before calibration, the derived channel emits NaN with the raw
+  inlet timestamps; this represents unavailable normalized values, not zero force.
+  Calibration never delays or rewrites raw capture.
+- Vernier calibration activates `(force_n - center_n) / amplitude_n`; Polar
+  calibration activates `(polarity × waveform_g - center_g) / amplitude_g`
+  on that same outlet, preserving source identity and synchronized inlet timestamps.
+  Immutable LSL metadata identifies the raw source, formula and pre-calibration
+  representation; `calibration.completed` markers carry the parameters. No clipping
+  or condition feedback gain applies. Wait for native reception of finite derived
+  values through its first-finite receipt before trials. Verify nonempty raw,
+  marker and derived data in final XDF.
 - One native watch query records visible streams and discovers later streams.
+  The setup Record checkboxes can exclude specific discovered LSL UIDs before
+  Start; the accepted raw input, Respyra derived outlet and event markers override
+  exclusions. Unseen later streams record by default. View selection is local
+  to the plot and does not change XDF capture.
   Stable source IDs deduplicate; source-less streams use UID. A producer must
   exist before subscription: late discovery cannot recover samples sent before
   connection. Publish a required derived outlet early if its first sample matters.
-  Additional streams do not replace the study's validated Force input.
+  Additional streams do not replace the selected validated input. Polar validity
+  companions remain separate recorded streams unless the experimenter excludes
+  them; the accepted waveform, derived outlet and markers remain mandatory.
 - Recorder errors fail the study at cancellation checkpoints. Normal, stopped
   and failed runs attempt recording finalization after source/display cleanup.
   `recording.finalizing` remains inside XDF; final HTML result/Close markers follow it.
@@ -32,15 +43,17 @@ Source/provenance is in `native/recorder/README.md`.
   only on success. Preserve failures; never report an outlet/subscriber as disk evidence.
 - Installed XDF/optional original CSV files use the writable user data folder,
   survive uninstall, and never enter Git/Pages. CSV remains opt-in and unchanged.
-- Participant/session and up to six custom label/value pairs are saved atomically
-  on setup edits in local user settings and restored on launch. Numeric participant
+- Participant and up to six custom label/value pairs are saved atomically
+  on setup edits in local user settings and restored on launch. The existing
+  session value remains in recording metadata but is hidden in the desktop hub.
+  Numeric participant
   entries render as `P001`, `P002`, etc. in XDF names; session and label-value pairs
   form underscore-separated filename parts before the unique suffix. Python appends
   a `participant-list.jsonl` record with full values only after XDF verification
   and promotion. A list-write failure reports an error while preserving the closed XDF.
 - Local `mpi.lsl_viewer.LSLViewer` owns separate display-only subscriptions to all
   visible numeric and string streams, with UID identity, full channel metadata
-  and late discovery. The study's Force inlet remains its only acquisition and
+  and late discovery. The selected study inlet remains its only acquisition and
   calibrated-output owner. The study marker display uses the owner's projection;
   its readiness indicator uses native receipt, preserving pre-subscription naming.
   HTML stacks channels in one paged, ten-second plot (100 points each), with

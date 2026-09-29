@@ -7,7 +7,8 @@ recorder application and private settings are not copied into Respyra 2.0.
 `upstream/` contains exact MIT-licensed source at the revision and hashes in
 `source-lock.json`. `scripts/build_recorder.py` verifies those inputs and applies
 reviewed patches only in ignored staging: continuous discovery at one second,
-source-less streams by UID, exact subscription/first-data receipts, int64 transfer,
+source-less streams by UID, exact subscription/first-data receipts, a first-finite
+receipt for Respyra breathing, int64 transfer,
 valid clock-offset writes after query timeouts, error reporting, UTF-8 Windows
 paths and checked/flushed XDF writes. XDF serialization remains upstream.
 
@@ -22,7 +23,9 @@ wheel; both upstream licenses accompany the output. The manifest hashes source,
 patches, adapter and runtime files. `package:windows` rebuilds and verifies this
 bundle before placing it under `engine/recorder`.
 
-Python owns its fixed output path, stdin-based stop, readiness deadline and reap
+Python passes one bounded LSL watch predicate to omit streams unchecked before
+Start; raw Force, Respyra breathing and event markers remain required. Python
+owns its fixed output path, stdin-based stop, readiness deadline and reap
 timeout. The executable has no web server, UI, arbitrary command protocol or Qt
 dependency. Native stdout is diagnostic; framed stderr reports subscription/data
 receipts and failures. It writes `.xdf.partial`; only Python's completion check

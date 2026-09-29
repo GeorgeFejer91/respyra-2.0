@@ -40,6 +40,9 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
         def source_id(self):
             return "polar-stream-vernier-raw-Vernier-GDX-Mini_rawVernier"
 
+        def uid(self):
+            return "synthetic-force-uid"
+
         def as_xml(self):
             return XML
 
@@ -152,7 +155,7 @@ def test_scan_displays_rejected_units_and_rejects_duplicate_identities():
     assert candidates["good"].force_index == 1
     assert all(item.force_index is None for name, item in candidates.items() if name != "good")
     assert "Duplicate" in candidates["duplicate1"].reason
-    assert len(closed) == 6  # processed stream needs no metadata inlet
+    assert len(closed) == 7  # Respiration streams need metadata validation for Polar contracts
 
 
 def test_selection_memory_contains_identity_only_and_rejects_corruption(tmp_path):

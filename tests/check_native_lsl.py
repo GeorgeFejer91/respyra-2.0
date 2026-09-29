@@ -114,7 +114,8 @@ try:
                 recorded,_=pyxdf.load_xdf(str(file))
                 by_id={s['info']['source_id'][0]:s for s in recorded}
                 marker_id=streams[0].source_id()
-                summaries=inspect_xdf(file,[identity,marker_id])
+                derived_id='respyra-breathing-'+markers[0]['run_id']
+                summaries=inspect_xdf(file,[identity,marker_id,derived_id])
                 recorded_events=[json.loads(row[0]) for row in by_id[marker_id]['time_series']]
                 recorded_names=[m['event'] for m in recorded_events]
                 for expected in ['recording.started','participant.dialog.accepted','display.opened',
@@ -123,7 +124,9 @@ try:
                 assert by_id[identity]['time_stamps'][0] < next(m['lsl_time'] for m in recorded_events if m['event']=='display.opened')
                 assert recorded_names.index('display.closed') < recorded_names.index('recording.finalizing')
                 assert [m['seq'] for m in recorded_events]==list(range(recorded_events[0]['seq'],recorded_events[-1]['seq']+1))
-                assert len(recorded)==3 and all(s['sample_count'] for s in summaries)
+                assert len(recorded)==4 and all(s['sample_count'] for s in summaries)
+                import math
+                assert all(math.isnan(float(row[0])) for row in by_id[derived_id]['time_series'])
                 print(json.dumps({'native_xdf':'passed','mode':mode,'file':str(file),'streams':summaries}),flush=True)
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             print(out.strip(),flush=True)

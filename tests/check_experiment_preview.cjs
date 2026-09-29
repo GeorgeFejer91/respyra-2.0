@@ -19,7 +19,7 @@ const path = require('node:path');
     const file = path.resolve(web, '.' + pathname);
     if (!file.startsWith(web + path.sep)) { res.writeHead(403).end(); return; }
     try {
-      res.setHeader('Content-Type', { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2' }[path.extname(file)] || 'application/octet-stream');
+      res.setHeader('Content-Type', { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.woff2': 'font/woff2' }[path.extname(file)] || 'application/octet-stream');
       res.end(await fs.readFile(file));
     } catch { res.writeHead(404).end(); }
   });
@@ -46,7 +46,8 @@ const path = require('node:path');
     assert(!await page.locator('#remote-preview-dialog').evaluate(dialog => dialog.open));
     await page.waitForFunction(() => document.querySelector('#stream-status')?.textContent === 'No LSL streams found.');
     assert.equal(await page.locator('.stream-row').count(), 0);
-    assert(await page.locator('#breathing-source').isDisabled());
+    assert(await page.locator('#vernier-source').isDisabled());
+    assert(await page.locator('#polar-source').isDisabled());
     assert(await page.locator('#start').isDisabled());
     assert(!String(await page.locator('body').textContent()).includes('Lab breathing belt'));
     await page.getByRole('checkbox', { name: 'Include keyboard markers' }).check();
@@ -69,7 +70,9 @@ const path = require('node:path');
     assert.deepEqual(await page.locator('.stream-row').first().locator('.check span').allTextContents(), ['R', 'V']);
     assert.deepEqual(await page.locator('#plot-legend strong').allTextContents(), ['Force (N)'], 'viewer labels channels without repeating stream names');
     assert(!String(await page.locator('#plot-legend').textContent()).includes('waiting'));
-    assert.equal(await page.locator('#breathing-source').inputValue(), raw.uid);
+    assert.equal(await page.locator('#vernier-source').inputValue(), raw.uid);
+    assert.equal(await page.locator('#polar-source').inputValue(), '');
+    assert(await page.locator('#polar-source').isDisabled());
     assert(await page.getByRole('checkbox', { name: 'Record Synthetic raw Force' }).isChecked());
     assert(await page.getByRole('checkbox', { name: 'Record Synthetic raw Force' }).isDisabled());
     assert(await page.getByRole('checkbox', { name: 'Record Respyra-Calibrated-Breathing' }).isChecked());
@@ -131,8 +134,8 @@ const path = require('node:path');
 
     const second = { ...raw, uid: 'raw-2', source_id: 'polar-stream-vernier-raw-2', name: 'Second raw Force', lsl_time: 3 };
     discovery = { streams: [raw, second, heart], error: null };
-    await page.waitForFunction(() => document.querySelector('#breathing-source').options.length === 3);
-    await page.locator('#breathing-source').selectOption(second.uid);
+    await page.waitForFunction(() => document.querySelector('#vernier-source').options.length === 3);
+    await page.locator('#vernier-source').selectOption(second.uid);
     assert(await page.getByRole('checkbox', { name: 'Record Second raw Force' }).isChecked());
     assert(await page.getByRole('checkbox', { name: 'Record Second raw Force' }).isDisabled());
     assert(!await page.getByRole('checkbox', { name: 'Record Synthetic raw Force' }).isChecked(), 'old input becomes optional');
@@ -148,8 +151,8 @@ const path = require('node:path');
     assert(await page.getByRole('checkbox', { name: 'Record Respyra-Calibrated-Breathing' }).isDisabled());
 
     discovery = { streams: [raw, heart], error: null };
-    await page.waitForFunction(() => document.querySelector('#breathing-source').options.length === 2);
-    assert.equal(await page.locator('#breathing-source').inputValue(), '', 'a lost input must not silently switch to another belt');
+    await page.waitForFunction(() => document.querySelector('#vernier-source').options.length === 2);
+    assert.equal(await page.locator('#vernier-source').inputValue(), '', 'a lost input must not silently switch to another belt');
     assert(await page.locator('#start').isDisabled());
     assert.equal(await page.getByRole('checkbox', { name: 'Record Respyra-Calibrated-Breathing' }).count(), 0);
 

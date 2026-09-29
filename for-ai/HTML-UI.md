@@ -16,30 +16,36 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
 
 - Never use page or panel scrollbars. All content in the active view fits the
   viewport. Do not hide scrollbars or clip overflow to pretend it fits.
-- Use three compact parts: participant/session and optional input markers;
-  automatic stream checks plus one shared plot with stacked channel lanes;
-  one salient red Start/action bar. Tabs show all channels, each numeric or text
-  stream, and the program event-marker catalog. Colored event lines cross the
-  visible plot lanes on one time axis; markers have no channel lane. Keep channel,
-  stream-tab and catalog pagination. Record all available and late LSL streams
-  regardless of the active tab. Never add a desktop view dropdown. Source selection, CSV, naming and
-  diagnostics are optional native Settings dialogs; recording-file details stay
-  outside the default workflow. The remote controller is a button opening a QR
-  popup automatically, with desktop Approve/Reject on an authenticated request.
-- Start launches respyrecorder and verifies exact Force/marker subscriptions and
-  raw and marker samples before opening PsychoPy. After calibration, require actual
-  native reception of the study's calibrated outlet before trials begin.
-- Automatically connect a unique compatible belt or the exact remembered identity;
-  require a choice only when discovery is ambiguous. Do not switch remembered belts.
+- Keep the Experiment hub and LSL streams on the same page. The compact hub has
+  participant number, up to six remembered custom label/value pairs, and Start.
+  The streams segment has side-by-side Vernier and Polar breathing-input
+  dropdowns populated by validated LSL discovery. Selecting one makes it the sole
+  study input; the Polar dropdown offers the two exact signed waveforms.
+  Keep compact R/V choices and one shared XY plot with channel pagination.
+  R selects XDF recording; V
+  controls the local plot independently. The selected raw input and Respyra
+  breathing rows appear first and are mandatory recording
+  channels. All discovered streams are recorded by default, including later
+  streams unless their current LSL UID was unchecked before Start. The remote button opens a
+  QR popup with desktop Approve/Reject on an authenticated request. Settings
+  contains the pre-recording marker name and optional original CSV export.
+- Polar input requires an explicit inhale-direction choice after selection.
+  Start prepares the derived outlet, launches respyrecorder, and verifies exact
+  selected-input/marker/derived subscriptions and samples before opening PsychoPy.
+  Before calibration, the normalized derived channel contains NaN. After
+  calibration, require actual native reception of finite derived values before trials.
+- Automatically connect a unique compatible source or the exact remembered identity;
+  require a choice only when discovery is ambiguous. Do not switch remembered sources.
 - Paginate stream/channel/event lists, preserving all entries and backend row identities.
 - Reflow and simplify before shrinking. Keep readable type, full critical
   instructions/errors, focus indicators, and accessible controls. Never undo
   user text enlargement. Impossible fits require an explicit no-fit outcome.
 - Python retains Start prerequisites, study timing, input and marker authority.
   Layout work must preserve existing remote contracts.
-- The setup form saves participant/session and custom variable entries on edits;
+- The setup form saves participant and custom variable entries on edits;
   do not add a Save field labels button. The labels and values are restored on
-  launch and must fit the compact local and phone controls.
+  launch and must fit the compact local and phone controls. A legacy internal
+  session value remains in recording metadata; the desktop hub does not ask for it.
 
 ## Restrained utility design
 

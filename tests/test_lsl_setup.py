@@ -9,6 +9,7 @@ import pytest
 from mpi import lsl_setup
 from mpi.event_markers import CATALOG
 from mpi.lsl_force import ForceStreamCandidate, LSLForceError, LSLForceSource
+from mpi.lsl_polar import LSLPolarSource
 
 
 class Collector:
@@ -71,6 +72,42 @@ def test_experiment_fields_save_without_a_button_and_restore_on_restart(setup):
         restored.close()
     with pytest.raises(lsl_setup.SetupRejected, match="Invalid custom variables"):
         send(setup, "field_edit", field="variables", value="not json")
+
+
+def test_record_stream_choice_is_reflected_in_setup_snapshot(setup):
+    send(setup, "shown")
+    send(setup, "record_stream", uid="polar-heart-rate-uid", enabled=False)
+    assert setup.snapshot()["excluded_streams"] == ["polar-heart-rate-uid"]
+    send(setup, "record_stream", uid="polar-heart-rate-uid", enabled=True)
+    assert setup.snapshot()["excluded_streams"] == []
+    assert setup.markers.names.count("recording.stream.changed") == 2
+
+
+def test_polar_input_requires_explicit_inhale_direction(monkeypatch, setup):
+    class Inlet:
+        def pull_chunk(self, **_kwargs): return [[0.02]], [time.monotonic()]
+        def close_stream(self): pass
+    source = LSLPolarSource(Inlet(), "polar-h10-StudyPolar_adrPcaWaveform",
+                            "StudyPolar_adrPcaWaveform", "respyra-polar-pca/1", {})
+    info = SimpleNamespace(name=lambda: source.stream_name, type=lambda: "Respiration",
+                           source_id=lambda: source.source_id)
+    monkeypatch.setattr(lsl_setup, "scan_force_streams", lambda: [ForceStreamCandidate(info, 0, "Compatible")])
+    monkeypatch.setattr(lsl_setup, "open_force_source", lambda _info: source)
+    monkeypatch.setattr(lsl_setup, "save_force_selection", lambda _source: None)
+    send(setup, "shown")
+    send(setup, "field_edit", field="participant", value="polar")
+    send(setup, "scan")
+    finish(setup)
+    send(setup, "select", row=0)
+    send(setup, "use")
+    finish(setup)
+    assert setup.snapshot()["source"]["contract_id"] == "respyra-polar-pca/1"
+    assert not setup.snapshot()["can_start"]
+    send(setup, "option", field="polar_inverted", enabled=True)
+    assert setup.snapshot()["can_start"] and source.polarity == -1
+    assert "source.polarity.set" in setup.markers.names
+    send(setup, "start")
+    source.stop()
 
 
 @pytest.mark.parametrize("saved_state", ["none", "missing", "corrupt"])

@@ -84,16 +84,26 @@ class MarkerOutlet:
                 "online": self.online,
                 "emitted": self.sequence}
 
+    @property
+    def uid(self):
+        return self._outlet.get_info().uid()
+
     def start_calibration_attempt(self) -> None:
         self.emit("calibration.attempt.started")
         self.calibration_attempt_open = True
 
     def end_calibration_attempt(self, outcome: str) -> None:
         if self.calibration_attempt_open and self.state is not None:
+            polar = bool(getattr(getattr(self.state, "belt", None), "contract_id", None))
             self.emit("calibration.attempt.ended", outcome=outcome,
-                      center_n=self.state.range_center,
-                      amplitude_n=self.state.global_amplitude,
-                      y_min_n=self.state.y_min, y_max_n=self.state.y_max)
+                      center_n=None if polar else self.state.range_center,
+                      amplitude_n=None if polar else self.state.global_amplitude,
+                      y_min_n=None if polar else self.state.y_min,
+                      y_max_n=None if polar else self.state.y_max,
+                      center_value=self.state.range_center,
+                      amplitude_value=self.state.global_amplitude,
+                      y_min_value=self.state.y_min, y_max_value=self.state.y_max,
+                      signal_unit="g" if polar else "N")
             self.calibration_attempt_open = False
 
     def emit(self, name: str, **fields) -> None:

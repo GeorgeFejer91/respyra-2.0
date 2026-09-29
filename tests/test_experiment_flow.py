@@ -10,6 +10,7 @@ import pytest
 
 from mpi.condition import ConditionDef
 from mpi.event_markers import MarkerOutlet
+from mpi.lsl_polar import LSLPolarSource
 from mpi.validation_study_jenny import CONFIG
 from respyra.core.target_generator import SegmentDef
 
@@ -60,8 +61,29 @@ class Force:
         self.stopped = True
 
 
+class Polar(LSLPolarSource):
+    contract_id = "respyra-polar-pca/1"
+    source_id = "polar-h10-Synthetic_adrPcaWaveform"
+    stream_name = "Synthetic_adrPcaWaveform"
+    force_index = 0
+
+    def __init__(self):
+        self.n = 0
+        self.stopped = False
+
+    def get_all(self):
+        self.n += 1
+        return [(float(self.n) + i / 100, 0.01 + i * 0.002) for i in range(6)]
+
+    def calibrate(self, center, amplitude, _run_id):
+        self.center, self.amplitude = center, amplitude
+
+    def stop(self):
+        self.stopped = True
+
+
 @pytest.mark.parametrize("scenario", [
-    "complete", "ready_escape", "tracking_error", "no_force",
+    "complete", "polar_complete", "ready_escape", "tracking_error", "no_force",
 ])
 @pytest.mark.parametrize("save_csv", [False, True])
 def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tmp_path):
@@ -93,7 +115,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
     marker.state = None
     marker.observer = None
     marker.calibration_attempt_open = False
-    force = Force()
+    force = Polar() if scenario == "polar_complete" else Force()
     force.produce = scenario != "no_force"
     win = Window()
     stimuli = {name: Stimulus() for name in (
@@ -171,7 +193,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
         assert "run.failed" in names and "run.completed" not in names
         ended = next(row for row in payloads if row["event"] == "tracking.ended")
         assert ended["outcome"] == "error" and ended["sample_count"] is None
-    elif scenario == "complete":
+    elif scenario in {"complete", "polar_complete"}:
         for expected in (
             "trial.started", "baseline.started", "baseline.ended",
             "countdown.started", "countdown.tick", "countdown.ended",
@@ -185,6 +207,11 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
         assert names.index("tracking.started") < names.index("tracking.ended")
     assert [row["seq"] for row in payloads] == list(range(1, len(payloads) + 1))
     assert force.stopped and win.closed
+    if scenario == "polar_complete":
+        calibrated = next(row for row in payloads if row["event"] == "calibration.completed")
+        assert calibrated["center_n"] is None and calibrated["signal_unit"] == "g"
+        assert calibrated["input_polarity"] == 1
+        assert calibrated["amplitude_value"] > 0
     files = list(tmp_path.glob("*.csv"))
     if not save_csv:
         assert not files
@@ -195,8 +222,11 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
         ratings = next(f for f in files if f.name.endswith("-self-assessment.csv"))
         with samples.open(newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
-        assert list(rows[0]) == list(cfg.data_columns) if rows else samples.read_text().splitlines()[0].split(',') == list(cfg.data_columns)
-        if scenario == "complete":
+        expected_columns = ([{"force_n": "signal_g", "target_force": "target_signal_g",
+                              "error": "error_g", "compensated_error": "compensated_error_g"}.get(name, name)
+                             for name in cfg.data_columns] if scenario == "polar_complete" else list(cfg.data_columns))
+        assert list(rows[0]) == expected_columns if rows else samples.read_text().splitlines()[0].split(',') == expected_columns
+        if scenario in {"complete", "polar_complete"}:
             assert {row["phase"] for row in rows} >= {"range_cal", "baseline", "countdown", "tracking"}
             with ratings.open(newline="", encoding="utf-8") as f:
                 answers = list(csv.DictReader(f))

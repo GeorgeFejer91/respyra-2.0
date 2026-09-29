@@ -255,3 +255,42 @@ decision and link both entries.
 - Consequences: New installer branding needs its own artifact and installed
   upgrade checks before release; a debug app build proves only the local title.
 - Supersedes: The product display name in D-0008, not its packaging design.
+
+## D-0013 — Start recording with the two-segment hub and an early derived stream
+
+- Date: 2026-09-29
+- Status: Accepted
+- Context: The experimenter approved the compact same-page hub and asked Start
+  to launch the study and LSL recorder together, with raw and Respyra breathing
+  present before calibration.
+- Decision: Use the hub as the packaged desktop entry page. Keep the native
+  continuous-discovery XDF recorder behind Start and pass the unchecked stream
+  UIDs as exclusions. Advertise the Respyra normalized
+  outlet before recorder launch; publish NaN until study calibration supplies
+  center and amplitude, then publish finite normalized values on the same
+  outlet. Require raw, marker and derived sample receipts before accepting Start.
+  Keep the selected raw and derived rows mandatory in the stream list.
+- Consequences: Pre-calibration derived samples are explicitly unavailable; raw
+  Force remains unmodified. Calibration parameters live in markers because LSL
+  outlet metadata cannot change after publication. Raw, derived and marker
+  streams remain mandatory even if an exclusion is submitted. View is independent
+  of recording, and late streams not excluded before Start still join the XDF.
+- Supersedes: Post-calibration derived outlet creation in D-0009; its native
+  recorder and study authority boundaries remain.
+
+## D-0014 — Accept two signed Polar breathing candidates as separate study inputs
+
+- Date: 2026-09-29
+- Status: Accepted
+- Context: The user wants the Polar PCA and signed Phan waveforms selectable
+  for the same Respyra task, while retaining Vernier Force as an option.
+- Decision: Accept only the exact `respyra-polar-pca/1` and
+  `respyra-polar-phan-signed/1` LSL contracts and required validity companions.
+  Choose inhale direction explicitly per connection. Calibrate and generate
+  targets in the selected waveform's native g values; publish the existing
+  normalized derived outlet and record the input contract, polarity, units and
+  calibration values in markers. Preserve Vernier's Newton path.
+- Consequences: Polar projections are neither force nor displacement. Their
+  availability as study inputs does not establish respiratory agreement or
+  comparable performance; paired data is needed. The contract details live in
+  `docs/polar-input-contracts.md`.

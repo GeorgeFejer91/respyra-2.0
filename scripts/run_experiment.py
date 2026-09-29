@@ -3,11 +3,14 @@ from __future__ import annotations
 from collections import deque
 from contextlib import ExitStack, redirect_stdout
 import sys
+import time
 from typing import Any, TYPE_CHECKING
 
 from mpi.event_markers import MarkerOutlet, NullSampleLogger
 from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, ExperimentStopped, isolate_control_input
 from mpi.lsl_force import LSLForceError, LSLForceSource
+from mpi.lsl_polar import LSLPolarSource
+from mpi.polar_calibration import PolarSampleLogger, run_polar_range_calibration
 from mpi.lsl_setup import run_source_setup
 from mpi.recording import NativeRecording, RecordingError
 if TYPE_CHECKING:
@@ -175,6 +178,21 @@ def run_tracking(
     return trial_errors, False
 
 
+def show_polar_trial_feedback(state, cfg, trial_errors, trial_num):
+    from respyra.core.display import show_text_and_wait
+
+    mean_error = sum(trial_errors) / len(trial_errors) if trial_errors else float("nan")
+    state.all_trial_errors.append(mean_error)
+    key = show_text_and_wait(
+        state.win,
+        text=(f"Trial {trial_num} complete.\n\n"
+              f"Mean tracking error: {mean_error:.4f} g\n\n"
+              "Press SPACE to continue."),
+        key_list=["space", cfg.escape_key],
+    )
+    return key == cfg.escape_key
+
+
 def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=None) -> None:
     """Run the standard breath tracking experiment.
 
@@ -227,6 +245,14 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             abort_reason = "participant_dialog_cancelled"
             return
 
+        polar_input = isinstance(belt, LSLPolarSource)
+        signal_unit = "g" if polar_input else "N"
+        if polar_input:
+            from dataclasses import replace
+            columns = [{"force_n": "signal_g", "target_force": "target_signal_g",
+                        "error": "error_g", "compensated_error": "compensated_error_g"}.get(name, name)
+                       for name in cfg.data_columns]
+            cfg = replace(cfg, data_columns=columns)
         participant = exp_info["participant"]
         session = exp_info["session"]
         markers.emit("participant.dialog.submitted", participant=participant, session=session)
@@ -268,6 +294,7 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             dot_feedback_mode=cfg.dot.feedback_mode,
             range_percentiles=[cfg.range_cal.percentile_lo, cfg.range_cal.percentile_hi],
             range_scale=cfg.range_cal.scale,
+            input_contract=getattr(belt, "contract_id", "vernier-force/1"), signal_unit=signal_unit,
         )
         exp_clock = core.Clock()
         buffer = deque(maxlen=cfg.trace_buffer_size)
@@ -275,7 +302,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         state = ExperimentState(
             belt=belt,
             win=win,
-            logger=logger or NullSampleLogger(),
+            logger=(PolarSampleLogger(logger or NullSampleLogger()) if polar_input
+                    else logger or NullSampleLogger()),
             clock=exp_clock,
             buffer=buffer,
             stimuli=stimuli,
@@ -317,7 +345,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
 
         markers.phase = "calibration"
         try:
-            calibrated = run_range_calibration(state, cfg)
+            calibrated = (run_polar_range_calibration(state, cfg) if polar_input
+                          else run_range_calibration(state, cfg))
         except Exception:
             markers.end_calibration_attempt("error")
             raise
@@ -332,16 +361,38 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             abort_reason = "calibration_escape"
             return  # finally handles cleanup
         if used_defaults:
-            raise LSLForceError("Range calibration received no Force samples")
+            raise LSLForceError("Range calibration received no valid Polar waveform samples"
+                                if polar_input else "Range calibration received no Force samples")
+        if isinstance(belt, LSLForceSource):
+            belt.get_all()  # Keep buffered pre-calibration samples on the missing-value side.
         markers.emit(
-            "calibration.completed", center_n=state.range_center,
-            amplitude_n=state.global_amplitude,
-            y_min_n=state.y_min, y_max_n=state.y_max,
+            "calibration.completed",
+            center_n=None if polar_input else state.range_center,
+            amplitude_n=None if polar_input else state.global_amplitude,
+            y_min_n=None if polar_input else state.y_min,
+            y_max_n=None if polar_input else state.y_max,
+            center_value=state.range_center, amplitude_value=state.global_amplitude,
+            y_min_value=state.y_min, y_max_value=state.y_max, signal_unit=signal_unit,
+            input_polarity=getattr(belt, "polarity", 1) if polar_input else None,
         )
+        if polar_input:
+            from dataclasses import replace
+            amplitude = state.global_amplitude
+            cfg = replace(cfg, dot=replace(cfg.dot,
+                error_threshold_n=0.5 * amplitude,
+                error_threshold_mid_n=amplitude,
+                graded_max_error_n=1.5 * amplitude))
         if isinstance(belt, LSLForceSource):
             belt.calibrate(state.range_center, state.global_amplitude, markers.run_id)
             if bridge is not None and bridge.recorder is not None:
-                bridge.recorder.wait_for_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
+                deadline = time.monotonic() + 8
+                while belt.calibrated_sample is None:
+                    bridge.check_cancel()
+                    belt.get_all()
+                    if time.monotonic() >= deadline:
+                        raise LSLForceError("Calibrated breathing has no live input samples")
+                    time.sleep(.025)
+                bridge.recorder.wait_for_finite_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
 
         # 8. Build trial order
         conditions = (cfg.trial.build_conditions(session)
@@ -422,16 +473,19 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
 
             # b) Calibrate from baseline (center logged for diagnostics only;
             #    target generation uses the global range calibration values)
-            baseline_center, baseline_amp = calibrate_from_baseline(baseline_forces)
-            markers.emit("baseline.calculated", center_n=baseline_center,
-                         amplitude_n=baseline_amp)
+            baseline_center, baseline_amp = calibrate_from_baseline(
+                baseline_forces, min_amplitude=1e-5 if polar_input else 0.5)
+            markers.emit("baseline.calculated", center_n=None if polar_input else baseline_center,
+                         amplitude_n=None if polar_input else baseline_amp,
+                         center_value=baseline_center, amplitude_value=baseline_amp,
+                         signal_unit=signal_unit)
             target_gen = TargetGenerator(
                 condition_def, state.range_center, state.global_amplitude
             )
             print(
-                f"Trial {trial_num}: target center={state.range_center:.2f} N, "
-                f"amplitude={state.global_amplitude:.2f} N, "
-                f"baseline center={baseline_center:.2f} N, "
+                f"Trial {trial_num}: target center={state.range_center:.4f} {signal_unit}, "
+                f"amplitude={state.global_amplitude:.4f} {signal_unit}, "
+                f"baseline center={baseline_center:.2f} {signal_unit}, "
                 f"feedback_gain={condition_def.feedback_gain}"
             )
 
@@ -451,8 +505,10 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             win.callOnFlip(state.clock.reset)
             win.callOnFlip(
                 markers.emit, "tracking.started",
-                target_center_n=state.range_center,
-                target_amplitude_n=state.global_amplitude,
+                target_center_n=None if polar_input else state.range_center,
+                target_amplitude_n=None if polar_input else state.global_amplitude,
+                target_center_value=state.range_center,
+                target_amplitude_value=state.global_amplitude, signal_unit=signal_unit,
                 segments=[{"freq_hz": seg.freq_hz, "n_cycles": seg.n_cycles}
                           for seg in condition_def.segments],
                 feedback_gain=condition_def.feedback_gain,
@@ -530,7 +586,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             )
 
             # e) Feedback
-            if show_trial_feedback(state, cfg, trial_errors, trial_num):
+            if (show_polar_trial_feedback(state, cfg, trial_errors, trial_num)
+                    if polar_input else show_trial_feedback(state, cfg, trial_errors, trial_num)):
                 print("Escape pressed at feedback.")
                 markers.emit("trial.aborted", reason="feedback_escape")
                 abort_reason = "feedback_escape"
@@ -538,8 +595,10 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             markers.emit(
                 "trial.ended",
                 mean_abs_compensated_error_n=(
-                    sum(trial_errors) / len(trial_errors) if trial_errors else None
+                    sum(trial_errors) / len(trial_errors) if trial_errors and not polar_input else None
                 ),
+                mean_abs_compensated_error_value=(sum(trial_errors) / len(trial_errors)
+                                                  if trial_errors else None), signal_unit=signal_unit,
             )
             completed_trials += 1
 
@@ -549,7 +608,7 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                 sum(state.all_trial_errors) / len(state.all_trial_errors)
                 if state.all_trial_errors else None
             )
-            mean_text = f"{overall:.2f} N" if overall is not None else "unavailable"
+            mean_text = f"{overall:.4f} {signal_unit}" if overall is not None else "unavailable"
             show_text_and_wait(
                 win,
                 text=(

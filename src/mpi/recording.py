@@ -105,6 +105,7 @@ class NativeRecording:
         self.error = None
         self.streams = {}
         self.data_sources = set()
+        self.finite_sources = set()
         self.required = ()
         self.summary = []
         self._lock = threading.Lock()
@@ -122,6 +123,7 @@ class NativeRecording:
                     "bytes_written": size,
                     "streams": [{"source_id": identity, "name": name} for identity, name in self.streams.items()],
                     "data_sources": sorted(self.data_sources),
+                    "finite_sources": sorted(self.finite_sources),
                     "summary": list(self.summary)}
 
     def check_health(self):
@@ -157,18 +159,24 @@ class NativeRecording:
                         self.data_sources.add(bytes.fromhex(line.split()[1]).decode("utf-8"))
                     except (ValueError, UnicodeError, IndexError):
                         self.error = "Invalid native recorder data message."
+                elif line.startswith("RESPIRA_RECORDER_FINITE/1 "):
+                    try:
+                        self.finite_sources.add(bytes.fromhex(line.split()[1]).decode("utf-8"))
+                    except (ValueError, UnicodeError, IndexError):
+                        self.error = "Invalid native recorder finite-data message."
                 elif "RESPIRA_RECORDER_ERROR" in line:
                     self.error = "Native recording failed; the partial XDF has been preserved."
                 if self.error:
                     self.phase = "error"
 
-    def start(self, values, source, markers, cancel_check=lambda: None):
+    def start(self, values, source, markers, cancel_check=lambda: None, excluded_uids=()):
         if self.process is not None:
             raise RecordingError("A native recording is already active")
         self.path = None
         self.participant_record = None
         self.phase, self.error, self.streams, self.summary = "preparing", None, {}, []
         self.data_sources = set()
+        self.finite_sources = set()
         try:
             executable = self.runtime / "respyrecorder.exe"
             if not executable.is_file() or not (self.runtime / "lsl.dll").is_file():
@@ -180,8 +188,16 @@ class NativeRecording:
                                        "participant_number": stem.split("_", 1)[0],
                                        "session": values["session"],
                                        "variables": [row.copy() for row in values.get("variables", [])]}
-            self.required = (source.source_id, markers.health_snapshot()["source_id"])
-            self.process = subprocess.Popen([str(executable), str(self.path.resolve())],
+            if source.calibrated_id is None:
+                raise RecordingError("Derived breathing outlet was not prepared before recording")
+            self.required = (source.source_id, markers.health_snapshot()["source_id"], source.calibrated_id)
+            required_uids = {getattr(source, "uid", ""), getattr(source, "calibrated_uid", ""),
+                             getattr(markers, "uid", "")}
+            excluded = set(excluded_uids) - required_uids
+            if len(excluded) > 128 or any(not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", uid) for uid in excluded):
+                raise RecordingError("Invalid LSL recording selection")
+            watch_query = ("not(" + " or ".join(f"uid='{uid}'" for uid in sorted(excluded)) + ")") if excluded else "true()"
+            self.process = subprocess.Popen([str(executable), str(self.path.resolve()), watch_query],
                 cwd=self.runtime, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
             self._reader = threading.Thread(target=self._read, daemon=True, name="respyrecorder")
@@ -190,16 +206,20 @@ class NativeRecording:
             while True:
                 cancel_check()
                 self.check_health()
+                source.get_all()  # Publish pre-calibration missing values on the derived outlet.
                 with self._lock:
-                    ready = all(identity in self.streams for identity in self.required) and source.source_id in self.data_sources
+                    ready = (all(identity in self.streams for identity in self.required)
+                             and source.source_id in self.data_sources
+                             and source.calibrated_id in self.data_sources)
                 if ready:
                     self.phase = "recording"
                     markers.name_locked = True
-                    markers.emit("recording.started", source_ids=list(self.required), policy="all_visible_and_late")
+                    markers.emit("recording.started", source_ids=list(self.required),
+                                 policy="visible_and_late_except_excluded", excluded_uids=sorted(excluded))
                     self.wait_for_data(self.required[1], cancel_check=cancel_check)
                     return
                 if time.monotonic() >= deadline:
-                    raise RecordingError("Recorder could not subscribe to Force and markers; experiment has not started.")
+                    raise RecordingError("Recorder could not receive the selected breathing input, derived breathing and markers; experiment has not started.")
                 time.sleep(0.025)
         except BaseException as exc:
             if self.process is not None:
@@ -224,6 +244,19 @@ class NativeRecording:
                     return
             if time.monotonic() >= deadline:
                 raise RecordingError("Recorder has received no samples from a required LSL stream")
+            time.sleep(.025)
+
+    def wait_for_finite_data(self, identity, poll=lambda: None, cancel_check=lambda: None):
+        deadline = time.monotonic() + 8
+        while True:
+            cancel_check()
+            self.check_health()
+            poll()
+            with self._lock:
+                if identity in self.finite_sources:
+                    return
+            if time.monotonic() >= deadline:
+                raise RecordingError("Recorder has received no finite calibrated breathing samples")
             time.sleep(.025)
 
     def stop(self):
