@@ -1,6 +1,7 @@
 """Real embedded imports and native synthetic XDF round trip; no study display."""
 import hashlib
 import importlib
+import importlib.util
 import importlib.metadata as metadata
 import json
 import math
@@ -26,10 +27,17 @@ assert sys.flags.isolated and sys.flags.no_user_site and sys.flags.dont_write_by
 assert sys.stdout.encoding.lower() == "utf-8"
 assert all(Path(path).resolve().is_relative_to(runtime) for path in sys.path), sys.path
 for name in ("numpy", "scipy", "pandas", "matplotlib", "pylsl", "psychopy.core", "psychopy.visual",
-             "psychopy.data", "psychopy.event", "PyQt6.QtGui", "ffpyplayer.player", "pythoncom", "pywintypes",
+             "psychopy.data", "psychopy.event", "PyQt6.QtGui", "pythoncom", "pywintypes",
              "mpi.lsl_force", "mpi.event_markers", "mpi.recording", "mpi.validation_study_jenny", "respyra.core.runner"):
     module = importlib.import_module(name)
     assert Path(module.__file__).resolve().is_relative_to(runtime), (name, module.__file__)
+assert importlib.util.find_spec("ffpyplayer") is None
+assert importlib.util.find_spec("imageio_ffmpeg") is None
+assert not (runtime / "share/ffpyplayer").exists()
+assert not list(runtime.rglob("*ffmpeg*.exe"))
+assert not list(runtime.rglob("*ffmpeg*.dll"))
+assert not list(runtime.rglob("avcodec-*.dll"))
+assert not list(runtime.rglob("avformat-*.dll"))
 from mpi.event_markers import MarkerOutlet
 import psutil
 support = [Path(m.path) for m in psutil.Process().memory_maps()

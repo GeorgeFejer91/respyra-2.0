@@ -60,6 +60,33 @@ def stage_runtime() -> None:
         installed_data = Path(sys.prefix) / name
         if installed_data.is_dir():
             shutil.copytree(installed_data, python / name, copy_function=link_or_copy)
+    # PsychoPy installs video/camera backends even though this study uses only
+    # visual stimuli and keyboard input. Keep the locked build environment
+    # intact, but omit its unused FFmpeg binaries from the shipped runtime.
+    # Exact paths make a changed wheel fail the build instead of silently
+    # introducing a new native media payload.
+    unused_media = (
+        "Lib/site-packages/ffpyplayer",
+        "Lib/site-packages/ffpyplayer-4.5.3.dist-info",
+        "Lib/site-packages/imageio_ffmpeg",
+        "Lib/site-packages/imageio_ffmpeg-0.6.0.dist-info",
+        "share/ffpyplayer",
+        "Lib/site-packages/cv2/opencv_videoio_ffmpeg500_64.dll",
+        "Lib/site-packages/PyQt6/Qt6/plugins/multimedia/ffmpegmediaplugin.dll",
+        "Lib/site-packages/PyQt6/Qt6/bin/avcodec-61.dll",
+        "Lib/site-packages/PyQt6/Qt6/bin/avformat-61.dll",
+        "Lib/site-packages/PyQt6/Qt6/bin/avutil-59.dll",
+        "Lib/site-packages/PyQt6/Qt6/bin/swresample-5.dll",
+        "Lib/site-packages/PyQt6/Qt6/bin/swscale-8.dll",
+    )
+    for relative in unused_media:
+        path = python / relative
+        if not path.exists():
+            raise RuntimeError(f"Locked media payload changed: {relative}")
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
     # Qt's locked wheel supplies current MSVC support. Put the same DLLs beside
     # python.exe so Windows never needs a separately installed VC redistributable.
     for support in (site / "PyQt6/Qt6/bin").glob("*140*.dll"):

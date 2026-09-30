@@ -22,7 +22,9 @@ launch them on the user's active desktop; missing isolation leaves those gates
 - Package the official CPython 3.10.11 x64 embedded ZIP, pinned URL/SHA-256 in
   `scripts/package_runtime.py`. Stage a fresh `uv sync --frozen --no-dev
   --no-editable` environment; never copy the working `.venv` or whole workspace.
-  Preserve locked PsychoPy/respyra/LSL dependencies and wheel data/DLL/licenses.
+  Preserve needed locked PsychoPy/respyra/LSL dependencies and wheel data/DLL/licenses.
+  Exclude the explicitly inventoried FFmpeg video/camera payloads that the
+  experiment does not use; fail packaging if those wheel paths change.
   Reinstall the local `mpi` wheel on every package build so uv's project cache
   cannot ship stale source or README metadata after a source-only edit.
   Copy the locked Qt wheel's MSVC support DLLs beside embedded Python and check

@@ -6,13 +6,15 @@ license. Third-party components below retain their own licenses.
 
 The standalone Respyra 2.0 distribution retains the original licensed dependencies
 listed in `engine/notices/python-packages.json`, their metadata, original
-license files, DLL/data files, and the resolved `uv.lock`. The private CPython
+license files, and needed DLL/data files, plus the resolved `uv.lock`. The private CPython
 runtime includes its own `LICENSE.txt`. These components keep their own licenses.
 PsychoPy and PyQt6 are GPL-licensed; no commercial Qt license is claimed.
-The Windows `ffpyplayer` wheel is GPL because its bundled FFmpeg was built with
-GPL options, despite its package-level LGPL metadata. The `imageio-ffmpeg`
-wheel also bundles a GPLv3 FFmpeg executable; its BSD metadata describes the
-Python wrapper, not that executable.
+The packaging environment installs PsychoPy's `ffpyplayer` and
+`imageio-ffmpeg` dependencies, but the Windows application uses no video or
+camera functions. Their packages and FFmpeg binaries are excluded from the
+installer, together with unused OpenCV and Qt FFmpeg plugins and FFmpeg DLLs.
+The locked build environment still contains those dependencies; `uv.lock` is
+included to document that input, not to claim every resolved wheel is shipped.
 
 The original Respyra package and transparent logo are by Micah Allen,
 [embodied-computation-group/respyra](https://github.com/embodied-computation-group/respyra).
