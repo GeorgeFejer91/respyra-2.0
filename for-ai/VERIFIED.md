@@ -65,7 +65,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | verified for current inputs; see Mini pipeline receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility change. |
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/run_private_mock.py` after a matching native build | verified for installed Mini mock, early Stop and complete phone controlled study; see Mini pipeline receipt | Native/pipe/lifecycle/remote contracts or consuming runtime change. |
 | Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | public page pairing and full run verified; byte parity not checked in Mini pipeline receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
-| Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | partial local install; see naming/install receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
+| Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | public 0.3.2 verified; see release receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
 | Windows shortcut icon transparency and circle tint: `assets/icon.svg`, packaging generator, PNG/ICO | Direct SVG icon generation, alpha/color assertions and 48 px preview | reusable; see shortcut icon receipt | SVG, icon generation, generated PNG/ICO or icon tooling changes. A new installer has its own packaging gate. |
 | Physical belt/phone, scientific timing and other operating systems | Separate named hardware/platform qualification | NOT RUN / unverified in `PROJECT.md` | Those surfaces are requested or claimed; synthetic/browser evidence does not qualify them. |
 | Agent routing, policy links and control-plane structure | `for-ai/scripts/check-context.ps1`, diff and local-link review | Record the policy change's final checks in handoff | Router/rule/linked document changes; this never triggers product suites by itself. |
@@ -474,3 +474,16 @@ the respective scope needs current evidence; panel styling does not need it.
   corresponding-source and notice review for retained copyleft components.
 - Exact hashes, commands, observations and limits:
   [`WINDOWS-INSTALLER-0.3.1-2026-09-30.md`](./WINDOWS-INSTALLER-0.3.1-2026-09-30.md).
+
+### Windows 0.3.2 public installer and source companion
+
+- Result/date: `VERIFIED` for exact installed synthetic runtime, source asset
+  integrity and public GitHub Release, 2026-09-30. The clean 0.3.2 installer
+  from `98c89eb` has 18,433 manifest-matched engine files, passed installed
+  native LSL/XDF/hosted-QR/CSV checks, and is 113,152,255 bytes. The 696 MB
+  companion ZIP contains pinned Python, Rust and native source with verified
+  checksums. The public release asset digests match local files.
+- Exact commands, hashes, source review and limits:
+  [`WINDOWS-INSTALLER-0.3.2-2026-09-30.md`](./WINDOWS-INSTALLER-0.3.2-2026-09-30.md).
+  Silent uninstall, clean-machine WebView2 download, physical hardware,
+  full-duration timing and signing remain unverified.

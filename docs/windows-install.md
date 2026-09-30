@@ -48,7 +48,8 @@ original sample and assessment CSV schemas/filenames are saved in
 `%LOCALAPPDATA%\Respira\data`. Program files and the source checkout are never
 the installed app's recording destination. Source identity remains in
 `%LOCALAPPDATA%\Respyra\lsl-source.json` for compatibility with prior launches.
-Uninstall removes the program, retaining user recordings/settings.
+The uninstaller is intended to remove the program and retain user
+recordings/settings. That behavior has not been qualified for v0.3.2.
 Startup diagnostics are in `%LOCALAPPDATA%\Respira\engine.log` (replaced on each
 launch); keep this local when it contains experiment identifiers.
 
