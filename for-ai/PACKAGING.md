@@ -85,7 +85,8 @@ launch them on the user's active desktop; missing isolation leaves those gates
 The initial local build is unsigned; do not claim Authenticode, SmartScreen
 reputation or clean-machine qualification. Signing identity/certificate/channel
 needs explicit authorization. Review retained notices and corresponding source
-for copyleft dependencies, including native libraries in wheels, before public
-release promotion. Source links alone are not that review. If any gate fails,
+for copyleft dependencies, including native wheel libraries and compiled Rust
+crates, before public release promotion. Source links alone are not that review.
+If any gate fails,
 keep the reviewable local installer and name the missing evidence. No bypass,
 automatic promotion or secret-bearing CI is authorized by a build success.
