@@ -23,8 +23,8 @@ launch them on the user's active desktop; missing isolation leaves those gates
   `scripts/package_runtime.py`. Stage a fresh `uv sync --frozen --no-dev
   --no-editable` environment; never copy the working `.venv` or whole workspace.
   Preserve needed locked PsychoPy/respyra/LSL dependencies and wheel data/DLL/licenses.
-  Exclude the explicitly inventoried FFmpeg video/camera payloads that the
-  experiment does not use; fail packaging if those wheel paths change.
+  Exclude the explicitly inventoried Qt/PyQt, OpenCV, PyArrow and FFmpeg
+  payloads that the experiment does not use; fail packaging if those wheel paths change.
   Reinstall the local `mpi` wheel on every package build so uv's project cache
   cannot ship stale source or README metadata after a source-only edit.
   Keep Jupyter and `ipympl` in the opt-in `notebooks` dependency group; they
@@ -39,8 +39,9 @@ launch them on the user's active desktop; missing isolation leaves those gates
 - Generate icon formats with Tauri directly from `assets/icon.svg`, a vector
   recreation of the attributed upstream artwork pinned under `assets/branding/`.
 - NSIS per-user installation uses the normal destination page. Default requires
-  no elevation; the user can choose any writable folder. Include offline WebView2
-  delivery. No self-updater, firewall changes or startup task.
+  no elevation; the user can choose any writable folder. Use Tauri's standard
+  WebView2 download bootstrapper only if WebView2 is absent, so first installation
+  on a clean computer needs Internet. No self-updater, firewall changes or startup task.
 - Installed runtime cwd remains `%LOCALAPPDATA%/Respira` for existing recordings;
   optional original CSVs go to its `data/`. Retain
   `%LOCALAPPDATA%/Respyra/lsl-source.json` identity memory.
@@ -76,8 +77,11 @@ launch them on the user's active desktop; missing isolation leaves those gates
 7. Check CSV writes in the writable user folder with original headers and off
    creates none. Installed scope is separate from scientific timing, physical
    belt/phone, full study calibration/timing, clean VM, other OS, upgrade and uninstall evidence.
-8. Hash the installer (`dist/SHA256SUMS.txt`) and retain its manifest. Promote
-   only these tested bytes. Upload installers as release assets, never to Git
+8. After exact installer qualification, run `python scripts/build_release_sources.py`
+   to verify pinned Python, Rust and native source archives and write the source
+   companion ZIP beside the installer. Keep the source ZIP and
+   `dist/runtime-manifest.json` under the same GitHub Release as the exact
+   installer, with `dist/SHA256SUMS.txt`. Upload assets, never put them in Git
    history or the static phone Pages branch. Source publication follows WORKFLOW.
 
 ## Distribution gate
@@ -86,7 +90,8 @@ The initial local build is unsigned; do not claim Authenticode, SmartScreen
 reputation or clean-machine qualification. Signing identity/certificate/channel
 needs explicit authorization. Review retained notices and corresponding source
 for copyleft dependencies, including native wheel libraries and compiled Rust
-crates, before public release promotion. Source links alone are not that review.
+crates, before public release promotion. The companion source ZIP must match the
+runtime and installer hashes; links alone are not that review.
 If any gate fails,
 keep the reviewable local installer and name the missing evidence. No bypass,
 automatic promotion or secret-bearing CI is authorized by a build success.

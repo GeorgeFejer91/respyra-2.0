@@ -1,18 +1,22 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra 2.0_0.3.1_x64-setup.exe` on Windows 10/11 x64. The installer lets you
+Run `Respyra 2.0_0.3.2_x64-setup.exe` on Windows 10/11 x64. The installer lets you
 choose a destination folder, creates a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
 folder on the destination page if desired.
 
-Python 3.10.11, the locked PsychoPy/Respyra/LSL and analysis dependencies, app-local
-MSVC runtime DLLs from the locked Qt wheel, fonts,
-**respyrecorder** native LSL/XDF recorder, HTML controller and an offline WebView2 installer are included. Users do not
-need Python, Git, Node, Rust, a source checkout or package downloads to launch.
+Python 3.10.11, the locked PsychoPy/Respyra/LSL study dependencies, app-local
+MSVC runtime DLLs, fonts, **respyrecorder** native LSL/XDF recorder and HTML
+controller are included. Qt/PyQt, OpenCV, PyArrow and FFmpeg media backends
+used by unrelated PsychoPy features are omitted. Unused audio, video,
+adaptive-staircase and HDF5 packages are omitted too. Users do not need Python,
+Git, Node, Rust or a source checkout. If WebView2 is absent, setup downloads
+its bootstrapper and runtime from Microsoft; that first installation requires
+Internet access. Later launches do not need it for the local study.
 The Windows Universal C Runtime supplied by Windows 10/11 is required.
 QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and
-therefore still needs Internet access. Hardware acquisition remains a separate
+also needs Internet access. Hardware acquisition remains a separate
 Vernier Stream Mini program. Respyra 2.0 owns recording; a separate LSL recorder is unnecessary.
 
 Open Respyra 2.0 to use **Experiment control**. Enter participant/session and any
@@ -50,6 +54,8 @@ launch); keep this local when it contains experiment identifiers.
 
 This first installer is unsigned. Windows may show an unknown-publisher prompt.
 Check its SHA-256 against the accompanying `SHA256SUMS.txt` before running it.
+The same GitHub Release provides a separate source ZIP and runtime manifest;
+the source ZIP is not required to install or run the program.
 Respyra's original code is GPL-3.0; the installer includes its license and
 third-party notices under `engine/notices/`. The exact source revision and lock
 hashes are in `engine/manifest.json`.
@@ -68,5 +74,8 @@ The packaging command builds the pinned native recorder, syncs a private non-edi
 locked Python environment, stages the official embedded interpreter, and checks a
 synthetic native XDF round trip. Generated runtime and diagnostics
 stay in `.for-ai-local/packaging/`; the final installer/checksums are in `dist/`.
+After the installed artifact passes the release checks, run
+`python scripts/build_release_sources.py` to assemble its matching source ZIP and
+complete `dist/SHA256SUMS.txt`.
 There is no self-updater or background startup task. See the bundled notices and
 dependency inventory for licenses and original source links.

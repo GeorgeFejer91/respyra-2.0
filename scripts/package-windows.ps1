@@ -2,6 +2,7 @@ param([switch]$GenerateIcons)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
+$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 if (-not [Environment]::Is64BitOperatingSystem) { throw 'The installer target is Windows x64.' }
 $stagingRoot = Join-Path $repoRoot '.for-ai-local/packaging'
 New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
@@ -28,7 +29,6 @@ if ($GenerateIcons) {
 if ($LASTEXITCODE -ne 0) { throw 'Embedded runtime verification failed.' }
 pnpm install --frozen-lockfile
 if ($LASTEXITCODE -ne 0) { throw 'Locked frontend install failed.' }
-$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 pnpm tauri build --config src-tauri/installer.conf.json --bundles nsis -- --locked
 if ($LASTEXITCODE -ne 0) { throw 'Windows installer build failed.' }
 $output = Join-Path $repoRoot 'dist'

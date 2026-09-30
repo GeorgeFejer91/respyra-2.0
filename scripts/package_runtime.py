@@ -60,26 +60,40 @@ def stage_runtime() -> None:
         installed_data = Path(sys.prefix) / name
         if installed_data.is_dir():
             shutil.copytree(installed_data, python / name, copy_function=link_or_copy)
-    # PsychoPy installs video/camera backends even though this study uses only
-    # visual stimuli and keyboard input. Keep the locked build environment
-    # intact, but omit its unused FFmpeg binaries from the shipped runtime.
-    # Exact paths make a changed wheel fail the build instead of silently
-    # introducing a new native media payload.
-    unused_media = (
+    # Keep PsychoPy's declared dependencies in the locked build environment.
+    # The installed study uses Tauri controls, pyglet visuals and LSL input;
+    # it does not use Qt Builder, camera/video, or Arrow data interchange.
+    # Exact paths fail packaging if an upstream wheel changes its layout.
+    unused_runtime = (
         "Lib/site-packages/ffpyplayer",
         "Lib/site-packages/ffpyplayer-4.5.3.dist-info",
         "Lib/site-packages/imageio_ffmpeg",
         "Lib/site-packages/imageio_ffmpeg-0.6.0.dist-info",
         "share/ffpyplayer",
-        "Lib/site-packages/cv2/opencv_videoio_ffmpeg500_64.dll",
-        "Lib/site-packages/PyQt6/Qt6/plugins/multimedia/ffmpegmediaplugin.dll",
-        "Lib/site-packages/PyQt6/Qt6/bin/avcodec-61.dll",
-        "Lib/site-packages/PyQt6/Qt6/bin/avformat-61.dll",
-        "Lib/site-packages/PyQt6/Qt6/bin/avutil-59.dll",
-        "Lib/site-packages/PyQt6/Qt6/bin/swresample-5.dll",
-        "Lib/site-packages/PyQt6/Qt6/bin/swscale-8.dll",
+        "Lib/site-packages/cv2",
+        "Lib/site-packages/opencv_python-5.0.0.93.dist-info",
+        "Lib/site-packages/pyarrow",
+        "Lib/site-packages/pyarrow.libs",
+        "Lib/site-packages/pyarrow-25.0.1.dist-info",
+        "Lib/site-packages/soundfile.py",
+        "Lib/site-packages/_soundfile.py",
+        "Lib/site-packages/_soundfile_data",
+        "Lib/site-packages/soundfile-0.14.0.dist-info",
+        "Lib/site-packages/vlc.py",
+        "Lib/site-packages/python_vlc-3.0.21203.dist-info",
+        "Lib/site-packages/questplus",
+        "Lib/site-packages/questplus-2023.1.dist-info",
+        "Lib/site-packages/meshpy",
+        "Lib/site-packages/meshpy.libs",
+        "Lib/site-packages/meshpy-2026.1.1.dist-info",
+        "Lib/site-packages/tables",
+        "Lib/site-packages/tables.libs",
+        "Lib/site-packages/tables-3.10.1.dist-info",
+        "Lib/site-packages/blosc2",
+        "Lib/site-packages/blosc2-4.3.3.dist-info",
+        "Lib/site-packages/pypiwin32-223.dist-info",
     )
-    for relative in unused_media:
+    for relative in unused_runtime:
         path = python / relative
         if not path.exists():
             raise RuntimeError(f"Locked media payload changed: {relative}")
@@ -87,10 +101,22 @@ def stage_runtime() -> None:
             shutil.rmtree(path)
         else:
             path.unlink()
-    # Qt's locked wheel supplies current MSVC support. Put the same DLLs beside
-    # python.exe so Windows never needs a separately installed VC redistributable.
+    # Qt's locked wheel supplies current MSVC support. Retain only these
+    # redistributable DLLs beside python.exe; the study does not use Qt itself.
     for support in (site / "PyQt6/Qt6/bin").glob("*140*.dll"):
         shutil.copy2(support, python / support.name)
+    unused_qt = (
+        "PyQt6", "pyqt6-6.11.0.dist-info", "pyqt6_qt6-6.11.2.dist-info",
+        "pyqt6_sip-13.12.0.dist-info",
+    )
+    for name in unused_qt:
+        path = site / name
+        if not path.exists():
+            raise RuntimeError(f"Locked Qt payload changed: {name}")
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
     if list(site.glob("__editable__*")) or not (site / "mpi/event_markers/catalog.json").is_file():
         raise RuntimeError("Runtime must contain the installed project, not an editable checkout link")
     (python / "python310._pth").write_text("python310.zip\n.\nLib/site-packages\nimport site\n", encoding="utf-8")
@@ -117,8 +143,34 @@ def stage_runtime() -> None:
     shutil.copy2(ROOT / "LICENSE", notices / "RESPYRA-LICENSE.txt")
     shutil.copy2(ROOT / "assets/branding/LICENSE.upstream.txt", notices)
     shutil.copy2(ROOT / "assets/branding/README.md", notices / "ARTWORK.md")
+    for name in ("PSYCHTOOLBOX-LICENSE.txt", "ESPRIMA-LICENSE.txt",
+                 "ESPRIMA-LICENSE.BSD.txt", "PYPARALLEL-LICENSE.txt",
+                 "PYWINRT-LICENSE.txt", "python-license-files.zip",
+                 "python-source-manifest.json", "native-source-manifest.json",
+                 "MPL-2.0.txt", "OPENBLAS-WINDOWS-LICENSE.txt"):
+        shutil.copy2(ROOT / "licenses" / name, notices)
     shutil.copy2(ROOT / "docs/windows-install.md", ENGINE / "README.md")
     shutil.copy2(ROOT / "docs/THIRD-PARTY.md", notices)
+    cargo = json.loads(subprocess.check_output(
+        ["cargo", "metadata", "--manifest-path", str(ROOT / "src-tauri/Cargo.toml"),
+         "--locked", "--format-version", "1", "--filter-platform", "x86_64-pc-windows-msvc"],
+        cwd=ROOT, text=True, encoding="utf-8"))
+    crates = []
+    with zipfile.ZipFile(notices / "rust-licenses.zip", "w", zipfile.ZIP_DEFLATED,
+                         strict_timestamps=False) as archive:
+        for package in sorted(cargo["packages"], key=lambda item: (item["name"], item["version"])):
+            crate = {key: package.get(key) for key in ("name", "version", "license", "repository", "source")}
+            crate["notice_files"] = []
+            if (package.get("source") or "").startswith("registry+"):
+                directory = Path(package["manifest_path"]).parent
+                for pattern in ("LICENSE*", "COPYING*", "NOTICE*"):
+                    for path in sorted(directory.glob(pattern)):
+                        if path.is_file():
+                            relative = f"{package['name']}-{package['version']}/{path.name}"
+                            archive.write(path, relative)
+                            crate["notice_files"].append(relative)
+            crates.append(crate)
+    (notices / "rust-crates.json").write_text(json.dumps(crates, indent=2) + "\n", encoding="utf-8")
     # Every distribution's original license/data/DLL files remain in site-packages.
     inventory = [{"name": d.metadata["Name"], "version": d.version,
                   "license": d.metadata.get("License-Expression") or d.metadata.get("License"),
@@ -127,6 +179,12 @@ def stage_runtime() -> None:
                   "source": f"https://pypi.org/project/{d.metadata['Name']}/{d.version}/#files"}
                  for d in metadata.distributions(path=[str(site)])]
     inventory.sort(key=lambda d: d["name"].lower())
+    sources = json.loads((notices / "python-source-manifest.json").read_text(encoding="utf-8"))
+    expected = {(item["name"].lower(), item["version"]) for item in inventory
+                if item["name"].lower() != "mpi"}
+    actual = {(item["name"].lower(), item["version"]) for item in sources}
+    if actual != expected:
+        raise RuntimeError(f"Python source manifest differs from packaged runtime: {sorted(expected ^ actual)}")
     (notices / "python-packages.json").write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
     shutil.copy2(ROOT / "uv.lock", notices)
     print(f"Staged {len(inventory)} locked packages; hashing installed inputs…", flush=True)

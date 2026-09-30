@@ -1,0 +1,76 @@
+{
+  "archives": [
+    {
+      "filename": "libusb-1.0.26.tar.bz2",
+      "url": "https://github.com/libusb/libusb/releases/download/v1.0.26/libusb-1.0.26.tar.bz2",
+      "sha256": "12ce7a61fc9854d1d2a1ffe095f7b5fac19ddba095c259e6067a46500381b5a5",
+      "purpose": "LGPL source corresponding to Psychtoolbox's libusb-1.0.dll"
+    },
+    {
+      "filename": "gcc-8.3.0.tar.xz",
+      "url": "https://ftp.gnu.org/gnu/gcc/gcc-8.3.0/gcc-8.3.0.tar.xz",
+      "sha256": "64baadfe6cc0f4947a84cb12d7f0dfaf45bb58b7e92461639596c21e02d97d2c",
+      "purpose": "GCC runtime source for the Rtools 4.0 toolchain used by the Windows OpenBLAS wheels"
+    },
+    {
+      "filename": "gcc-10.3.0.tar.xz",
+      "url": "https://ftp.gnu.org/gnu/gcc/gcc-10.3.0/gcc-10.3.0.tar.xz",
+      "sha256": "64f404c1a650f27fc33da242e1f2df54952e3963a49e06e73f6940f3223ac344",
+      "purpose": "GCC runtime source for the compiler version recorded by the SciPy 1.15.3 Windows wheel"
+    },
+    {
+      "filename": "OpenBLAS-v0.3.28.zip",
+      "url": "https://codeload.github.com/OpenMathLib/OpenBLAS/zip/refs/tags/v0.3.28",
+      "sha256": "be480730a1380b4076436243594327c6df195be1c948a79633443a6c8795112f",
+      "purpose": "OpenBLAS source corresponding to SciPy's 0.3.28 math DLL"
+    },
+    {
+      "filename": "OpenBLAS-v0.3.29.zip",
+      "url": "https://codeload.github.com/OpenMathLib/OpenBLAS/zip/refs/tags/v0.3.29",
+      "sha256": "80c09ba570592176212a519434787c6e39b390c36502b2aa0d1975484a12a42e",
+      "purpose": "OpenBLAS source corresponding to NumPy's 0.3.29 math DLL"
+    },
+    {
+      "filename": "openblas-libs-v0.3.28.0.2.zip",
+      "repository": "https://github.com/MacPython/openblas-libs",
+      "revision": "70589374463a01fba4334ec37c17c16da05127e2",
+      "sha256": "c3fa378160e063058d3bbe115ed9c2757fdb94d875f9f185ad524d49a4b47e93",
+      "purpose": "Build recipe and Windows patches for SciPy's exact OpenBLAS wheel"
+    },
+    {
+      "filename": "openblas-libs-v0.3.29.0.0.zip",
+      "repository": "https://github.com/MacPython/openblas-libs",
+      "revision": "510428188c2a87260a0593796af9ce425f86ad8e",
+      "sha256": "478ca01ca1a385a2164ad9450abbf94f8fd7f54483172b49b6dc5df387e2c5cd",
+      "purpose": "Build recipe and Windows patches for NumPy's exact OpenBLAS wheel"
+    },
+    {
+      "filename": "rtools40-mingw-w64-gcc-recipe.zip",
+      "repository": "https://github.com/r-windows/rtools-packages",
+      "revision": "31f09c0801f9b038e91e8905ad83473a7c447472",
+      "sha256": "002e5eb6dbb0d8b21c6fb5857357302f0e9bd39419b7f26e5a798e917a0a7638",
+      "purpose": "Rtools GCC 8.3 build recipe and its patches"
+    }
+  ],
+  "binary_matches": [
+    {
+      "installed": "python/Lib/site-packages/psychtoolbox/libusb-1.0.dll",
+      "sha256": "1dac95d1eafcba057cf3df73dcf419bc14f4167ef4ac92fe1f8fdcab4278b6f4",
+      "reference": "Official libusb 1.0.26 Windows x64 release binary"
+    },
+    {
+      "installed": "python/Lib/site-packages/numpy.libs/libscipy_openblas64_-13e2df515630b4a41f92893938845698.dll",
+      "sha256": "6547e9fb966e9773caee2755e91a8bf4d6f3a2f0eebf9646b0158f8675ea4ab5",
+      "wheel": "scipy_openblas64-0.3.29.0.0-win_amd64.whl",
+      "wheel_sha256": "70f1a24c8ddea9f63755e81a607bbf9ef2296bb757a747eaa5bb4977a9917b14",
+      "wheel_member": "scipy_openblas64/lib/libscipy_openblas64_.dll"
+    },
+    {
+      "installed": "python/Lib/site-packages/scipy.libs/libscipy_openblas-f07f5a5d207a3a47104dca54d6d0c86a.dll",
+      "sha256": "6b2103f2ae4d8547998b5d188e9801fba6cb12404ae8e4bfff319e8cc1949000",
+      "wheel": "scipy_openblas32-0.3.28.0.2-win_amd64.whl",
+      "wheel_sha256": "7a6c0618760084278eeda0ea0d1d7ca77eebbc4fce9f0a0b4fef82000e5ec01b",
+      "wheel_member": "scipy_openblas32/lib/libscipy_openblas.dll"
+    }
+  ]
+}

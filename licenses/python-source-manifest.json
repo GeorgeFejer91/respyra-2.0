@@ -1,0 +1,821 @@
+[
+  {
+    "name": "annotated-types",
+    "version": "0.8.0",
+    "filename": "annotated_types-0.8.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/5f/56/a8120250d128bed162cd73c76d45f6ef9991f3e068f62a8ee060afa3104a/annotated_types-0.8.0.tar.gz",
+    "sha256": "13b2beaad985e05e2d6407ee4c4f35590b11f8d693a258a561055cac8f64cab7",
+    "size": 15893,
+    "notice_files": 1
+  },
+  {
+    "name": "arabic-reshaper",
+    "version": "3.0.1",
+    "filename": "arabic_reshaper-3.0.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f2/6c/6be41c689bd2f6e9274c77bf45be820e41ff1ecb9ab0a1d23964b6d04606/arabic_reshaper-3.0.1.tar.gz",
+    "sha256": "a0d9b2a9fa29b5f2c1d705f407adf6ca4242405b9cac0e5cc09e6c4f3f8fb68c",
+    "size": 42829,
+    "notice_files": 1
+  },
+  {
+    "name": "astunparse",
+    "version": "1.6.3",
+    "filename": "astunparse-1.6.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f3/af/4182184d3c338792894f34a62672919db7ca008c89abee9b564dd34d8029/astunparse-1.6.3.tar.gz",
+    "sha256": "5ad93a8456f0d084c3456d059fd9a92cce667963232cbf763eac3bc5b7940872",
+    "size": 18290,
+    "notice_files": 2
+  },
+  {
+    "name": "async-timeout",
+    "version": "5.0.1",
+    "filename": "async_timeout-5.0.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/a5/ae/136395dfbfe00dfc94da3f3e136d0b13f394cba8f4841120e34226265780/async_timeout-5.0.1.tar.gz",
+    "sha256": "d9321a7a3d5a6a5e187e824d2fa0793ce379a202935782d555d6e9d2735677d3",
+    "size": 9274,
+    "notice_files": 1
+  },
+  {
+    "name": "beautifulsoup4",
+    "version": "4.15.0",
+    "filename": "beautifulsoup4-4.15.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/43/65/318323f98dbee45d42dff61d8f047181bc6f2268a9068cfad035a46be5af/beautifulsoup4-4.15.0.tar.gz",
+    "sha256": "288e3ca7d54b06f2ac191970bc275c1939cb46d450b255bf6718b04aa37ab4f7",
+    "size": 632571,
+    "notice_files": 2
+  },
+  {
+    "name": "bleak",
+    "version": "3.0.2",
+    "filename": "bleak-3.0.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/16/df/05a3f80ca8e3f7f5b0dba68a9e618147c909ccdba1468f07487dc8d72a9d/bleak-3.0.2.tar.gz",
+    "sha256": "c2229cb8238d5876b4bd05c74bf7a1aea1f88da39d2e51ac9dfd5cc319d5265f",
+    "size": 125293,
+    "notice_files": 1
+  },
+  {
+    "name": "certifi",
+    "version": "2026.7.22",
+    "filename": "certifi-2026.7.22.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/a3/c2/24167ea9858356b47a87a50d39908bfdb72ceeefe0041586e704e5376b3a/certifi-2026.7.22.tar.gz",
+    "sha256": "741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55",
+    "size": 138112,
+    "notice_files": 1
+  },
+  {
+    "name": "cffi",
+    "version": "2.1.1",
+    "filename": "cffi-2.1.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz",
+    "sha256": "dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be",
+    "size": 530807,
+    "notice_files": 2
+  },
+  {
+    "name": "charset-normalizer",
+    "version": "3.5.1",
+    "filename": "charset_normalizer-3.5.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/e5/3f/143b048436775b0f76ac3eec145c019e8173ccc2885c8f20319b996d5e83/charset_normalizer-3.5.1.tar.gz",
+    "sha256": "6117b84ea48435e5356dc737f5121485c30920ba43375fa7b434fd753df0eac3",
+    "size": 171764,
+    "notice_files": 2
+  },
+  {
+    "name": "colorama",
+    "version": "0.4.6",
+    "filename": "colorama-0.4.6.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz",
+    "sha256": "08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44",
+    "size": 27697,
+    "notice_files": 1
+  },
+  {
+    "name": "contourpy",
+    "version": "1.3.2",
+    "filename": "contourpy-1.3.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/66/54/eb9bfc647b19f2009dd5c7f5ec51c4e6ca831725f1aea7a993034f483147/contourpy-1.3.2.tar.gz",
+    "sha256": "b6945942715a034c671b7fc54f9588126b0b8bf23db2696e3ca8328f3ff0ab54",
+    "size": 13466130,
+    "notice_files": 1
+  },
+  {
+    "name": "cycler",
+    "version": "0.12.1",
+    "filename": "cycler-0.12.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/a9/95/a3dbbb5028f35eafb79008e7522a75244477d2838f38cbb722248dabc2a8/cycler-0.12.1.tar.gz",
+    "sha256": "88bb128f02ba341da8ef447245a9e138fae777f6a23943da4540077d3601eb1c",
+    "size": 7615,
+    "notice_files": 1
+  },
+  {
+    "name": "decorator",
+    "version": "5.3.1",
+    "filename": "decorator-5.3.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/60/8b/32f9823da46cde7df2087faa08cd98d01b908f8dcab982cdba9c84e85355/decorator-5.3.1.tar.gz",
+    "sha256": "4cbcdd55a6efadb9dbea26b858f4fb3264567b52d69ca0d25b721b553f60ea82",
+    "size": 58084,
+    "notice_files": 1
+  },
+  {
+    "name": "elementpath",
+    "version": "5.1.4",
+    "filename": "elementpath-5.1.4.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/69/9d/766386c47959bb8b014242af8770c869350884a3c3f7054375576e11f30a/elementpath-5.1.4.tar.gz",
+    "sha256": "3c912a9c41311ac5244c038867670d7c0b0fec0e444813608e5b846dbb3428ac",
+    "size": 381114,
+    "notice_files": 1
+  },
+  {
+    "name": "esprima",
+    "version": "4.0.1",
+    "filename": "esprima-4.0.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/cc/a1/50fccd68a12bcfc27adfc9969c090286670a9109a0259f3f70943390b721/esprima-4.0.1.tar.gz",
+    "sha256": "08db1a876d3c2910db9cfaeb83108193af5411fc3a3a66ebefacd390d21323ee",
+    "size": 47021,
+    "notice_files": 0
+  },
+  {
+    "name": "et_xmlfile",
+    "version": "2.0.0",
+    "filename": "et_xmlfile-2.0.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/d3/38/af70d7ab1ae9d4da450eeec1fa3918940a5fafb9055e934af8d6eb0c2313/et_xmlfile-2.0.0.tar.gz",
+    "sha256": "dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54",
+    "size": 17234,
+    "notice_files": 3
+  },
+  {
+    "name": "fonttools",
+    "version": "4.65.0",
+    "filename": "fonttools-4.65.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/77/51/d63c7e52163ac14393a35bd14bd7c0da95f8f74be5d7cc988092f9965129/fonttools-4.65.0.tar.gz",
+    "sha256": "762ba5431358d0dbd4a01982484a1d494fb267e91f974cdcf20b80eab8560f6f",
+    "size": 3674467,
+    "notice_files": 2
+  },
+  {
+    "name": "freetype-py",
+    "version": "2.5.1",
+    "filename": "freetype-py-2.5.1.zip",
+    "url": "https://files.pythonhosted.org/packages/d0/9c/61ba17f846b922c2d6d101cc886b0e8fb597c109cedfcb39b8c5d2304b54/freetype-py-2.5.1.zip",
+    "sha256": "cfe2686a174d0dd3d71a9d8ee9bf6a2c23f5872385cf8ce9f24af83d076e2fbd",
+    "size": 851738,
+    "notice_files": 3
+  },
+  {
+    "name": "future",
+    "version": "1.0.0",
+    "filename": "future-1.0.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/a7/b2/4140c69c6a66432916b26158687e821ba631a4c9273c474343badf84d3ba/future-1.0.0.tar.gz",
+    "sha256": "bd2968309307861edae1458a4f8a4f3598c03be43b97521076aebf5d94c07b05",
+    "size": 1228490,
+    "notice_files": 2
+  },
+  {
+    "name": "gevent",
+    "version": "25.5.1",
+    "filename": "gevent-25.5.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f1/58/267e8160aea00ab00acd2de97197eecfe307064a376fb5c892870a8a6159/gevent-25.5.1.tar.gz",
+    "sha256": "582c948fa9a23188b890d0bc130734a506d039a2e5ad87dae276a456cc683e61",
+    "size": 6388207,
+    "notice_files": 9
+  },
+  {
+    "name": "godirect",
+    "version": "1.2.1",
+    "filename": "godirect-1.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/a9/1d/2683f6c0f1add36079c27ef5485131a9d646dd760a1ebda7c9f712786cae/godirect-1.2.1.tar.gz",
+    "sha256": "d8fac756cd782659a6ae11e0abb1c8d80924bdb2d08d8edffca5fcaa5f8a2201",
+    "size": 33808,
+    "notice_files": 1
+  },
+  {
+    "name": "greenlet",
+    "version": "3.5.6",
+    "filename": "greenlet-3.5.6.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/3e/6e/0091f175ccd02b02bc8811bbcbcc6ac2e980be116e3b2f7a736ca322bf84/greenlet-3.5.6.tar.gz",
+    "sha256": "8e67c43bdfc88d5fee6db0d3e40175b362fc95fb85f0412d233b9b203c53a575",
+    "size": 207653,
+    "notice_files": 3
+  },
+  {
+    "name": "hidapi",
+    "version": "0.15.0",
+    "filename": "hidapi-0.15.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/74/f6/caad9ed701fbb9223eb9e0b41a5514390769b4cb3084a2704ab69e9df0fe/hidapi-0.15.0.tar.gz",
+    "sha256": "ecbc265cbe8b7b88755f421e0ba25f084091ec550c2b90ff9e8ddd4fcd540311",
+    "size": 184995,
+    "notice_files": 4
+  },
+  {
+    "name": "i18next",
+    "version": "0.0.3",
+    "filename": "i18next-0.0.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f2/15/8690e07c48bb44aae8316f19ed988dedb906fc78af80a42c438419b97f4e/i18next-0.0.3.tar.gz",
+    "sha256": "69387928e3b0ec0ae655dd2761dd486567876cec5e869d3f38791b89e89f2bd7",
+    "size": 12444,
+    "notice_files": 1
+  },
+  {
+    "name": "idna",
+    "version": "3.20",
+    "filename": "idna-3.20.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f5/08/8eea9d4b8302028f3abb2c0813953f7aec26d33b7a8960ed760e65ff29fa/idna-3.20.tar.gz",
+    "sha256": "a7db850025b95ded1eae8a46181a1a6c56c92c96f0e2b005d9ff8dc0210cab44",
+    "size": 216463,
+    "notice_files": 1
+  },
+  {
+    "name": "ImageIO",
+    "version": "2.37.4",
+    "filename": "imageio-2.37.4.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/48/62/aa770a9307508d2a2a2c62d536a49347bffe9e55322db27838d3c93d0b07/imageio-2.37.4.tar.gz",
+    "sha256": "e45cbc5e83502047fb138f7f585f7f105a136a57eea5f4b3cfc6ce1b52720bd3",
+    "size": 390173,
+    "notice_files": 1
+  },
+  {
+    "name": "jedi",
+    "version": "0.20.0",
+    "filename": "jedi-0.20.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/46/b7/a3635f6a2d7cf5b5dd98064fc1d5fbbafcb25477bcea204a3a92145d158b/jedi-0.20.0.tar.gz",
+    "sha256": "c3f4ccbd276696f4b19c54618d4fb18f9fc24b0aef02acf704b23f487daa1011",
+    "size": 3119416,
+    "notice_files": 4
+  },
+  {
+    "name": "json-tricks",
+    "version": "3.17.3",
+    "filename": "json_tricks-3.17.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/00/15/a4983fd782472b7968b4a0b50092981debccdd938ba4d94698bbb71b0abb/json_tricks-3.17.3.tar.gz",
+    "sha256": "71561eedad7c22dde019e9a38ff8c46ebd91da789e31e2513f627dd2cbbdbf56",
+    "size": 30537,
+    "notice_files": 1
+  },
+  {
+    "name": "kiwisolver",
+    "version": "1.5.1",
+    "filename": "kiwisolver-1.5.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/ba/07/bd78e6a8fae171ea041ef5bba3ed21a003522fa088834b069b1909981f30/kiwisolver-1.5.1.tar.gz",
+    "sha256": "f1303ef2eec81262a4b708c3e858afe58d7c75ad91c1c05266eda7673369859a",
+    "size": 104395,
+    "notice_files": 1
+  },
+  {
+    "name": "matplotlib",
+    "version": "3.10.9",
+    "filename": "matplotlib-3.10.9.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/63/1b/4be5be87d43d327a0cf4de1a56e86f7f84c89312452406cf122efe2839e6/matplotlib-3.10.9.tar.gz",
+    "sha256": "fd66508e8c6877d98e586654b608a0456db8d7e8a546eb1e2600efd957302358",
+    "size": 34811233,
+    "notice_files": 19
+  },
+  {
+    "name": "moviepy",
+    "version": "2.2.1",
+    "filename": "moviepy-2.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/de/61/15f9476e270f64c78a834e7459ca045d669f869cec24eed26807b8cd479d/moviepy-2.2.1.tar.gz",
+    "sha256": "c80cb56815ece94e5e3e2d361aa40070eeb30a09d23a24c4e684d03e16deacb1",
+    "size": 58431438,
+    "notice_files": 1
+  },
+  {
+    "name": "msgpack",
+    "version": "1.2.2",
+    "filename": "msgpack-1.2.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/6d/44/ea2100ec54d30c46ee9dba10a3bfb79b655e96c6df237238a3234c75869b/msgpack-1.2.2.tar.gz",
+    "sha256": "9eb0b0e602064527a045ea28c4f174ed69383587e29cebe28947e3b84106eb2a",
+    "size": 187025,
+    "notice_files": 1
+  },
+  {
+    "name": "msgpack-numpy",
+    "version": "0.4.8",
+    "filename": "msgpack-numpy-0.4.8.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/08/94/61e8aee142733ebfdc400a05bdac6e1763c4514bba3b42743d223f388450/msgpack-numpy-0.4.8.tar.gz",
+    "sha256": "c667d3180513422f9c7545be5eec5d296dcbb357e06f72ed39cc683797556e69",
+    "size": 10923,
+    "notice_files": 2
+  },
+  {
+    "name": "ndindex",
+    "version": "1.10.1",
+    "filename": "ndindex-1.10.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f5/92/4b9d2f4e0f3eabcfc7b02b48261f6e5ad36a3e2c1bbdcc4e3b7b6c768fa6/ndindex-1.10.1.tar.gz",
+    "sha256": "0f6113c1f031248f8818cbee1aa92aa3c9472b7701debcce9fddebcd2f610f11",
+    "size": 271395,
+    "notice_files": 1
+  },
+  {
+    "name": "numexpr",
+    "version": "2.14.1",
+    "filename": "numexpr-2.14.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/cb/2f/fdba158c9dbe5caca9c3eca3eaffffb251f2fb8674bf8e2d0aed5f38d319/numexpr-2.14.1.tar.gz",
+    "sha256": "4be00b1086c7b7a5c32e31558122b7b80243fe098579b170967da83f3152b48b",
+    "size": 119400,
+    "notice_files": 2
+  },
+  {
+    "name": "numpy",
+    "version": "2.2.6",
+    "filename": "numpy-2.2.6.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/76/21/7d2a95e4bba9dc13d043ee156a356c0a8f0c6309dff6b21b4d71a073b8a8/numpy-2.2.6.tar.gz",
+    "sha256": "e29554e2bef54a90aa5cc07da6ce955accb83f21ab5de01a62c8478897b264fd",
+    "size": 20276440,
+    "notice_files": 30
+  },
+  {
+    "name": "openpyxl",
+    "version": "3.1.5",
+    "filename": "openpyxl-3.1.5.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz",
+    "sha256": "cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050",
+    "size": 186464,
+    "notice_files": 2
+  },
+  {
+    "name": "packaging",
+    "version": "26.3",
+    "filename": "packaging-26.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz",
+    "sha256": "94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79",
+    "size": 313412,
+    "notice_files": 4
+  },
+  {
+    "name": "pandas",
+    "version": "2.3.3",
+    "filename": "pandas-2.3.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/33/01/d40b85317f86cf08d853a4f495195c73815fdf205eef3993821720274518/pandas-2.3.3.tar.gz",
+    "sha256": "e05e1af93b977f7eafa636d043f9f94c7ee3ac81af99c13508215942e64c993b",
+    "size": 4495223,
+    "notice_files": 2
+  },
+  {
+    "name": "parso",
+    "version": "0.8.7",
+    "filename": "parso-0.8.7.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/30/4b/90c937815137d43ce71ba043cd3566221e9df6b9c805f24b5d138c9d40a7/parso-0.8.7.tar.gz",
+    "sha256": "eaaac4c9fdd5e9e8852dc778d2d7405897ec510f2a298071453e5e3a07914bb1",
+    "size": 401824,
+    "notice_files": 4
+  },
+  {
+    "name": "pillow",
+    "version": "11.3.0",
+    "filename": "pillow-11.3.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f3/0d/d0d6dea55cd152ce3d6767bb38a8fc10e33796ba4ba210cbab9354b6d238/pillow-11.3.0.tar.gz",
+    "sha256": "3828ee7586cd0b2091b6209e5ad53e20d0649bbe87164a459d0676e035e8f523",
+    "size": 47113069,
+    "notice_files": 7
+  },
+  {
+    "name": "proglog",
+    "version": "0.1.12",
+    "filename": "proglog-0.1.12.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/c2/af/c108866c452eda1132f3d6b3cb6be2ae8430c97e9309f38ca9dbd430af37/proglog-0.1.12.tar.gz",
+    "sha256": "361ee074721c277b89b75c061336cb8c5f287c92b043efa562ccf7866cda931c",
+    "size": 8794,
+    "notice_files": 1
+  },
+  {
+    "name": "psutil",
+    "version": "7.2.2",
+    "filename": "psutil-7.2.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/aa/c6/d1ddf4abb55e93cebc4f2ed8b5d6dbad109ecb8d63748dd2b20ab5e57ebe/psutil-7.2.2.tar.gz",
+    "sha256": "0746f5f8d406af344fd547f1c8daa5f5c33dbc293bb8d6a16d80b4bb88f59372",
+    "size": 493740,
+    "notice_files": 1
+  },
+  {
+    "name": "psychopy",
+    "version": "2026.2.4",
+    "filename": "psychopy-2026.2.4.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/74/fb/58f57f74b3dde3ce470c176615a0d6ad44a10fd95579318d1b7af36d474f/psychopy-2026.2.4.tar.gz",
+    "sha256": "bfac5df1c1c377d2132652c4f29b76c50630f0b20bad08bfc00b660ae8eda863",
+    "size": 40909039,
+    "notice_files": 4
+  },
+  {
+    "name": "psychtoolbox",
+    "version": "3.0.22.2",
+    "filename": "psychtoolbox-3.0.22.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/39/1f/7d8530a05ca04eebe909029fd757697c3133baeca4f968bd05ad4e2596cf/psychtoolbox-3.0.22.2.tar.gz",
+    "sha256": "164d638e82f0595c166310c71d72859fe443f988c38a0bc8a42a5c05fbf0e33a",
+    "size": 3220139,
+    "notice_files": 1
+  },
+  {
+    "name": "py-cpuinfo",
+    "version": "9.0.0",
+    "filename": "py-cpuinfo-9.0.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/37/a8/d832f7293ebb21690860d2e01d8115e5ff6f2ae8bbdc953f0eb0fa4bd2c7/py-cpuinfo-9.0.0.tar.gz",
+    "sha256": "3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690",
+    "size": 104716,
+    "notice_files": 1
+  },
+  {
+    "name": "pycparser",
+    "version": "3.0",
+    "filename": "pycparser-3.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/1b/7d/92392ff7815c21062bea51aa7b87d45576f649f16458d78b7cf94b9ab2e6/pycparser-3.0.tar.gz",
+    "sha256": "600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29",
+    "size": 103492,
+    "notice_files": 1
+  },
+  {
+    "name": "pydantic",
+    "version": "2.13.5",
+    "filename": "pydantic-2.13.5.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/53/ef/fc4f868f4e2cee79f863883abffceff107875f569b848507319842d2a681/pydantic-2.13.5.tar.gz",
+    "sha256": "51a9c5f7b2f8e636f04c6cada605d9b6a3bf1348fdf945a3d8869b19bba0ee08",
+    "size": 845750,
+    "notice_files": 1
+  },
+  {
+    "name": "pydantic_core",
+    "version": "2.46.5",
+    "filename": "pydantic_core-2.46.5.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/af/f9/8a06bea35ef8daf588f707784c973a7046e0034c8d8cfb08828eeffb8b75/pydantic_core-2.46.5.tar.gz",
+    "sha256": "10416c15b8839ecc4ef4d0885da76da6fd0f67333a0eb8aff6d93c4b8f2910fc",
+    "size": 472262,
+    "notice_files": 1
+  },
+  {
+    "name": "pyglet",
+    "version": "1.4.11",
+    "filename": "pyglet-1.4.11.zip",
+    "url": "https://files.pythonhosted.org/packages/00/cd/e22352401f93f1f0ecc24d28f7b3f6896950c8cc4dacb5a8858e6aa65c19/pyglet-1.4.11.zip",
+    "sha256": "e4cc8dc2f09d8487f7b3e2d93bd1961528afe989d058177b26a46d3508fd2c33",
+    "size": 7863507,
+    "notice_files": 9
+  },
+  {
+    "name": "pylsl",
+    "version": "1.18.5",
+    "filename": "pylsl-1.18.5.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/37/bc/ec91573a16dbd72014a826ef89a26f2ade7cb11af30716d02400ebb01a20/pylsl-1.18.5.tar.gz",
+    "sha256": "96450d7b14211460011d9eae278cb4b76d5ed355eb6bd058b1a826cbee6967f3",
+    "size": 48397,
+    "notice_files": 1
+  },
+  {
+    "name": "pyparallel",
+    "version": "0.2.2",
+    "filename": "pyparallel-0.2.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/87/85/be9988fdafabb41d6cc0a1a5dc70a351d968e0b3e80d8b627dc7ad075712/pyparallel-0.2.2.tar.gz",
+    "sha256": "b5550293af42a42d7b2e1ada1224d3c3ce2f09b80e85421820e068655908c611",
+    "size": 11814,
+    "notice_files": 0
+  },
+  {
+    "name": "pyparsing",
+    "version": "3.3.2",
+    "filename": "pyparsing-3.3.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f3/91/9c6ee907786a473bf81c5f53cf703ba0957b23ab84c264080fb5a450416f/pyparsing-3.3.2.tar.gz",
+    "sha256": "c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc",
+    "size": 6851574,
+    "notice_files": 1
+  },
+  {
+    "name": "pyserial",
+    "version": "3.5",
+    "filename": "pyserial-3.5.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/1e/7d/ae3f0a63f41e4d2f6cb66a5b57197850f919f59e558159a4dd3a818f5082/pyserial-3.5.tar.gz",
+    "sha256": "3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb",
+    "size": 159125,
+    "notice_files": 1
+  },
+  {
+    "name": "python-bidi",
+    "version": "0.6.11",
+    "filename": "python_bidi-0.6.11.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/ce/e7/f168f2c3151aa05b9f9c9b2f7767bc8e06a133ea822c231ab497d4f36833/python_bidi-0.6.11.tar.gz",
+    "sha256": "034090c597af250d699299d7e7f1e83eb016f9e47b3b707bd89ab2bdec77bce0",
+    "size": 57647,
+    "notice_files": 5
+  },
+  {
+    "name": "python-dateutil",
+    "version": "2.9.0.post0",
+    "filename": "python-dateutil-2.9.0.post0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz",
+    "sha256": "37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3",
+    "size": 342432,
+    "notice_files": 2
+  },
+  {
+    "name": "python-dotenv",
+    "version": "1.2.3",
+    "filename": "python_dotenv-1.2.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/6a/53/ed9d74092561d4b01a2ef1349d52cdbc135e526c245f366b089cfca6de49/python_dotenv-1.2.3.tar.gz",
+    "sha256": "a20a594dabeaa385725aa239d5244871c143ecb356add8a20fcf23773a6c3a35",
+    "size": 58945,
+    "notice_files": 2
+  },
+  {
+    "name": "pytz",
+    "version": "2026.3.post1",
+    "filename": "pytz-2026.3.post1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/fb/48/fb042503b6ca6cd271261dc559fd6432f7d8c713153e9ec5c591af4dfc1c/pytz-2026.3.post1.tar.gz",
+    "sha256": "2211d3fcf9a797d3405cac96ac7f61d80e6a644f72a3309607282fe8a2010c5d",
+    "size": 319745,
+    "notice_files": 1
+  },
+  {
+    "name": "pywin32",
+    "version": "312",
+    "filename": "pywin32-b312.zip",
+    "url": "https://codeload.github.com/mhammond/pywin32/zip/refs/tags/b312",
+    "sha256": "fb20b2da00ed53594e96e1bf13c979394b91e874b0284ab18f34ae6e7d471951",
+    "size": 5761762,
+    "notice_files": 9
+  },
+  {
+    "name": "pyWinhook",
+    "version": "1.6.2",
+    "filename": "pyWinhook-1.6.2.zip",
+    "url": "https://files.pythonhosted.org/packages/ce/d1/6dcf4a17f425a5e3e2c011bac622dacae3128e96fd038b3e6f56c0e7a032/pyWinhook-1.6.2.zip",
+    "sha256": "18fe2f63245d8a2f9d83f8d9c385e3695a6363badd50d492eb3e7f6f06a01c0c",
+    "size": 15791,
+    "notice_files": 1
+  },
+  {
+    "name": "PyYAML",
+    "version": "6.0.3",
+    "filename": "pyyaml-6.0.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/05/8e/961c0007c59b8dd7729d542c61a4d537767a59645b82a0b521206e1e25c2/pyyaml-6.0.3.tar.gz",
+    "sha256": "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f",
+    "size": 130960,
+    "notice_files": 1
+  },
+  {
+    "name": "pyzmq",
+    "version": "27.2.0",
+    "filename": "pyzmq-27.2.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/e7/8d/5b3d5631c2f4b4b8862f64cd0c9eb777b5710eeb5125b4be8dd0a200a4c0/pyzmq-27.2.0.tar.gz",
+    "sha256": "54d4259d1bfae24ecdb5ca79f7acc2eac6c286a02d6a0ae617797cb45f0726d3",
+    "size": 292316,
+    "notice_files": 6
+  },
+  {
+    "name": "requests",
+    "version": "2.34.2",
+    "filename": "requests-2.34.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/ac/c3/e2a2b89f2d3e2179abd6d00ebd70bff6273f37fb3e0cc209f48b39d00cbf/requests-2.34.2.tar.gz",
+    "sha256": "f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed",
+    "size": 142856,
+    "notice_files": 2
+  },
+  {
+    "name": "respyra",
+    "version": "0.4.0",
+    "filename": "respyra-0.4.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/ab/df/df94df313b9cbd104b0e004ab0941c453366d58593bbcce4e3b197bbba19/respyra-0.4.0.tar.gz",
+    "sha256": "125b54e51cd81e67444264bacfce33ef9563118f9cb337c64268836a4948f354",
+    "size": 37313430,
+    "notice_files": 2
+  },
+  {
+    "name": "scipy",
+    "version": "1.15.3",
+    "filename": "scipy-1.15.3.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/0f/37/6964b830433e654ec7485e45a00fc9a27cf868d622838f6b6d9c5ec0d532/scipy-1.15.3.tar.gz",
+    "sha256": "eae3cf522bc7df64b42cad3925c876e1b0b6c35c1337c93e12c0f366f55b0eaf",
+    "size": 59419214,
+    "notice_files": 36
+  },
+  {
+    "name": "setuptools",
+    "version": "84.0.0",
+    "filename": "setuptools-84.0.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/6d/44/f5da03a8ef95d369145c5bb53050e7877c9f3d312e128605fd9504829143/setuptools-84.0.0.tar.gz",
+    "sha256": "f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73",
+    "size": 1168449,
+    "notice_files": 18
+  },
+  {
+    "name": "six",
+    "version": "1.17.0",
+    "filename": "six-1.17.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz",
+    "sha256": "ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81",
+    "size": 34031,
+    "notice_files": 1
+  },
+  {
+    "name": "sounddevice",
+    "version": "0.5.6",
+    "filename": "sounddevice-0.5.6.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/ec/db/0c890e2d9aab9ba284021efc02e1d3aebfecab1b611762d7434602209bcf/sounddevice-0.5.6.tar.gz",
+    "sha256": "8ec9fbfde2e32f020b167e348f3ab3bac6625a5f15af524d790108ac7147a410",
+    "size": 1120094,
+    "notice_files": 1
+  },
+  {
+    "name": "soupsieve",
+    "version": "2.9.2",
+    "filename": "soupsieve-2.9.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/69/99/a6ca3beb3ccacb41fb3321d8a60e5566f9e6467601ef8eba6a17e1b89778/soupsieve-2.9.2.tar.gz",
+    "sha256": "4a55d8cf158a9c2e587fa4922f1bbb91d68ac829e2d6f25403a85747c71daf74",
+    "size": 122445,
+    "notice_files": 2
+  },
+  {
+    "name": "threadpoolctl",
+    "version": "3.7.0",
+    "filename": "threadpoolctl-3.7.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/00/dc/6c58154c1c65f758ea979e7139cb76993a9cfc662d14e9be3c4a667cfb77/threadpoolctl-3.7.0.tar.gz",
+    "sha256": "61348cfb77d53b9242e0017029244b559b810c142ced65b4e21eeca1843959a7",
+    "size": 31961,
+    "notice_files": 1
+  },
+  {
+    "name": "tqdm",
+    "version": "4.70.1",
+    "filename": "tqdm-4.70.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz",
+    "sha256": "cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4",
+    "size": 171846,
+    "notice_files": 1
+  },
+  {
+    "name": "typing-inspection",
+    "version": "0.4.4",
+    "filename": "typing_inspection-0.4.4.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/a3/26/b09b8010994eccc3c09092e6b34058f36a460eea2d4c3e8b910c695975a0/typing_inspection-0.4.4.tar.gz",
+    "sha256": "547274fa6b0a561ccf549cc9524b999a578e737d015d8709d021f9d0d13bea47",
+    "size": 76928,
+    "notice_files": 1
+  },
+  {
+    "name": "typing_extensions",
+    "version": "4.16.0",
+    "filename": "typing_extensions-4.16.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f6/cc/6253133b5bb138fc3306cebfbda2c520f545d36b5be2c7255cc528bb45d6/typing_extensions-4.16.0.tar.gz",
+    "sha256": "dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5",
+    "size": 113555,
+    "notice_files": 1
+  },
+  {
+    "name": "tzdata",
+    "version": "2026.4",
+    "filename": "tzdata-2026.4.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/e4/31/3d74fa778a63b98b7374323befcc0be5ab3bd94afd4096a0124e7379152c/tzdata-2026.4.tar.gz",
+    "sha256": "f1b8bd365d8d210c55353f4d7f8d6d8561c0ba50d704b700d195a9424bba0d79",
+    "size": 199350,
+    "notice_files": 2
+  },
+  {
+    "name": "ujson",
+    "version": "6.0.0",
+    "filename": "ujson-6.0.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/64/7c/e1fa3fb70b53192436d751b5cb671f0ee960baa188b8351a7fec735223d3/ujson-6.0.0.tar.gz",
+    "sha256": "80e23393feb707582e0ad495c397a4477b646d08094d2df64f7316f9fafd8aae",
+    "size": 7169158,
+    "notice_files": 4
+  },
+  {
+    "name": "urllib3",
+    "version": "2.8.0",
+    "filename": "urllib3-2.8.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz",
+    "sha256": "63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63",
+    "size": 458972,
+    "notice_files": 1
+  },
+  {
+    "name": "websockets",
+    "version": "16.1.1",
+    "filename": "websockets-16.1.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/21/f7/bc3a25c5ec26ce62ce487690becc2f3710bbc7b33338f005ad390db0b986/websockets-16.1.1.tar.gz",
+    "sha256": "db234eda965dcce15df96bb9709f587cd87d4d52aaf0e80e2f34ec04c7670c57",
+    "size": 182204,
+    "notice_files": 1
+  },
+  {
+    "name": "wheel",
+    "version": "0.48.0",
+    "filename": "wheel-0.48.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/d0/20/50ed6bdf27dec98b568a8ae25dc599f35baa3d9709f9e83fd1edb56b9a90/wheel-0.48.0.tar.gz",
+    "sha256": "94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322",
+    "size": 66471,
+    "notice_files": 1
+  },
+  {
+    "name": "winrt-runtime",
+    "version": "3.2.1",
+    "filename": "winrt_runtime-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/16/dd/acdd527c1d890c8f852cc2af644aa6c160974e66631289420aa871b05e65/winrt_runtime-3.2.1.tar.gz",
+    "sha256": "c8dca19e12b234ae6c3dadf1a4d0761b51e708457492c13beb666556958801ea",
+    "size": 21721,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Devices.Bluetooth",
+    "version": "3.2.1",
+    "filename": "winrt_windows_devices_bluetooth-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/b2/a0/1c8a0c469abba7112265c6cb52f0090d08a67c103639aee71fc690e614b8/winrt_windows_devices_bluetooth-3.2.1.tar.gz",
+    "sha256": "db496d2d92742006d5a052468fc355bf7bb49e795341d695c374746113d74505",
+    "size": 23732,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Devices.Bluetooth.Advertisement",
+    "version": "3.2.1",
+    "filename": "winrt_windows_devices_bluetooth_advertisement-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/06/fc/7ffe66ca4109b9e994b27c00f3d2d506e6e549e268791f755287ad9106d8/winrt_windows_devices_bluetooth_advertisement-3.2.1.tar.gz",
+    "sha256": "0223852a7b7fa5c8dea3c6a93473bd783df4439b1ed938d9871f947933e574cc",
+    "size": 16906,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Devices.Bluetooth.GenericAttributeProfile",
+    "version": "3.2.1",
+    "filename": "winrt_windows_devices_bluetooth_genericattributeprofile-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/44/21/aeeddc0eccdfbd25e543360b5cc093233e2eab3cdfb53ad3cabae1b5d04d/winrt_windows_devices_bluetooth_genericattributeprofile-3.2.1.tar.gz",
+    "sha256": "cdf6ddc375e9150d040aca67f5a17c41ceaf13a63f3668f96608bc1d045dde71",
+    "size": 38896,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Devices.Enumeration",
+    "version": "3.2.1",
+    "filename": "winrt_windows_devices_enumeration-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/9e/dd/75835bfbd063dffa152109727dedbd80f6e92ea284855f7855d48cdf31c9/winrt_windows_devices_enumeration-3.2.1.tar.gz",
+    "sha256": "df316899e39bfc0ffc1f3cb0f5ee54d04e1d167fbbcc1484d2d5121449a935cf",
+    "size": 23538,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Devices.Radios",
+    "version": "3.2.1",
+    "filename": "winrt_windows_devices_radios-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/5e/02/9704ea359ad8b0d6faa1011f98fb477e8fb6eac5201f39d19e73c2407e7b/winrt_windows_devices_radios-3.2.1.tar.gz",
+    "sha256": "4dc9b9d1501846049eb79428d64ec698d6476c27a357999b78a8331072e18a0b",
+    "size": 5908,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Foundation",
+    "version": "3.2.1",
+    "filename": "winrt_windows_foundation-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/0c/55/098ce7ea0679efcc1298b269c48768f010b6c68f90c588f654ec874c8a74/winrt_windows_foundation-3.2.1.tar.gz",
+    "sha256": "ad2f1fcaa6c34672df45527d7c533731fdf65b67c4638c2b4aca949f6eec0656",
+    "size": 30485,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Foundation.Collections",
+    "version": "3.2.1",
+    "filename": "winrt_windows_foundation_collections-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/ef/62/d21e3f1eeb8d47077887bbf0c3882c49277a84d8f98f7c12bda64d498a07/winrt_windows_foundation_collections-3.2.1.tar.gz",
+    "sha256": "0eff1ad0d8d763ad17e9e7bbd0c26a62b27215016393c05b09b046d6503ae6d5",
+    "size": 16043,
+    "notice_files": 0
+  },
+  {
+    "name": "winrt-Windows.Storage.Streams",
+    "version": "3.2.1",
+    "filename": "winrt_windows_storage_streams-3.2.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/00/50/f4488b07281566e3850fcae1021f0285c9653992f60a915e15567047db63/winrt_windows_storage_streams-3.2.1.tar.gz",
+    "sha256": "476f522722751eb0b571bc7802d85a82a3cae8b1cce66061e6e758f525e7b80f",
+    "size": 34335,
+    "notice_files": 0
+  },
+  {
+    "name": "xarray",
+    "version": "2025.6.1",
+    "filename": "xarray-2025.6.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/19/ec/e50d833518f10b0c24feb184b209bb6856f25b919ba8c1f89678b930b1cd/xarray-2025.6.1.tar.gz",
+    "sha256": "a84f3f07544634a130d7dc615ae44175419f4c77957a7255161ed99c69c7c8b0",
+    "size": 3003185,
+    "notice_files": 1
+  },
+  {
+    "name": "xmlschema",
+    "version": "4.3.2",
+    "filename": "xmlschema-4.3.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/55/f0/2431c2c8f77326757f2e2b1d79226c17b2abfe44a78a41c7d7b944e90732/xmlschema-4.3.2.tar.gz",
+    "sha256": "f3b33a21a2b2cdc404ddc3fb599d8bc1dee90b155d547370672e6e684746b8d6",
+    "size": 682724,
+    "notice_files": 1
+  },
+  {
+    "name": "zope.event",
+    "version": "5.0",
+    "filename": "zope.event-5.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/46/c2/427f1867bb96555d1d34342f1dd97f8c420966ab564d58d18469a1db8736/zope.event-5.0.tar.gz",
+    "sha256": "bac440d8d9891b4068e2b5a2c5e2c9765a9df762944bda6955f96bb9b91e67cd",
+    "size": 17350,
+    "notice_files": 2
+  },
+  {
+    "name": "zope.interface",
+    "version": "7.2",
+    "filename": "zope.interface-7.2.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/30/93/9210e7606be57a2dfc6277ac97dcc864fd8d39f142ca194fdc186d596fda/zope.interface-7.2.tar.gz",
+    "sha256": "8b49f1a3d1ee4cdaf5b32d2e738362c7f5e40ac8b46dd7d1a65e82a4872728fe",
+    "size": 252960,
+    "notice_files": 2
+  }
+]

@@ -15,8 +15,8 @@ see [third-party notices](docs/THIRD-PARTY.md).
 
 ## Windows program
 
-The standalone **Respyra 2.0** installer includes **respyrecorder**, the native LSL/XDF recorder, locked Python/PsychoPy engine
-and offline WebView2 delivery. It allows choosing the installation folder and
+The **Respyra 2.0** installer includes **respyrecorder**, the native LSL/XDF recorder, and a locked Python/PsychoPy engine.
+If WebView2 is missing, setup downloads it from Microsoft. It allows choosing the installation folder and
 creates a Start menu shortcut. See [Windows installation](docs/windows-install.md)
 for build/download checks, writable CSV location and qualification limits.
 The attributed original [Respyra logo](assets/branding/README.md) is included.

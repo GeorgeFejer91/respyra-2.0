@@ -27,7 +27,7 @@ assert sys.flags.isolated and sys.flags.no_user_site and sys.flags.dont_write_by
 assert sys.stdout.encoding.lower() == "utf-8"
 assert all(Path(path).resolve().is_relative_to(runtime) for path in sys.path), sys.path
 for name in ("numpy", "scipy", "pandas", "matplotlib", "pylsl", "psychopy.core", "psychopy.visual",
-             "psychopy.data", "psychopy.event", "PyQt6.QtGui", "pythoncom", "pywintypes",
+             "psychopy.data", "psychopy.event", "pythoncom", "pywintypes",
              "mpi.lsl_force", "mpi.event_markers", "mpi.recording", "mpi.validation_study_jenny", "respyra.core.runner"):
     module = importlib.import_module(name)
     assert Path(module.__file__).resolve().is_relative_to(runtime), (name, module.__file__)
@@ -36,6 +36,15 @@ assert importlib.util.find_spec("imageio_ffmpeg") is None
 assert importlib.util.find_spec("jupyterlab") is None
 assert importlib.util.find_spec("ipympl") is None
 assert importlib.util.find_spec("psycopg") is None
+assert importlib.util.find_spec("PyQt6") is None
+assert importlib.util.find_spec("cv2") is None
+assert importlib.util.find_spec("pyarrow") is None
+assert importlib.util.find_spec("soundfile") is None
+assert importlib.util.find_spec("vlc") is None
+assert importlib.util.find_spec("questplus") is None
+assert importlib.util.find_spec("meshpy") is None
+assert importlib.util.find_spec("tables") is None
+assert importlib.util.find_spec("blosc2") is None
 assert not (runtime / "share/ffpyplayer").exists()
 assert not list(runtime.rglob("*ffmpeg*.exe"))
 assert not list(runtime.rglob("*ffmpeg*.dll"))
