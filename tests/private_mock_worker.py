@@ -6,6 +6,7 @@ import sys
 import traceback
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 log = Path(os.environ["RESPYRA_TEST_LOG"])
 mode = os.environ.get("RESPYRA_PRIVATE_TARGET", "full")
 target = Path(__file__).resolve().parent / (

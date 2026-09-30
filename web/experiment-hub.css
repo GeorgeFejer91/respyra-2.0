@@ -63,7 +63,7 @@
     #viewer-dialog label { display: block; min-width: 0; }
     #viewer-dialog label span { display: block; margin-bottom: 5px; }
     #viewer-link { width: 100%; min-height: 38px; padding: 7px 9px; border: 1px solid #455d6c; border-radius: 4px; color: #e9f1f4; background: #0d171f; }
-    #viewer-qr img { display: block; width: 180px; max-width: 100%; height: auto; image-rendering: pixelated; margin: 12px 0; }
+    #viewer-qr img { display: block; width: 320px; max-width: 100%; height: auto; image-rendering: pixelated; margin: 12px 0; }
     .viewer-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     #viewer-copy, #viewer-done { margin-top: 10px; }
 
