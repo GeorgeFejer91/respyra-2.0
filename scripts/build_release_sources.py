@@ -149,7 +149,7 @@ notebook dependencies, and unrelated development caches are outside its scope.
         "bidi_registry_crates": len(bidi_vendored), "native_archives": len(native["archives"]),
     }
     git_tar = subprocess.check_output(["git", "archive", "--format=tar", "HEAD"], cwd=ROOT)
-    with zipfile.ZipFile(source_path, "w", allowZip64=True) as output:
+    with zipfile.ZipFile(source_path, "w", allowZip64=True, strict_timestamps=False) as output:
         with tarfile.open(fileobj=io.BytesIO(git_tar), mode="r:") as tracked:
             for member in tracked:
                 if member.isfile():
