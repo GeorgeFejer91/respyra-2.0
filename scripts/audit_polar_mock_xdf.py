@@ -71,6 +71,12 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     assert len(acc) > 100 and len(acc) % 2 == 0
     assert np.all(np.diff(acc_time) > 0)
     assert np.max(np.abs(np.diff(acc_time) - .005)) < 1e-4
+    markers = by_name["Respyra-Events"]
+    recorded = [json.loads(row[0]) for row in markers["time_series"]]
+    finalizing = [item["lsl_time"] for item in recorded if item["event"] == "recording.finalizing"]
+    assert len(finalizing) == 1
+    if expect_abort:
+        assert acc_time[-1] >= finalizing[0], "Raw ACC ended before recording finalization"
 
     replay = _reference(reference)
     max_samples = 2 * (max(replay["adr_pca_valid"]) + 1)
@@ -89,6 +95,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     tick_times = acc_time[1::2]
     metric_streams = {}
     metric_errors = {}
+    post_finalization_tail = {}
     for metric, suffix in METRICS.items():
         stream = by_name[base + "_" + suffix]
         info, description = stream["info"], stream["info"]["desc"][0]
@@ -114,7 +121,13 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
         first_tick = start // 2 + round((stamps[0] - tick_times[0]) / .01)
         ticks = first_tick + np.arange(len(stamps))
         in_raw = (ticks >= start // 2) & (ticks < start // 2 + len(tick_times))
-        assert np.count_nonzero(~in_raw) <= 2, f"{metric} extends beyond recorded ACC boundary"
+        # An abort closes the recorder while the Mini keeps publishing. Streams
+        # may capture different tails, but all must cover the finalization marker.
+        relevant = stamps <= finalizing[0] if expect_abort else np.ones(len(stamps), dtype=bool)
+        assert np.count_nonzero(~in_raw & relevant) <= 2, f"{metric} extends beyond recorded ACC boundary"
+        if expect_abort:
+            assert stamps[-1] >= finalizing[0], f"{metric} ended before recording finalization"
+        post_finalization_tail[metric] = int(np.count_nonzero(stamps > finalizing[0]))
         raw_positions = ticks[in_raw] - start // 2
         assert np.max(np.abs(tick_times[raw_positions] - stamps[in_raw])) < .005
         expected = np.array([replay[metric].get(int(tick), np.nan) for tick in ticks])
@@ -139,8 +152,6 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     signed = metric_streams["adr_axis_mean_difference"]["time_series"][:, 0]
     assert np.min(signed) < 0 < np.max(signed), "Phan candidate lost its sign"
 
-    markers = by_name["Respyra-Events"]
-    recorded = [json.loads(row[0]) for row in markers["time_series"]]
     assert recorded and recorded[0]["event"] == "recording.started"
     earlier = recorded[0]["pre_recording_events"]
     events = earlier + recorded
@@ -174,7 +185,8 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
         return {"result": "passed", "xdf": str(path), "outcome": "aborted",
                 "raw_acc_samples": len(acc), "candidate_samples": len(metric_streams["adr_pca_waveform"]["time_stamps"]),
                 "metric_max_errors": metric_errors, "xdf_marker_samples": len(recorded),
-                "embedded_setup_markers": len(earlier), "reconstructed_markers": len(events)}
+                "embedded_setup_markers": len(earlier), "reconstructed_markers": len(events),
+                "post_finalization_tail": post_finalization_tail}
     assert counts["source.polarity.set"] == counts["calibration.completed"] == 1
     assert counts["run.completed"] == counts["recording.finalizing"] == 1
     assert counts["run.failed"] == counts["run.aborted"] == 0
