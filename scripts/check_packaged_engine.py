@@ -3,6 +3,7 @@ import hashlib
 import importlib
 import importlib.metadata as metadata
 import json
+import math
 from pathlib import Path
 import os
 import sys
@@ -49,21 +50,25 @@ for name, expected in manifest["files"].items():
 from pylsl import StreamInfo, StreamOutlet, cf_float32, local_clock
 from mpi.recording import NativeRecording
 identity = "package-proof-" + uuid4().hex
+derived_id = "respyra-breathing-" + uuid4().hex
 raw = StreamOutlet(StreamInfo("Packaged recorder proof", "VernierRaw", 1, 50, cf_float32, identity))
+derived = StreamOutlet(StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 50, cf_float32, derived_id))
 stop = threading.Event()
 def push():
     while not stop.wait(.02):
         raw.push_sample([5.0], local_clock())
+        derived.push_sample([math.nan], local_clock())
 worker = threading.Thread(target=push)
 worker.start()
 recorder = NativeRecording(bundle, proof.name)
 try:
     recorder.start({"participant": "package-proof", "session": "001"},
-                   SimpleNamespace(source_id=identity), markers)
+                   SimpleNamespace(source_id=identity, calibrated_id=derived_id,
+                                   get_all=lambda: []), markers)
     markers.emit("recording.finalizing")
     recorder.stop()
     assert recorder.phase == "complete" and recorder.path.suffix == ".xdf"
-    assert len(recorder.summary) == 2 and all(s["sample_count"] > 0 for s in recorder.summary)
+    assert len(recorder.summary) == 3 and all(s["sample_count"] > 0 for s in recorder.summary)
 finally:
     try:
         if recorder.process is not None:
