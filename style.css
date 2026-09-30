@@ -161,10 +161,10 @@ details > label { display: block; }
 .desktop dialog { width: min(680px, calc(100% - 24px)); max-width: none; max-height: none; padding: 16px; border: 1px solid #8c959f; border-radius: 4px; color: inherit; background: #fff; }
 .desktop dialog::backdrop { background: rgb(36 41 47 / 25%); }
 .desktop dialog > button { margin-top: 12px; }
-.desktop #viewer-invitation { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 8px 16px; }
+.desktop #viewer-invitation { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 8px 16px; }
 .desktop #viewer-invitation > p { grid-column: 1 / -1; }
 .desktop #viewer-qr { grid-column: 2; grid-row: 2 / 4; }
-.desktop #viewer-qr img { width: 180px; margin: 0; }
+.desktop #viewer-qr img { width: 320px; margin: 0; }
 .desktop #viewer-copy { margin: 0; justify-self: start; }
 .desktop #recorded-streams { padding-left: 20px; }
 .desktop #recorded-streams li { white-space: pre-wrap; }

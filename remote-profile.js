@@ -3,7 +3,7 @@ export const OBSERVE_SCOPE = 'experiment.observe';
 export const SETUP_SCOPE = 'experiment.setup';
 export const RUN_SCOPE = 'experiment.run';
 export const SCOPES = Object.freeze([OBSERVE_SCOPE, SETUP_SCOPE, RUN_SCOPE]);
-export const PANEL = Object.freeze({ id:'respyra-2', name:'Respyra 2.0', url:VIEWER_URL });
+export const PANEL = Object.freeze({ id:'respyra-2', name:'Respyra 2.0', url:new URL('remote.html', VIEWER_URL).href });
 
 export function invitationUrl({ room, secret }) {
   if (!/^brsp_[a-f0-9]{64}$/u.test(room) || !/^[a-f0-9]{64}$/u.test(secret)) throw new Error('Invalid Respyra invitation.');
@@ -13,7 +13,8 @@ export function invitationUrl({ room, secret }) {
 export function parseInvitation(value) {
   try {
     const url = new URL(value);
-    if (url.origin !== new URL(VIEWER_URL).origin || url.pathname !== new URL(VIEWER_URL).pathname || url.search) return null;
+    const base = new URL(VIEWER_URL);
+    if (url.origin !== base.origin || ![base.pathname, new URL('remote.html', base).pathname].includes(url.pathname) || url.search) return null;
     const fields = new URLSearchParams(url.hash.slice(1));
     if ([...fields.keys()].length !== 2 || !fields.has('room') || !fields.has('secret')) return null;
     const invitation = { room:fields.get('room'), secret:fields.get('secret') };

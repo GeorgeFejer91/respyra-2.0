@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src wss://wss.vdo.ninja https://turn.vdo.ninja; img-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Respyra experiment control</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./vendor/vdoninja-sdk.min.js" defer></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body class="remote"><main>
+  <header><h1 data-measure>Respyra 2.0</h1><p data-measure>Remote Viewer</p></header>
+  <div class="connection-row">
+  <p id="connection-status" role="status" aria-live="polite" data-measure>Disconnected. Open Remote Viewer in Respyra for a fresh QR code.</p>
+  <form id="pairing" autocomplete="off">
+    <label id="viewer-name-field"><span data-measure>Your name</span><input id="viewer-name" type="text" maxlength="64" autocomplete="off" required spellcheck="false"></label>
+    <label id="invitation-field"><span data-measure>Private Respyra control link</span><input id="invitation" type="url" maxlength="4096" spellcheck="false" required></label>
+    <div class="actions"><button id="connect" type="submit" data-measure>Request access</button><button id="disconnect" type="button" disabled data-measure>Disconnect</button></div>
+  </form>
+  </div>
+  <p id="pairing-note" data-measure>Enter your name to request desktop approval. Disconnecting leaves the study running.</p>
+  <div id="controller" hidden></div>
+  <p id="route" data-measure></p>
+</main></body></html>
