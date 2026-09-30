@@ -3,6 +3,12 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+function Get-Sha256([string]$Path) {
+    $stream = [System.IO.File]::OpenRead($Path)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try { [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '').ToLowerInvariant() }
+    finally { $sha.Dispose(); $stream.Dispose() }
+}
 if (-not [Environment]::Is64BitOperatingSystem) { throw 'The installer target is Windows x64.' }
 $stagingRoot = Join-Path $repoRoot '.for-ai-local/packaging'
 New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
@@ -15,7 +21,7 @@ $archive = Join-Path $stagingRoot 'python-3.10.11-embed-amd64.zip'
 if (-not (Test-Path -LiteralPath $archive)) {
     Invoke-WebRequest 'https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip' -OutFile $archive
 }
-if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne '608619f8619075629c9c69f361352a0da6ed7e62f83a0e19c63e0ea32eb7629d') {
+if ((Get-Sha256 $archive) -ne '608619f8619075629c9c69f361352a0da6ed7e62f83a0e19c63e0ea32eb7629d') {
     throw 'Embedded Python checksum mismatch; no installer was built.'
 }
 $buildPython = Join-Path $stagingRoot 'venv/Scripts/python.exe'
@@ -37,7 +43,7 @@ $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
 $productName = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).productName
 $name = "${productName}_${version}_x64-setup.exe"
 Copy-Item -LiteralPath (Join-Path $repoRoot "src-tauri/target/release/bundle/nsis/$name") -Destination (Join-Path $output $name)
-$checksum = (Get-FileHash -LiteralPath (Join-Path $output $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+$checksum = Get-Sha256 (Join-Path $output $name)
 "$checksum  $name" | Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt') -Encoding ascii
 Copy-Item -LiteralPath (Join-Path $stagingRoot 'engine/manifest.json') -Destination (Join-Path $output 'runtime-manifest.json')
 Write-Output "Installer ready: $output\$name"
