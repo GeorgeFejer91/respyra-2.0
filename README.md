@@ -9,6 +9,10 @@ and records LSL to XDF automatically.
 
 The importable Python package keeps its original name, `mpi`.
 
+Respyra 2.0's original study, controller and packaging code is licensed under
+[GPL-3.0](LICENSE). Bundled third-party components retain their own licenses;
+see [third-party notices](docs/THIRD-PARTY.md).
+
 ## Windows program
 
 The standalone **Respyra 2.0** installer includes **respyrecorder**, the native LSL/XDF recorder, locked Python/PsychoPy engine

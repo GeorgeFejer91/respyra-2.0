@@ -24,6 +24,9 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
 
 ## Product/control-plane boundary
 
+- Original Respyra 2.0 study, controller and packaging code is GPL-3.0;
+  bundled third-party components retain their own licenses. The root `LICENSE`
+  and `docs/THIRD-PARTY.md` are the distribution notices.
 - Product source: `src/mpi/`, `native/`, `web/`, `src-tauri/`, `scripts/`, `notebooks/`, and `tests/`.
 - Local session output: `data/` (ignored by Git).
 - Agent orchestration and durable project memory: `for-ai/`.

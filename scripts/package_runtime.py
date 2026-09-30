@@ -51,6 +51,10 @@ def stage_runtime() -> None:
         return destination
     shutil.copytree(packages, site, copy_function=link_or_copy,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "_virtualenv.*", "direct_url.json"))
+    for name in ("share", "etc"):
+        installed_data = Path(sys.prefix) / name
+        if installed_data.is_dir():
+            shutil.copytree(installed_data, python / name, copy_function=link_or_copy)
     # Qt's locked wheel supplies current MSVC support. Put the same DLLs beside
     # python.exe so Windows never needs a separately installed VC redistributable.
     for support in (site / "PyQt6/Qt6/bin").glob("*140*.dll"):
@@ -78,6 +82,7 @@ def stage_runtime() -> None:
     shutil.copy2(recorder / "manifest.json", target)
     notices = ENGINE / "notices"
     notices.mkdir()
+    shutil.copy2(ROOT / "LICENSE", notices / "RESPYRA-LICENSE.txt")
     shutil.copy2(ROOT / "assets/branding/LICENSE.upstream.txt", notices)
     shutil.copy2(ROOT / "assets/branding/README.md", notices / "ARTWORK.md")
     shutil.copy2(ROOT / "docs/windows-install.md", ENGINE / "README.md")

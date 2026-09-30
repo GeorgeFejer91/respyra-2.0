@@ -49,6 +49,9 @@ launch); keep this local when it contains experiment identifiers.
 
 This first installer is unsigned. Windows may show an unknown-publisher prompt.
 Check its SHA-256 against the accompanying `SHA256SUMS.txt` before running it.
+Respyra's original code is GPL-3.0; the installer includes its license and
+third-party notices under `engine/notices/`. The exact source revision and lock
+hashes are in `engine/manifest.json`.
 Physical belt behavior, physical phone pairing and scientific display timing
 need validation on the study computer; synthetic-source checks do not prove them.
 
