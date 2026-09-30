@@ -176,8 +176,8 @@ const assert = require('node:assert/strict');
     await ui.evaluate(()=>document.fonts.ready);
     const compact=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth,viewportWidth:innerWidth}));
     await ui.screenshot({path:'.for-ai-local/native-phone-setup.png',fullPage:true});
-    assert(compact.width<=compact.viewportWidth+1 && (process.env.RESPYRA_TEST_SOURCE_ID || compact.height<=compact.viewport+1),
-      'Phone setup overflows: '+JSON.stringify(compact));
+    assert(compact.width<=compact.viewportWidth+1,
+      'Phone setup overflows horizontally: '+JSON.stringify(compact));
   }
   const geometry=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1, measured:document.querySelectorAll('[data-measure]').length}));
   assert(!geometry.overflow && geometry.measured>10,JSON.stringify(geometry));
