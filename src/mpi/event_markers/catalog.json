@@ -6,7 +6,7 @@
     "channel_count": 1,
     "channel_format": "string",
     "sampling_rate": "irregular",
-    "lifecycle": "Advertised at desktop Python startup and retained through final Close. The default name may change during setup before subscription. Start requires the bundled native recorder to subscribe to the selected breathing input and markers and receive raw samples before acceptance or display creation. Setup events sent before recording may be absent from its file. Recording ends after study cleanup, before the final HTML Close.",
+    "lifecycle": "Advertised at desktop Python startup and retained through final Close. The default name may change during setup before subscription. Start requires the bundled native recorder to subscribe to the selected breathing input and markers and receive raw samples before acceptance or display creation. The first recorded marker embeds pre-recording setup events with their original sequence and LSL times. Recording ends after study cleanup, before the final HTML Close.",
     "sample": "One compact JSON object per LSL sample. The LSL sample timestamp equals payload.lsl_time. Record this stream together with the selected Vernier or Polar input outlet."
   },
   "common_fields": {
@@ -77,6 +77,7 @@
     "source_id": "Exact LSL source_id of the selected study input stream.",
     "source_ids": "Required selected input and marker source IDs subscribed by the native recorder.",
     "policy": "Native recording policy; visible_and_late_except_excluded records current and future streams except explicitly unchecked LSL UIDs.",
+    "pre_recording_events": "Ordered setup marker payloads emitted before native XDF recording began. They retain their original sequence and LSL times inside recording.started; they are not separate XDF samples.",
     "stream_name": "LSL name of the selected study input stream.",
     "signal_unit": "Native input unit: N for Vernier Force or g for Polar waveform.",
     "streams": "Discovery results: list of objects with source_id, stream_name, stream_type, compatible, and reason. Rejected streams are included; compatible requires unique source_id and one exact supported input contract.",
@@ -98,7 +99,7 @@
   "events": {
     "input.mouse_event": {"when": "Optional mouse events during XDF recording, within Respyra windows.", "fields": ["input_action", "event_lsl_time", "scope", "x", "y", "mouse_data", "flags"]},
     "input.keyboard_event": {"when": "Optional keyboard events during XDF recording, within Respyra windows.", "fields": ["input_action", "event_lsl_time", "scope", "vk_code", "scan_code", "flags"]},
-    "recording.started": {"when": "The native recorder has subscribed to the selected input, markers and the derived breathing stream and received samples from each, before setup acceptance and PsychoPy display creation.", "fields": ["source_ids", "policy", "excluded_uids"]},
+    "recording.started": {"when": "The native recorder has subscribed to the selected input, markers and the derived breathing stream and received samples from each, before setup acceptance and PsychoPy display creation. pre_recording_events preserves earlier setup marker payloads.", "fields": ["source_ids", "policy", "excluded_uids", "pre_recording_events"]},
     "recording.finalizing": {"when": "Study cleanup has finished; the recorder will drain pending samples, close and verify the XDF. This event is inside the recording; the final HTML result/Close markers are outside it.", "fields": []},
     "recording.option.changed": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "Python observes a recording-option checkbox change."},
     "source.polarity.set": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "The experimenter confirms whether inhale lowers the selected Polar waveform before Start."},

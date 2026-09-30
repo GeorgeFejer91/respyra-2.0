@@ -62,10 +62,11 @@ def audit(path: Path) -> dict:
     for diagnostic in ("dropped_rows_before", "device_drop_reports_before"):
         assert np.all(raw["time_series"][:, labels.index(diagnostic)] == 0), diagnostic
 
-    force_copy = next(stream for stream in streams if stream["info"]["type"][0] == "RespirationForce")
-    assert len(force_copy["time_stamps"]) == len(times)
-    assert np.max(np.abs(force_copy["time_stamps"] - times)) < 1e-6
-    assert np.max(np.abs(force_copy["time_series"][:, 0] - values)) < 1e-5
+    force_copy = next((stream for stream in streams if stream["info"]["type"][0] == "RespirationForce"), None)
+    if force_copy is not None:
+        assert len(force_copy["time_stamps"]) == len(times)
+        assert np.max(np.abs(force_copy["time_stamps"] - times)) < 1e-6
+        assert np.max(np.abs(force_copy["time_series"][:, 0] - values)) < 1e-5
 
     producer = next(stream for stream in streams if stream["info"]["type"][0] == "Respiration"
                     and stream["info"]["desc"][0].get("stream_role") == ["derived_breathing_waveform"])
@@ -80,22 +81,28 @@ def audit(path: Path) -> dict:
     assert producer_sequence[0] >= 0 and np.all(np.diff(producer_sequence) == 1)
     assert np.max(np.abs(producer["time_stamps"] - times[0] - (producer_sequence - sequence[0]) * .05)) < .02
 
-    combined = next(stream for stream in streams if stream["info"]["type"][0] == "VernierMini")
-    combined_labels = [channel["label"][0] for channel in combined["info"]["desc"][0]["channels"][0]["channel"]]
-    combined_rows = combined["time_series"]
-    assert len(combined_rows) == 2 * len(times)
-    combined_force = combined_rows[::2]
-    combined_breathing = combined_rows[1::2]
-    combined_sequence = combined_force[:, combined_labels.index("sequence")].astype(np.int64)
-    assert np.all(np.diff(combined_sequence) == 1)
-    assert np.all(np.isnan(combined_force[:, combined_labels.index("vernier_breathing_01")]))
-    assert np.all(np.isnan(combined_breathing[:, combined_labels.index("sensor_1_Force")]))
-    expected_force = 12 + 2.4 * np.sin(combined_sequence * 2 * np.pi * .22 / 20)
-    assert np.max(np.abs(combined_force[:, combined_labels.index("sensor_1_Force")] - expected_force)) < 1e-5
-    replay = mock_breathing(int(max(producer_sequence[-1], combined_sequence[-1])))
+    replay = mock_breathing(int(producer_sequence[-1]))
     producer_error = np.max(np.abs(producer["time_series"][:, 0] - replay[producer_sequence]))
-    combined_error = np.max(np.abs(combined_breathing[:, combined_labels.index("vernier_breathing_01")] - replay[combined_sequence]))
-    assert producer_error < 2e-6 and combined_error < 2e-6
+    assert producer_error < 2e-6
+    combined = next((stream for stream in streams if stream["info"]["type"][0] == "VernierMini"), None)
+    combined_rows = []
+    combined_error = None
+    if combined is not None:
+        combined_labels = [channel["label"][0] for channel in combined["info"]["desc"][0]["channels"][0]["channel"]]
+        combined_rows = combined["time_series"]
+        assert len(combined_rows) == 2 * len(times)
+        combined_force = combined_rows[::2]
+        combined_breathing = combined_rows[1::2]
+        combined_sequence = combined_force[:, combined_labels.index("sequence")].astype(np.int64)
+        if combined_sequence[-1] >= len(replay):
+            replay = mock_breathing(int(combined_sequence[-1]))
+        assert np.all(np.diff(combined_sequence) == 1)
+        assert np.all(np.isnan(combined_force[:, combined_labels.index("vernier_breathing_01")]))
+        assert np.all(np.isnan(combined_breathing[:, combined_labels.index("sensor_1_Force")]))
+        expected_force = 12 + 2.4 * np.sin(combined_sequence * 2 * np.pi * .22 / 20)
+        assert np.max(np.abs(combined_force[:, combined_labels.index("sensor_1_Force")] - expected_force)) < 1e-5
+        combined_error = np.max(np.abs(combined_breathing[:, combined_labels.index("vernier_breathing_01")] - replay[combined_sequence]))
+        assert combined_error < 2e-6
 
     markers = next(stream for stream in streams if stream["info"]["name"][0] == "Respyra-Events")
     events = [json.loads(row[0]) for row in markers["time_series"]]
@@ -166,9 +173,8 @@ def audit(path: Path) -> dict:
     assert np.max(np.abs(times[raw_indices] - derived_times[finite])) < .01
     assert np.max(np.abs(derived_values[finite] - (values[raw_indices] - center) / amplitude)) < 2e-5
 
-    required_ids = [raw["info"]["source_id"][0], force_copy["info"]["source_id"][0],
-                    producer["info"]["source_id"][0], combined["info"]["source_id"][0],
-                    markers["info"]["source_id"][0], derived_id]
+    required_ids = [stream["info"]["source_id"][0] for stream in
+                    (raw, producer, markers, derived, force_copy, combined) if stream is not None]
     summaries = inspect_xdf(path, required_ids)
     assert all(row["sample_count"] > 0 for row in summaries if row["source_id"] in required_ids)
     return {"result": "passed", "xdf": str(path), "streams": len(streams),
@@ -176,7 +182,7 @@ def audit(path: Path) -> dict:
             "raw_sequence_last": int(sequence[-1]), "derived_samples": len(derived_times),
             "producer_breathing_samples": len(producer_sequence),
             "producer_breathing_max_error": float(producer_error),
-            "combined_rows": len(combined_rows), "combined_breathing_max_error": float(combined_error),
+            "combined_rows": len(combined_rows), "combined_breathing_max_error": float(combined_error) if combined_error is not None else None,
             "derived_precalibration_nan": int(np.isnan(derived_values).sum()),
             "derived_postcalibration_finite": int(finite.sum()), "marker_count": len(events),
             "trials_reconstructed": len(trials), "conditions": dict(Counter(order["conditions"])),

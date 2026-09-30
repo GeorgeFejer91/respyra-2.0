@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -108,11 +109,17 @@ static std::string hex_text(const std::string &value) {
     with zipfile.ZipFile(archive) as bundle:
         bundle.extractall(STAGE / "sdk")
     sdk = STAGE / "sdk/liblsl-1.18.0-Win_amd64"
-    subprocess.run(["cmake", "-S", str(SOURCE), "-B", str(STAGE / "build"), "-A", "x64",
-                    f"-DRECORDER_SOURCE={patched.as_posix()}", f"-DCMAKE_PREFIX_PATH={sdk.as_posix()}"], check=True)
-    subprocess.run(["cmake", "--build", str(STAGE / "build"), "--config", "Release"], check=True)
+    generator = os.environ.get("CMAKE_GENERATOR") or ("NMake Makefiles" if os.environ.get("CXX") else None)
+    single_config = generator is not None and not generator.startswith("Visual Studio")
+    build_dir = STAGE / ("build-single" if single_config else "build")
+    configure = ["cmake", "-S", str(SOURCE), "-B", str(build_dir)]
+    configure += ["-G", generator] if generator else []
+    configure += ["-DCMAKE_BUILD_TYPE=Release"] if single_config else ["-A", "x64"]
+    configure += [f"-DRECORDER_SOURCE={patched.as_posix()}", f"-DCMAKE_PREFIX_PATH={sdk.as_posix()}"]
+    subprocess.run(configure, check=True)
+    subprocess.run(["cmake", "--build", str(build_dir), "--config", "Release"], check=True)
     OUTPUT.mkdir(exist_ok=True)
-    shutil.copy2(STAGE / "build/Release/respyrecorder.exe", OUTPUT)
+    shutil.copy2(build_dir / ("respyrecorder.exe" if single_config else "Release/respyrecorder.exe"), OUTPUT)
     # Drop the previous executable name from cached runtime bundles.
     (OUTPUT / "RespiraRecorder.exe").unlink(missing_ok=True)
     shutil.copy2(sdk / "bin/lsl.dll", OUTPUT)

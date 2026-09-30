@@ -17,7 +17,7 @@ if (os.environ.get("RESPYRA_FULL_MOCK_STUDY") == "1"
     config.timing.range_cal_duration_sec = 1.5
     config.timing.baseline_duration_sec = .15
     config.timing.countdown_duration_sec = .1
-    config.timing.tracking_duration_sec = .15
+    config.timing.tracking_duration_sec = float(os.environ.get("RESPYRA_TEST_TRACKING_SECONDS", ".15"))
     validation_study_jenny.CONFIG = config
 
     current = {}

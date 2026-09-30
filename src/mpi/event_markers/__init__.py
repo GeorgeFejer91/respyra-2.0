@@ -53,6 +53,7 @@ class MarkerOutlet:
         self.calibration_attempt_open = False
         self.name = "Respyra-Events"
         self.name_locked = False
+        self._pre_recording = []
         self._create_outlet()
 
     def _create_outlet(self, name=None):
@@ -109,6 +110,8 @@ class MarkerOutlet:
     def emit(self, name: str, **fields) -> None:
         if name not in CATALOG["events"]:
             raise ValueError(f"Undocumented LSL marker: {name}")
+        if name == "recording.started":
+            fields["pre_recording_events"] = self._pre_recording
         missing = set(CATALOG["events"][name]["fields"]) - fields.keys()
         if missing:
             raise ValueError(f"{name} is missing marker fields: {sorted(missing)}")
@@ -130,6 +133,10 @@ class MarkerOutlet:
             raise
         self.sequence += 1
         self.online = True
+        if name == "recording.started":
+            self._pre_recording = None
+        elif self._pre_recording is not None:
+            self._pre_recording.append(payload)
         if self.observer is not None:
             self.observer(payload)
 

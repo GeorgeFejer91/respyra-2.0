@@ -115,6 +115,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
     marker.state = None
     marker.observer = None
     marker.calibration_attempt_open = False
+    marker._pre_recording = []
     force = Polar() if scenario == "polar_complete" else Force()
     force.produce = scenario != "no_force"
     win = Window()

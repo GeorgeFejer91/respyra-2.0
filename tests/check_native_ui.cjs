@@ -164,6 +164,11 @@ const assert = require('node:assert/strict');
     assert(await page.locator('.stream-row').filter({hasText:'Synthetic normalized'}).count());
     await page.locator('#vernier-source').selectOption({label:'Synthetic raw Force'});
   }
+  if(process.env.RESPYRA_TEST_POLAR_METRIC) {
+    await page.locator('#polar-direction-field').waitFor({state:'visible',timeout:25000});
+    await page.locator('#polar-direction').selectOption(process.env.RESPYRA_TEST_POLAR_INVERT ?
+      'decreasing' : 'increasing');
+  }
   await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000});
   if(mode!=='remote') assert((await page.locator('#hub-input-status').textContent()).includes(
     process.env.RESPYRA_TEST_SOURCE_ID ? 'Mock' : 'Synthetic raw Force'));
@@ -197,7 +202,8 @@ const assert = require('node:assert/strict');
     assert(fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH),'PsychoPy instructions did not reach a display flip');
     if(mode==='remote') {
       await ui.locator('#xdf-state').getByText('Recording', {exact:true}).waitFor({timeout:10000});
-      await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
+      if(!process.env.RESPYRA_PRIVATE_READY_PATH)
+        await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
     } else {
       await page.locator('#stream-status').getByText(/recording/u).waitFor({timeout:10000});
       try { await page.locator('#input-readiness').getByText('Receiving samples',{exact:true}).waitFor({timeout:10000}); }
@@ -212,12 +218,14 @@ const assert = require('node:assert/strict');
       }
     }
     if(mode==='remote') assert.equal(await ui.locator('#battery').textContent(),'Not reported');
-    if(mode==='remote') {
+    if(mode==='remote' && !process.env.RESPYRA_PRIVATE_READY_PATH) {
       await ui.waitForFunction(() => document.getElementById('monitor-value').textContent.includes('Live') && document.getElementById('trace-line').getAttribute('d')?.includes('L'));
       if(process.env.RESPYRA_TEST_SOURCE_ID) {
-        assert((await ui.locator('#monitor-channel option').count())>=11);
+        assert((await ui.locator('#monitor-channel option').count())>=
+          (process.env.RESPYRA_TEST_POLAR_METRIC ? 1 : 11));
         await ui.locator('#monitor-channel').selectOption('0');
-        await ui.locator('#monitor-value').getByText(/Live · [0-9.]+ N/u).waitFor();
+        await ui.locator('#monitor-value').getByText(process.env.RESPYRA_TEST_POLAR_METRIC ?
+          /Live · [-0-9.]+ g/u : /Live · [0-9.]+ N/u).waitFor();
       } else {
         assert.equal(await ui.locator('#monitor-channel option').count(),2);
         await ui.locator('#monitor-channel').selectOption('0');
@@ -232,7 +240,8 @@ const assert = require('node:assert/strict');
       await ui.screenshot({path:'.for-ai-local/native-remote-controller.png',fullPage:true});
     }
     if(process.env.RESPYRA_FULL_MOCK_STUDY) {
-      await ui.locator('#close').waitFor({state:'visible',timeout:90000});
+      const extra=48*Math.max(0,Number(process.env.RESPYRA_TEST_TRACKING_SECONDS || .15)-.15)*1000;
+      await ui.locator('#close').waitFor({state:'visible',timeout:90000+extra});
     } else await ui.locator(mode==='remote' ? '#abort' : '#stop').click();
     await ui.locator('#close').waitFor({state:'visible',timeout:15000});
     if(mode==='remote') await ui.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor({timeout:20000});

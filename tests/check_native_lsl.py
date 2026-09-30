@@ -18,7 +18,9 @@ if any(mode not in {'select','memory','remote'} for mode in modes):
     parser.error('modes must be select, memory or remote')
 # Configure before importing liblsl; keep test streams out of live lab sessions.
 external = os.environ.get('RESPYRA_TEST_SOURCE_ID')
+polar_metric = os.environ.get('RESPYRA_TEST_POLAR_METRIC')
 full_mock = os.environ.get('RESPYRA_FULL_MOCK_STUDY') == '1'
+disconnect_probe = bool(os.environ.get('RESPYRA_PRIVATE_READY_PATH'))
 config = None
 if not external:
     config = root / '.for-ai-local' / ('native-lsl-' + uuid.uuid4().hex + '.cfg')
@@ -69,7 +71,8 @@ if modes[0] != 'select':
     # A focused reconnect/remote run owns its own saved-source fixture.
     from types import SimpleNamespace
     from mpi.lsl_force import save_force_selection
-    save_force_selection(SimpleNamespace(source_id=identity, stream_name=raw.name()),
+    contract = {'pca': 'respyra-polar-pca/1', 'phan': 'respyra-polar-phan-signed/1'}.get(polar_metric)
+    save_force_selection(SimpleNamespace(source_id=identity, stream_name=raw.name(), contract_id=contract),
                          Path(env['LOCALAPPDATA'])/'Respyra/lsl-source.json')
 try:
     for mode in modes:
@@ -84,13 +87,16 @@ try:
             inlet.open_stream(timeout=5)
             ui=subprocess.Popen(['node',str(root/'tests/check_native_ui.cjs'),mode],cwd=root,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
             markers=[]
-            deadline=time.monotonic()+120
+            deadline=time.monotonic()+120+48*max(0,float(os.environ.get('RESPYRA_TEST_TRACKING_SECONDS','.15'))-.15)
             while process.poll() is None and time.monotonic()<deadline:
                 try: sample,ts=inlet.pull_sample(timeout=.1)
                 except LostError: sample=None;time.sleep(.05)
                 if sample:
                     markers.append(json.loads(sample[0]))
-                    if markers[-1]['event']=='ui.instructions.shown':Path(env['RESPYRA_UI_TEST_READY_PATH']).write_text('ready')
+                    if markers[-1]['event']=='ui.instructions.shown':
+                        Path(env['RESPYRA_UI_TEST_READY_PATH']).write_text('ready')
+                        if env.get('RESPYRA_PRIVATE_READY_PATH'):
+                            Path(env['RESPYRA_PRIVATE_READY_PATH']).write_text('ready')
                 if ui.poll() not in (None,0):
                     out,err=ui.communicate();raise AssertionError(out+err)
             assert process.poll()==0,'Native app did not close cleanly'
@@ -103,9 +109,10 @@ try:
                 markers.append(json.loads(sample[0]))
             names=[m['event'] for m in markers]
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
-            assert 'run.failed' not in names,names
-            for expected in ['participant.dialog.shown','participant.field.edited','participant.field.key','source.connected','source.connection.accepted','source.disconnected',
-                             'run.completed' if full_mock else 'run.aborted']:assert expected in names,(expected,names)
+            assert ('run.failed' in names) == disconnect_probe,names
+            for expected in ['participant.field.edited','participant.field.key','source.connected','source.connection.accepted','source.disconnected',
+                             'run.failed' if disconnect_probe else 'run.completed' if full_mock else 'run.aborted']:assert expected in names,(expected,names)
+            if not external: assert 'participant.dialog.shown' in names
             assert [m['seq'] for m in markers]==list(range(markers[0]['seq'],markers[0]['seq']+len(markers)))
             if mode=='select':
                 assert 'source.memory.saved' in names and 'source.scan.completed' in names
@@ -120,7 +127,10 @@ try:
                 assert 'display.closed' in names
                 if full_mock:
                     assert mode == 'remote' and 'run.aborted' not in names
-                    assert sum(m['event']=='trial.ended' for m in markers) == 48
+                    if disconnect_probe:
+                        assert 'source.lost' in names and 'run.completed' not in names
+                    else:
+                        assert sum(m['event']=='trial.ended' for m in markers) == 48
                 else:
                     assert 'ui.experiment.stop.requested' in names
                     stopped=next(m for m in markers if m['event']=='ui.experiment.stop.requested')
@@ -137,7 +147,7 @@ try:
                 recorded_events=[json.loads(row[0]) for row in by_id[marker_id]['time_series']]
                 recorded_names=[m['event'] for m in recorded_events]
                 for expected in ['recording.started','participant.dialog.accepted','display.opened',
-                                 'ui.instructions.shown','run.completed' if full_mock else 'run.aborted',
+                                 'ui.instructions.shown','run.failed' if disconnect_probe else 'run.completed' if full_mock else 'run.aborted',
                                  'source.disconnected','display.closed','recording.finalizing']:
                     assert expected in recorded_names,(expected,recorded_names)
                 assert by_id[identity]['time_stamps'][0] < next(m['lsl_time'] for m in recorded_events if m['event']=='display.opened')
@@ -146,12 +156,22 @@ try:
                 assert (len(recorded)>=3 if external else len(recorded)==4)
                 assert all(s['sample_count'] for s in summaries if s['source_id'] in {identity, marker_id, derived_id})
                 import math
-                if full_mock:
+                if disconnect_probe:
+                    assert all(math.isnan(float(row[0])) for row in by_id[derived_id]['time_series'])
+                    from scripts.audit_polar_mock_xdf import audit
+                    print(json.dumps(audit(file, expect_disconnect=True)),flush=True)
+                elif full_mock:
                     assert any(math.isfinite(float(row[0])) for row in by_id[derived_id]['time_series'])
-                    from scripts.audit_mock_xdf import audit
+                    if polar_metric:
+                        from scripts.audit_polar_mock_xdf import audit
+                    else:
+                        from scripts.audit_mock_xdf import audit
                     print(json.dumps(audit(file)),flush=True)
                 else:
                     assert all(math.isnan(float(row[0])) for row in by_id[derived_id]['time_series'])
+                    if polar_metric:
+                        from scripts.audit_polar_mock_xdf import audit
+                        print(json.dumps(audit(file, expect_abort=True)),flush=True)
                 print(json.dumps({'native_xdf':'passed','mode':mode,'file':str(file),'streams':summaries}),flush=True)
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             print(out.strip(),flush=True)

@@ -77,6 +77,20 @@ def test_marker_payload_does_not_depend_on_recorder(marker):
     marker.emit("run.completed", trials_completed=1)
     assert len(marker._outlet.samples) == 2
 
+
+def test_recording_start_carries_setup_markers_in_order(marker):
+    marker.emit("participant.dialog.shown")
+    marker.emit("source.polarity.set", field="polar_inverted", enabled=False,
+                ui_seq=1, ui_time_ms=2)
+    marker.emit("recording.started", source_ids=["input", "markers", "derived"],
+                policy="visible_and_late_except_excluded", excluded_uids=[])
+    start = marker._outlet.samples[-1][0]
+    assert [event["seq"] for event in start["pre_recording_events"]] == [1, 2]
+    assert [event["event"] for event in start["pre_recording_events"]] == [
+        "participant.dialog.shown", "source.polarity.set"]
+    marker.emit("run.started", participant="p1", session="001")
+    assert len(start["pre_recording_events"]) == 2
+
 def test_name_can_change_before_subscription_but_not_during_run(marker):
     marker._outlet.connected = False
     marker.rename("Lab breathing markers")
