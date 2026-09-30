@@ -297,6 +297,20 @@ The runner decodes the final XDF with `scripts/audit_mock_xdf.py` and retains
 logs/XDF under ignored `.for-ai-local/`. The direct native and PsychoPy scripts
 still require isolation and must not run on the active desktop.
 
+For Polar, build `polar-stream-mini.exe` and
+`polar-h10-metrics/examples/mini_mock_reference.exe` in the Mini repository.
+Save a 30,000-tick reference CSV under `.for-ai-local/polar-reference-30000.csv`.
+Pass `--polar-metric pca` or `--polar-metric phan` and `--mini-exe <Polar debug exe>`
+to the private runner. `startup` checks both candidate outlets and their flags;
+`remote-full` selects the requested contract and audits the finished XDF with
+`scripts/audit_polar_mock_xdf.py`. `--repeat 2`, `--tracking-seconds 2`,
+`--invert` and `--disconnect-after-ready` exercise repeated studies, sustained
+recording, polarity and source loss. `remote` covers early Stop. Audit each
+retained XDF independently with the same script and record its path and counts.
+The auditor reads XDF stream chunks without clock synchronization/dejitter and
+checks raw ACC, both candidate/companion streams, derived samples, trial and
+marker order, calibration, saved participant state and stream footers.
+
 ## Gate 4: publication
 
 Standalone installer work additionally follows `PACKAGING.md`. A workspace

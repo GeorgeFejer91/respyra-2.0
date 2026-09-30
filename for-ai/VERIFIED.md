@@ -442,3 +442,13 @@ the respective scope needs current evidence; panel styling does not need it.
   headless Chrome and private-desktop WebView/PsychoPy. A physical belt/phone,
   full-duration participant timing, installed Respyra package, and public asset
   byte parity remain unverified.
+
+### Polar Mini mock through remote study and XDF
+
+- Result/date: `VERIFIED`, 2026-09-30, on the Tower PC. Final rebuilt Polar
+  Mini 0.6.3 and Respyra 0.3.0 completed both 48-trial contracts, a 120-second
+  PCA study, repeated studies, polarity inversion, abort, source loss/restart,
+  and a final Vernier Mini regression. Fourteen complete Polar XDFs, one abort,
+  and one source-loss XDF passed independent recorded-sample/marker audits.
+- Exact commands, commits, all XDF paths/counts, defects and limits:
+  [`POLAR-MOCK-VERIFIED.md`](./POLAR-MOCK-VERIFIED.md).
