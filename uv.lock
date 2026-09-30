@@ -1247,8 +1247,6 @@ name = "mpi"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "ipympl" },
-    { name = "jupyter" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "psychopy" },
@@ -1261,11 +1259,13 @@ dev = [
     { name = "pytest" },
     { name = "pyxdf" },
 ]
+notebooks = [
+    { name = "ipympl" },
+    { name = "jupyter" },
+]
 
 [package.metadata]
 requires-dist = [
-    { name = "ipympl", specifier = ">=0.10.0" },
-    { name = "jupyter", specifier = "==1.1.*" },
     { name = "matplotlib", specifier = ">=3.10.9" },
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "psychopy", specifier = ">=2026.2.1" },
@@ -1277,6 +1277,10 @@ requires-dist = [
 dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pyxdf", specifier = "==1.17.5" },
+]
+notebooks = [
+    { name = "ipympl", specifier = ">=0.10.0" },
+    { name = "jupyter", specifier = "==1.1.*" },
 ]
 
 [[package]]

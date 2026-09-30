@@ -1,6 +1,6 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra 2.0_0.3.0_x64-setup.exe` on Windows 10/11 x64. The installer lets you
+Run `Respyra 2.0_0.3.1_x64-setup.exe` on Windows 10/11 x64. The installer lets you
 choose a destination folder, creates a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
@@ -26,7 +26,8 @@ calibration/cleanup, and discovers additional streams during the run. **XDF reco
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
 
-XDFs are always saved in `%LOCALAPPDATA%\Respira\data`, with unique filenames.
+The app creates `%LOCALAPPDATA%\Respira\data` when it first opens. XDFs are
+always saved there, with unique filenames.
 Numeric participant entries become `P001`, `P002`, and so on in the filename;
 session and each filled `label-value` pair follow as underscore-separated parts,
 then a unique suffix. After a verified XDF closes, Respyra appends its filename,

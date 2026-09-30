@@ -33,11 +33,17 @@ for name in ("numpy", "scipy", "pandas", "matplotlib", "pylsl", "psychopy.core",
     assert Path(module.__file__).resolve().is_relative_to(runtime), (name, module.__file__)
 assert importlib.util.find_spec("ffpyplayer") is None
 assert importlib.util.find_spec("imageio_ffmpeg") is None
+assert importlib.util.find_spec("jupyterlab") is None
+assert importlib.util.find_spec("ipympl") is None
+assert importlib.util.find_spec("psycopg") is None
 assert not (runtime / "share/ffpyplayer").exists()
 assert not list(runtime.rglob("*ffmpeg*.exe"))
 assert not list(runtime.rglob("*ffmpeg*.dll"))
 assert not list(runtime.rglob("avcodec-*.dll"))
 assert not list(runtime.rglob("avformat-*.dll"))
+assert not list(runtime.rglob("avutil-*.dll"))
+assert not list(runtime.rglob("swresample-*.dll"))
+assert not list(runtime.rglob("swscale-*.dll"))
 from mpi.event_markers import MarkerOutlet
 import psutil
 support = [Path(m.path) for m in psutil.Process().memory_maps()

@@ -291,6 +291,8 @@ fn launch_backend(
             .join("Respira");
         std::fs::create_dir_all(&directory)
             .map_err(|e| format!("Cannot create application data folder: {e}"))?;
+        std::fs::create_dir_all(directory.join("data"))
+            .map_err(|e| format!("Cannot create recording data folder: {e}"))?;
         directory
     } else {
         root.to_path_buf()

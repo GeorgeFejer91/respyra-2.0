@@ -27,6 +27,8 @@ launch them on the user's active desktop; missing isolation leaves those gates
   experiment does not use; fail packaging if those wheel paths change.
   Reinstall the local `mpi` wheel on every package build so uv's project cache
   cannot ship stale source or README metadata after a source-only edit.
+  Keep Jupyter and `ipympl` in the opt-in `notebooks` dependency group; they
+  are not part of the installed experiment engine.
   Copy the locked Qt wheel's MSVC support DLLs beside embedded Python and check
   loaded DLL paths; Python-module isolation alone can miss a borrowed system CRT.
   Python `-I` excludes user site/environment paths. Retain stdio isolation.

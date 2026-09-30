@@ -13,7 +13,9 @@ The packaging environment installs PsychoPy's `ffpyplayer` and
 `imageio-ffmpeg` dependencies, but the Windows application uses no video or
 camera functions. Their packages and FFmpeg binaries are excluded from the
 installer, together with unused OpenCV and Qt FFmpeg plugins and FFmpeg DLLs.
-The locked build environment still contains those dependencies; `uv.lock` is
+Jupyter and `ipympl` are notebook-only tools and are not in the installer.
+The locked build environment still contains PsychoPy's media dependencies;
+`uv.lock` is
 included to document that input, not to claim every resolved wheel is shipped.
 
 The original Respyra package and transparent logo are by Micah Allen,

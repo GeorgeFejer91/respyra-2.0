@@ -28,7 +28,7 @@ and the Tauri Windows prerequisites (MSVC build tools and WebView2). From the
 checkout, launch the desktop app:
 
 ```powershell
-py -3.10 -m uv sync --frozen
+python -m uv sync --frozen --python 3.10.11
 pnpm install --frozen-lockfile
 pnpm prepare:recorder
 # If Cargo is not already in PATH:
@@ -145,7 +145,8 @@ pnpm check:ui
 closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
 helpers. `scripts/plot_session.py` reads local CSV sessions. `notebooks/` contains signal exploration,
-and `tests/` covers source, marker and recorded-file contracts.
+and `tests/` covers source, marker and recorded-file contracts. Install notebook
+tools only when using those files: `python -m uv sync --frozen --python 3.10.11 --group notebooks`.
 
 Older session CSVs and generated plots remain in the ignored local `data/`
 folder. Review and de-identify any recording separately before sharing it.
