@@ -41,3 +41,77 @@ decision and link both entries.
 - Consequences: Source can be shared through the private repository; raw data
   remains available locally for review and requires a separate sharing decision.
 - Supersedes: None
+
+## D-0003 — Source study force through Vernier Stream Mini LSL
+
+- Date: 2026-09-24
+- Status: Accepted
+- Context: The belt acquisition path now belongs to
+  [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream).
+  Its raw LSL outlet carries Force in N; its derived respiration outlet carries
+  a normalized 0–1 value. The study's targets and errors use N. An external LSL
+  recorder, not Respyra, will persist the breathing signal and timeline.
+- Decision: Discover and validate one live `VernierRaw` outlet from Vernier
+  Stream Mini in Separate Streams mode, select the metadata-identified GDX-RB
+  Force channel, and feed it into the existing study phases. Publish every
+  discrete experiment and observed accepted/rejected PsychoPy key event on a
+  catalogued LSL marker outlet. Require a marker-stream consumer before
+  participant input.
+  Do not write new session or self-assessment CSVs. Reject the upstream
+  calibration's no-data fallback so an unmeasured run cannot continue with
+  default force values. Retain the measured calibration and feedback logic
+  until a separately reviewed protocol change.
+- Consequences: Vernier Stream Mini must run first. Discovery ambiguity or
+  signal loss stops a run. The recorder must select both the Vernier raw and
+  Respyra marker streams; a marker subscriber alone does not prove persistence
+  of either stream. The `respyra` dependency still contains its own unused Go
+  Direct and CSV modules because this project uses its study phases; removing
+  those transitive modules needs an upstream package split or a separate phase
+  replacement. The native participant-dialog text fields use Qt callbacks for
+  keys and edits; individual animation frames are outside the discrete marker
+  contract.
+- Supersedes: None
+
+## D-0004 — Remember validated input in the existing startup form
+
+- Date: 2026-09-26
+- Status: Superseded for Qt UI ownership by D-0005; source identity policy retained
+- Context: Operators need to discover compatible LSL input and reuse their
+  accepted belt without setting environment variables each session.
+- Decision: Extend the existing PsychoPy Qt participant/session form with
+  Add LSL Stream, compatibility results, and Use Selected Stream. Reuse the
+  existing Force adapter and marker publisher. Require raw Vernier Force (N),
+  unique stable source identity, full metadata, and live data before acceptance.
+  Atomically save only identity/name in local user settings and revalidate on
+  every launch. An absent or incompatible remembered outlet requires selection;
+  do not substitute another source. Retain the environment override.
+- Consequences: There is no new dashboard, dependency, signal processor, or
+  persisted sample buffer. Discovery and connection run in one setup worker;
+  markers are published by the UI when it observes results. Start is gated on
+  accepted live input, and setup drains the inlet to avoid accumulating old data.
+- Supersedes: None; extends D-0003 with UI selection and identity persistence.
+
+## D-0005 — HTML/Tauri setup with the PsychoPy experiment authority retained
+
+- Date: 2026-09-27
+- Status: Accepted
+- Context: The user approved replacing the Qt wrapper after requesting a GitHub
+  rollback checkpoint. Experiment screens and paradigm decisions must remain
+  governed by PsychoPy. The prior revision is tagged
+  `qt-wrapper-checkpoint-2026-09-27`.
+- Decision: Use a plain local HTML form in Tauri v2, with user-supplied identifier
+  `dev.georgefejer.respyra2`. Rust supervises the fixed workspace Python engine
+  over private bounded pipes and three closed commands. Reuse Python's Force
+  validation, remembered selection, study phases and single marker outlet.
+  Delete the Qt form and its event filters. Keep onset markers directly on
+  PsychoPy flips; label HTML marker timestamps as backend receipt after IPC,
+  with separate browser action sequence/time capture. Retain the outlet until
+  final desktop closure so cleanup/Close events can be received.
+- Consequences: No waveform samples or experiment frames cross desktop IPC.
+  Qt remains a transitive distribution dependency. The initial executable needs
+  the checkout and `.venv`; self-contained packaging needs separate work. Native
+  shutdown attempts cleanup and has a 15-second kill limit, which cannot
+  guarantee final markers if the engine hangs. Isolate standard input from
+  library subprocesses to avoid Windows inherited-pipe hangs.
+- Supersedes: Qt-specific ownership in D-0003/D-0004; preserves their signal,
+  units, no-CSV, recorder and remembered-identity decisions.

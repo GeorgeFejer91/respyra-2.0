@@ -1,0 +1,6 @@
+{
+  "identifier": "main",
+  "description": "Local setup window: closed experiment controls and state events only.",
+  "windows": ["main"],
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "allow-launch-backend", "allow-setup-action", "allow-close-app"]
+}
