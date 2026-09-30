@@ -51,6 +51,11 @@ def stage_runtime() -> None:
         return destination
     shutil.copytree(packages, site, copy_function=link_or_copy,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "_virtualenv.*", "direct_url.json"))
+    # Galata is JupyterLab's browser-test fixture, not part of the study runtime.
+    # NSIS silently omitted one of its assets at a deep installation path.
+    galata = site / "jupyterlab/galata"
+    if galata.is_dir():
+        shutil.rmtree(galata)
     for name in ("share", "etc"):
         installed_data = Path(sys.prefix) / name
         if installed_data.is_dir():
