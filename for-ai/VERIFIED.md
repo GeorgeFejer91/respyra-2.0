@@ -60,11 +60,12 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | reusable; see experiment fields receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
 | Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for current inputs; see Mini pipeline receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
-| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for mocked current inputs; see hub/recorder receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
+| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for mocked current inputs; see project site receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
+| Project landing, installer/Mini links, logo and legacy QR routing: `companion/index.html`, `remote.html`, `site.*`, publication inputs | `node tests/check_project_site.cjs`, published asset parity and private-desktop published phone check | verified for current source and deployment; see project site receipt | Site/route/assets, source attribution, linked release assets or published endpoint changes. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | verified for current inputs; see hub/recorder receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | verified for current inputs; see Mini pipeline receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility change. |
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/run_private_mock.py` after a matching native build | verified for installed Mini mock, early Stop and complete phone controlled study; see Mini pipeline receipt | Native/pipe/lifecycle/remote contracts or consuming runtime change. |
-| Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | public page pairing and full run verified; byte parity not checked in Mini pipeline receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
+| Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | current published route, native early-Stop run and ten-asset byte parity verified; see project site receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
 | Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | public 0.3.2 verified; see release receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
 | Windows shortcut icon transparency and circle tint: `assets/icon.svg`, packaging generator, PNG/ICO | Direct SVG icon generation, alpha/color assertions and 48 px preview | reusable; see shortcut icon receipt | SVG, icon generation, generated PNG/ICO or icon tooling changes. A new installer has its own packaging gate. |
 | Physical belt/phone, scientific timing and other operating systems | Separate named hardware/platform qualification | NOT RUN / unverified in `PROJECT.md` | Those surfaces are requested or claimed; synthetic/browser evidence does not qualify them. |
@@ -487,3 +488,32 @@ the respective scope needs current evidence; panel styling does not need it.
   [`WINDOWS-INSTALLER-0.3.2-2026-09-30.md`](./WINDOWS-INSTALLER-0.3.2-2026-09-30.md).
   Silent uninstall, clean-machine WebView2 download, physical hardware,
   full-duration timing and signing remain unverified.
+
+### Project website, live phone route and release links
+
+- Result/date: `VERIFIED`, 2026-09-30. Source commit
+  `7d0c2b5cf7dbaa96ecbc30f00966ff9986b0dcc5` was pushed to `main`;
+  Pages commit `3bc62fc56d8c40862dfc87278323aab346296afe` was reported
+  `built`. Ten public HTML, CSS, JS, logo and attribution assets matched that
+  commit's Git blobs byte for byte, and published `source.json` named the
+  source commit. The GitHub repository homepage and 0.3.2 release notes now
+  link the site, both Stream Mini installers and the original Micah Allen work.
+  Existing release asset digests were unchanged.
+- Checks: `pnpm test:web` (6 pass), `node tests/check_project_site.cjs`
+  (project links, logo, 320–1440 px fit, enlarged text and private-link
+  redirect), configured `pnpm check:remote` (12 layouts and 12 mocked
+  mutations), `pnpm check:ui` (8 layouts, 15 actions, no page errors),
+  `python .for-ai-local/check_published_site.py` (10 public assets matched).
+  Headless site screenshots at 320 and 960 px were inspected.
+- Live route: `tests/run_private_mock.py remote --published-phone` used the
+  installed 0.3.2 executable, Vernier Mini mock outlet and a private Win32
+  desktop. The QR decoded to the public root invitation; the phone browser
+  reached `/remote.html`, requested access and completed Start/Stop/Close.
+  The independently checked XDF had four nonempty streams with matching
+  footers and 27 ordered markers; Chrome reported zero page errors. The
+  QR-check test source had SHA-256
+  `23f2c51a0a5fa85e8b9a0b4ea133558eb30eb523b5acc63d1c3f5beb0b82baed`.
+  Captured log: `.for-ai-local/RespyraProbeb81a10c7fc62414398a3afc60b828ddc/remote.log`.
+- Limits: local desktop plus headless Chrome and synthetic breathing, with
+  early Stop. A physical phone or belt and full-duration scientific timing
+  were not checked. The release EXE itself was not rebuilt for this site edit.

@@ -102,11 +102,12 @@ const assert = require('node:assert/strict');
     execFileSync('.venv/Scripts/python.exe',['-c',
       // Decode the rendered pixels. OpenCV sometimes needs nearest-neighbor
       // magnification at fractional Windows display scales; no QR data is added.
-      'import cv2,sys; image=cv2.imread(".for-ai-local/native-qr.png"); detector=cv2.QRCodeDetector(); decoded=[detector.detectAndDecode(cv2.resize(image,None,fx=scale,fy=scale,interpolation=cv2.INTER_NEAREST))[0] for scale in (1,2)]; assert sys.stdin.read() in decoded, "Displayed QR did not decode to the invitation"'],
+      'import cv2,sys; image=cv2.imread(".for-ai-local/native-qr.png"); image=cv2.copyMakeBorder(image,16,16,16,16,cv2.BORDER_CONSTANT,value=(255,255,255)); detector=cv2.QRCodeDetector(); decoded=[detector.detectAndDecode(cv2.resize(image,None,fx=scale,fy=scale,interpolation=cv2.INTER_NEAREST))[0] for scale in (1,2)]; assert sys.stdin.read() in decoded, "Displayed QR did not decode to the invitation"'],
       {input:link,timeout:15000});
     ui=await context.newPage();ui.on('pageerror',e=>errors.push(String(e)));
     await ui.setViewportSize({width:390,height:844});
     await ui.goto(link);
+    await ui.waitForURL(base+'remote.html',{timeout:10000});
     await ui.locator('#viewer-name').fill('Ada');
     await ui.locator('#connect').click();
     try {await ui.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…',{exact:true}).waitFor({timeout:45000});}
