@@ -23,7 +23,7 @@ def force_channel_index(xml: str, channel_count: int) -> int:
     desc = root.find("desc")
     if desc is None or desc.findtext("manufacturer") != "Vernier":
         raise LSLForceError("LSL stream is missing Vernier metadata")
-    if desc.findtext("model") != "GDX-RB" or desc.findtext("stream_role") != "raw_measurement_recording":
+    if desc.findtext("model") not in {"GDX-RB", "GDX-RB-MOCK"} or desc.findtext("stream_role") != "raw_measurement_recording":
         raise LSLForceError("LSL stream is not a raw GDX-RB recording")
     channels = desc.findall("channels/channel")
     if len(channels) != channel_count:
@@ -62,8 +62,9 @@ class ForceStreamCandidate:
 
 
 def scan_force_streams(wait_time: float = 1.0) -> list[ForceStreamCandidate]:
-    """List all visible streams, with eligibility based on full channel metadata."""
+    """List visible streams and the three exact study-input contracts."""
     from pylsl import StreamInlet, resolve_streams
+    from mpi.lsl_polar import validate_polar_info
 
     candidates = []
     for resolved in resolve_streams(wait_time=wait_time):
@@ -71,15 +72,20 @@ def scan_force_streams(wait_time: float = 1.0) -> list[ForceStreamCandidate]:
         inlet = None
         index = None
         try:
-            if info.type() != "VernierRaw":
-                raise LSLForceError("Requires VernierRaw Force (N)")
+            if info.type() not in {"VernierRaw", "Respiration"}:
+                raise LSLForceError("Requires VernierRaw Force or a supported Polar waveform")
             inlet = StreamInlet(info, max_buflen=1, recover=False)
             # Full inlet info validates metadata; retain resolver info for reconnecting.
             full_info = inlet.info(timeout=1.0)
             if full_info.source_id() != info.source_id():
                 raise LSLForceError("Stream identity changed during discovery")
-            index = validate_force_info(full_info)
-            reason = "Compatible: raw Force (N)"
+            if info.type() == "VernierRaw":
+                index = validate_force_info(full_info)
+                reason = "Compatible: raw Force (N)"
+            else:
+                contract, _ = validate_polar_info(full_info)
+                index = 0
+                reason = f"Compatible: {contract} (g)"
         except Exception as exc:
             reason = str(exc)
         finally:
@@ -104,10 +110,15 @@ def load_force_selection(path: Path | None = None) -> dict | None:
         return None
     try:
         saved = json.loads(path.read_text(encoding="utf-8"))
-        if (saved["version"] != 1
-                or not isinstance(saved["source_id"], str)
-                or not saved["source_id"].startswith("polar-stream-vernier-raw-")
-                or not isinstance(saved["stream_name"], str)):
+        if not isinstance(saved, dict):
+            raise ValueError("Unsupported selection")
+        polar = saved.get("version") == 2 and saved.get("contract_id") in {
+            "respyra-polar-pca/1", "respyra-polar-phan-signed/1"
+        }
+        force = saved.get("version") == 1 and isinstance(saved.get("source_id"), str) and saved["source_id"].startswith("polar-stream-vernier-raw-")
+        if (not isinstance(saved.get("source_id"), str)
+                or not isinstance(saved.get("stream_name"), str)
+                or not (force or (polar and saved["source_id"] == "polar-h10-" + saved["stream_name"]))):
             raise ValueError("Unsupported selection")
         return saved
     except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -123,8 +134,10 @@ def save_force_selection(source, path: Path | None = None) -> None:
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
                                          prefix="lsl-source-", suffix=".tmp", delete=False) as handle:
             temporary = Path(handle.name)
-            json.dump({"version": 1, "source_id": source.source_id,
-                       "stream_name": source.stream_name}, handle)
+            polar = getattr(source, "contract_id", None)
+            json.dump({"version": 2 if polar else 1, "source_id": source.source_id,
+                       "stream_name": source.stream_name,
+                       **({"contract_id": polar} if polar else {})}, handle)
         os.replace(temporary, path)
     finally:
         if temporary is not None:
@@ -134,23 +147,85 @@ def save_force_selection(source, path: Path | None = None) -> None:
 class LSLForceSource:
     """Small adapter for respyra's ``get_all`` / ``stop`` phase calls."""
 
-    def __init__(self, inlet, force_index: int, source_id: str = "", stream_name: str = "") -> None:
+    def __init__(self, inlet, force_index: int, source_id: str = "", stream_name: str = "", channels=()) -> None:
         self.inlet = inlet
         self.force_index = force_index
         self.source_id = source_id
         self.stream_name = stream_name
+        self.uid = ""
         self.last_force_at = time.monotonic()
+        self.stopped = False
+        self.channels = list(channels) or [{"index": force_index, "label": "Force", "unit": "N"}]
+        self.latest_sample = None
+        self.calibrated_outlet = None
+        self.calibrated_id = None
+        self.calibrated_uid = None
+        self.calibrated_sample = None
+        self.center = self.amplitude = None
+
+    def start_derived(self, run_id):
+        """Advertise the derived channel before recording; NaN means not calibrated."""
+        from pylsl import StreamInfo, StreamOutlet, cf_float32
+        identity = f"respyra-breathing-{run_id}"
+        if self.calibrated_outlet is not None:
+            if self.calibrated_id != identity:
+                raise LSLForceError("A different derived breathing stream is already active")
+            return
+        self.calibrated_id = identity
+        info = StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 0, cf_float32, identity)
+        desc = info.desc()
+        for key, value in {"application": "Respyra 2.0", "raw_source_id": self.source_id,
+                           "formula": "(force_n - center_n) / amplitude_n",
+                           "before_calibration": "NaN; parameters are in calibration.completed markers"}.items():
+            desc.append_child_value(key, value)
+        channel = desc.append_child("channels").append_child("channel")
+        channel.append_child_value("label", "Calibrated breathing")
+        channel.append_child_value("unit", "normalized")
+        self.calibrated_outlet = StreamOutlet(info)
+        self.calibrated_uid = self.calibrated_outlet.get_info().uid()
+
+    def calibrate(self, center, amplitude, run_id):
+        """Activate the accepted study calibration on the existing outlet."""
+        if not math.isfinite(center) or not math.isfinite(amplitude) or amplitude <= 0:
+            raise LSLForceError("Invalid breathing calibration")
+        if self.calibrated_outlet is None or self.calibrated_id != f"respyra-breathing-{run_id}":
+            raise LSLForceError("Derived breathing outlet was not started before recording")
+        self.center, self.amplitude = center, amplitude
+
+    def health_snapshot(self):
+        """Only actual inlet freshness; the raw Force contract has no battery field."""
+        age = max(0, time.monotonic() - self.last_force_at)
+        preview = None
+        if self.latest_sample:
+            timestamp, sample = self.latest_sample
+            preview = {"source_id": self.source_id, "name": self.stream_name,
+                       "lsl_time": timestamp, "force_index": self.force_index,
+                       "channels": [{**c, "value": float(sample[c["index"]])
+                                     if c["index"] < len(sample) and math.isfinite(sample[c["index"]]) else None}
+                                    for c in self.channels]}
+        return {"signal": ("disconnected" if self.stopped else
+                           "live" if age <= 1 else "stale" if age <= 3 else "lost"),
+                "sample_age_ms": round(age * 1000), "battery_percent": None, "preview": preview,
+                "calibrated": {"source_id": self.calibrated_id, "active": self.center is not None,
+                               "prepared": self.calibrated_outlet is not None,
+                               "lsl_time": self.calibrated_sample}}
 
     def get_all(self) -> list[tuple[float, float]]:
         try:
             samples, timestamps = self.inlet.pull_chunk(timeout=0.0, max_samples=1024)
         except Exception as exc:
             raise LSLForceError(f"Vernier LSL stream read failed: {exc}") from exc
-        forces = [
-            (timestamp, float(sample[self.force_index]))
-            for sample, timestamp in zip(samples, timestamps, strict=True)
-            if len(sample) > self.force_index and math.isfinite(sample[self.force_index])
-        ]
+        forces = []
+        for sample, timestamp in zip(samples, timestamps, strict=True):
+            if len(sample) > self.force_index and math.isfinite(sample[self.force_index]):
+                forces.append((timestamp, float(sample[self.force_index])))
+                self.latest_sample = (timestamp, list(sample))
+                if self.calibrated_outlet is not None:
+                    value = ((float(sample[self.force_index]) - self.center) / self.amplitude
+                             if self.center is not None else math.nan)
+                    self.calibrated_outlet.push_sample([value], timestamp=timestamp)
+                    if self.center is not None:
+                        self.calibrated_sample = timestamp
         if forces:
             self.last_force_at = time.monotonic()
         elif time.monotonic() - self.last_force_at > 3.0:
@@ -158,10 +233,14 @@ class LSLForceSource:
         return forces
 
     def stop(self) -> None:
+        self.stopped = True
         self.inlet.close_stream()
+        self.calibrated_outlet = None
+        self.calibrated_uid = None
 
 
-def connect_force_source(timeout: float = 5.0, source_id: str | None = None) -> LSLForceSource:
+def connect_force_source(timeout: float = 5.0, source_id: str | None = None,
+                         contract_id: str | None = None) -> LSLForceSource:
     """Resolve the exact remembered/explicit identity; never substitute another."""
     from pylsl import resolve_streams
 
@@ -170,30 +249,46 @@ def connect_force_source(timeout: float = 5.0, source_id: str | None = None) -> 
     matches = [
         info
         for info in discovered
-        if info.type() == "VernierRaw"
-        and info.source_id().startswith("polar-stream-vernier-raw-")
+        if ((info.type() == "VernierRaw" and info.source_id().startswith("polar-stream-vernier-raw-"))
+            or (source_id and info.type() == "Respiration" and info.source_id().startswith("polar-h10-")))
         and (not source_id or info.source_id() == source_id)
     ]
     if len(matches) != 1:
         raise LSLForceError(
-            f"Expected one Vernier Stream Mini raw LSL outlet; found {len(matches)}. "
-            "Start Vernier Stream Mini in Separate Streams mode and use Add LSL Stream."
+            f"Expected one selected breathing input outlet; found {len(matches)}. "
+            "Start the selected Mini streamer and use Add LSL Stream."
         )
-    return open_force_source(matches[0], timeout=timeout)
+    source = open_force_source(matches[0], timeout=timeout)
+    if contract_id is not None and getattr(source, "contract_id", None) != contract_id:
+        source.stop()
+        raise LSLForceError("Remembered Polar input contract changed")
+    return source
 
 
 def open_force_source(resolved, timeout: float = 5.0) -> LSLForceSource:
     """Revalidate the selected outlet and require live data before acceptance."""
     from pylsl import StreamInlet, proc_clocksync
+    if resolved.type() == "Respiration":
+        from mpi.lsl_polar import open_polar_source
+        return open_polar_source(resolved, timeout=max(timeout, 20.0))
 
     # Pin this outlet after validation; a restart requires fresh metadata validation.
-    inlet = StreamInlet(resolved, max_buflen=2, processing_flags=proc_clocksync, recover=False)
+    # The Mini advertises an irregular-rate raw outlet. Retain startup samples
+    # while PsychoPy imports and creates its display before the study drains it.
+    inlet = StreamInlet(resolved, max_buflen=60, processing_flags=proc_clocksync, recover=False)
     try:
         info = inlet.info(timeout=timeout)
         if info.source_id() != resolved.source_id():
             raise LSLForceError("Selected stream identity changed during connection")
         index = validate_force_info(info)
-        source = LSLForceSource(inlet, index, info.source_id(), info.name())
+        channels = []
+        metadata = ElementTree.fromstring(info.as_xml()).findall("./desc/channels/channel")
+        for number in range(min(info.channel_count(), 32)):
+            channel = metadata[number]
+            channels.append({"index": number, "label": channel.findtext("label") or f"Channel {number + 1}",
+                             "unit": channel.findtext("unit", "")})
+        source = LSLForceSource(inlet, index, info.source_id(), info.name(), channels)
+        source.uid = info.uid()
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             samples, _ = inlet.pull_chunk(timeout=min(0.5, deadline - time.monotonic()))

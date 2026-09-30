@@ -59,47 +59,73 @@ def marker():
         yield MarkerOutlet()
 
 
-def test_marker_payload_and_recorder_failure(marker):
-    marker.wait_for_recorder()
+def test_marker_payload_does_not_depend_on_recorder(marker):
+    observed = []
+    marker.observer = observed.append
     marker.emit("run.started", participant="p1", session="001")
     payload, timestamp = marker._outlet.samples[-1]
     assert payload["event"] == "run.started"
     assert payload["seq"] == 1
     assert payload["run_id"] == marker.run_id
     assert payload["lsl_time"] == timestamp == 123.5
+    assert observed == [payload]
     with pytest.raises(ValueError, match="Undocumented"):
         marker.emit("unknown")
     with pytest.raises(ValueError, match="missing marker fields"):
         marker.emit("run.completed")
     marker._outlet.connected = False
-    with pytest.raises(RuntimeError, match="no LSL recorder"):
-        marker.emit("run.completed", trials_completed=1)
-    assert len(marker._outlet.samples) == 1
+    marker.emit("run.completed", trials_completed=1)
+    assert len(marker._outlet.samples) == 2
 
 
-def test_recorder_wait_without_deadline_remains_cancellable(marker, monkeypatch):
-    checks = []
-    attempts = iter([False, False, True])
-    monkeypatch.setattr(marker._outlet, "wait_for_consumers", lambda _timeout: next(attempts))
-    monkeypatch.setattr("mpi.event_markers.time.monotonic", lambda: 1000.0 * len(checks))
-    marker.wait_for_recorder(timeout=None, cancel_check=lambda: checks.append(True))
-    assert len(checks) == 3 and marker.sequence == 0
+def test_recording_start_carries_setup_markers_in_order(marker):
+    marker.emit("participant.dialog.shown")
+    marker.emit("source.polarity.set", field="polar_inverted", enabled=False,
+                ui_seq=1, ui_time_ms=2)
+    marker.emit("recording.started", source_ids=["input", "markers", "derived"],
+                policy="visible_and_late_except_excluded", excluded_uids=[])
+    start = marker._outlet.samples[-1][0]
+    assert [event["seq"] for event in start["pre_recording_events"]] == [1, 2]
+    assert [event["event"] for event in start["pre_recording_events"]] == [
+        "participant.dialog.shown", "source.polarity.set"]
+    marker.emit("run.started", participant="p1", session="001")
+    assert len(start["pre_recording_events"]) == 2
 
-    def cancel():
-        raise DesktopCancelled()
+def test_name_can_change_before_subscription_but_not_during_run(marker):
+    marker._outlet.connected = False
+    marker.rename("Lab breathing markers")
+    assert marker.name == "Lab breathing markers"
+    with pytest.raises(ValueError, match="locked"):
+        marker.rename("Another name")
+    marker._outlet.connected = False
+    marker.name_locked = True
+    with pytest.raises(ValueError, match="locked"):
+        marker.rename("Another name")
 
-    with pytest.raises(DesktopCancelled):
-        marker.wait_for_recorder(timeout=None, cancel_check=cancel)
+
+def test_marker_health_reports_own_output_not_recording(marker):
+    marker._outlet.connected = False
+    marker.emit("run.started", participant="p", session="001")
+    assert marker.health_snapshot() == {"name":"Respyra-Events",
+        "source_id":"respyra-events-" + marker.run_id, "online":True,
+        "emitted":1}
 
 
-def test_prompt_identity_and_key_timing(marker):
+@pytest.mark.parametrize("cancel_only", [False, True])
+def test_prompt_identity_and_key_timing(marker, cancel_only):
     assert prompt_name("Breathing Range Calibration\nPress SPACE") == "calibration_ready"
     with pytest.raises(ValueError, match="Undocumented experiment screen"):
         prompt_name("Unexpected prompt")
 
     event = types.ModuleType("psychopy.event")
     waits = iter([[('x', 1.0)], [('space', 2.0)]])
-    event.waitKeys = lambda **_kwargs: next(waits)
+    bounded_waits = []
+    def wait(**kwargs):
+        if cancel_only:
+            assert kwargs["maxWait"] <= 0.1
+            bounded_waits.append(kwargs["maxWait"])
+        return next(waits)
+    event.waitKeys = wait
     event.clearEvents = lambda *_args, **_kwargs: None
     event.getKeys = lambda **_kwargs: []
     display = types.ModuleType("respyra.core.display")
@@ -125,7 +151,7 @@ def test_prompt_identity_and_key_timing(marker):
     }):
         win = Window()
         original = display.show_text_and_wait
-        with marker.observe_inputs_and_screens() as observed_show:
+        with marker.observe_inputs_and_screens(cancel_check=(lambda: None) if cancel_only else None) as observed_show:
             result = observed_show(
                 win, "Breathing Range Calibration\nPress SPACE",
                 key_list=["space"], prepare_flip=lambda _win: None, key_clock=object(),
@@ -133,6 +159,8 @@ def test_prompt_identity_and_key_timing(marker):
             assert result == ("space", 2.0)
             win.flip()  # first calibration frame
         assert display.show_text_and_wait is original
+    if cancel_only:
+        assert len(bounded_waits) == 2
 
     names = [sample[0]["event"] for sample in marker._outlet.samples]
     assert names == [
@@ -180,7 +208,7 @@ def test_catalog_has_pairs_and_logger_has_no_output():
         if name.startswith("ui.") and name.endswith(".shown"):
             assert name[:-5] + "dismissed" in events
     required = {field for event in events.values() for field in event["fields"]}
-    assert set(CATALOG["event_field_definitions"]) - required == {"ui_seq", "ui_time_ms"}
+    assert set(CATALOG["event_field_definitions"]) - required == {"ui_origin", "ui_client_seq"}
     logger = NullSampleLogger()
     logger.log_row(force_n=10)
     logger.flush()
@@ -202,4 +230,3 @@ def test_catalog_has_pairs_and_logger_has_no_output():
         and isinstance(node.args[0].value, str)
     }
     assert literal_events <= events.keys()
-    assert "create_session_file" not in runner.read_text(encoding="utf-8")

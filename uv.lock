@@ -1247,8 +1247,6 @@ name = "mpi"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "ipympl" },
-    { name = "jupyter" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "psychopy" },
@@ -1259,12 +1257,15 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "pyxdf" },
+]
+notebooks = [
+    { name = "ipympl" },
+    { name = "jupyter" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "ipympl", specifier = ">=0.10.0" },
-    { name = "jupyter", specifier = "==1.1.*" },
     { name = "matplotlib", specifier = ">=3.10.9" },
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "psychopy", specifier = ">=2026.2.1" },
@@ -1273,7 +1274,14 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+dev = [
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pyxdf", specifier = "==1.17.5" },
+]
+notebooks = [
+    { name = "ipympl", specifier = ">=0.10.0" },
+    { name = "jupyter", specifier = "==1.1.*" },
+]
 
 [[package]]
 name = "msgpack"
@@ -4408,6 +4416,18 @@ sdist = { url = "https://files.pythonhosted.org/packages/a9/ef/2d27f30c59a67be70
 wheels = [
     { url = "https://files.pythonhosted.org/packages/89/ff/8bd91d4502b48bee0459bc912806fa512111905ab97d317e7cb1201b3542/pywinpty-3.0.5-cp310-cp310-win_amd64.whl", hash = "sha256:b467dcad72365bc2205ed8b6e694e817d71de269d46e56cfe267dfa9d3d30e1b", size = 2092426, upload-time = "2026-06-10T23:40:23.292Z" },
     { url = "https://files.pythonhosted.org/packages/00/d2/dee13e67af2300a080dea30d4da8fdb05133a7eebb39171111f0530f7e88/pywinpty-3.0.5-cp310-cp310-win_arm64.whl", hash = "sha256:7dc4046ea8e4d7f0a16dae8dfcaeeda6df7ca3a9330444d2ba5bb96138fe0a91", size = 818083, upload-time = "2026-06-10T23:42:04.203Z" },
+]
+
+[[package]]
+name = "pyxdf"
+version = "1.17.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f6/e9/0e34f94f443fa88d70ddce91d4f3fbce319165dee09309e6ba6029cb1eda/pyxdf-1.17.5.tar.gz", hash = "sha256:97ab76e066855ed2233ebd8a2b046ea01306c5846a9471194c6dbc7e3a6a7bf4", size = 35635, upload-time = "2026-06-15T15:25:56.416Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/92/26/40408ec2d50b5a3794c1fbace10ca36882eb0d97bc2633d76e4edfb29efe/pyxdf-1.17.5-py3-none-any.whl", hash = "sha256:3162772dba88ed4516956f91ec05ea87b8c93387a403dacb7497ffcd0ee345af", size = 21577, upload-time = "2026-06-15T15:25:57.323Z" },
 ]
 
 [[package]]

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "shortDescription": "Respyra 2.0 experiment controller",
+    "longDescription": "Experiment control with automatic native LSL-to-XDF recording, PsychoPy participant display, raw Force input, event markers and opt-in QR phone control.",
+    "resources": {"../.for-ai-local/packaging/engine/": "engine/"},
+    "windows": {
+      "webviewInstallMode": {"type": "downloadBootstrapper"},
+      "nsis": {
+        "installMode": "currentUser",
+        "startMenuFolder": "Respyra 2.0",
+        "installerIcon": "icons/icon.ico",
+        "compression": "lzma"
+      }
+    }
+  }
+}

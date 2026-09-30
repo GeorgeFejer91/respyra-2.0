@@ -1,13 +1,16 @@
 {
   "name": "respyra-desktop",
-  "version": "0.1.0",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "scripts": {
     "tauri": "tauri",
+    "package:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-windows.ps1",
     "prepare:web": "node scripts/prepare-web.mjs",
+    "prepare:recorder": ".venv\\Scripts\\python.exe scripts/build_recorder.py",
     "test:web": "node --test tests/*.test.mjs",
-    "check:ui": "pnpm prepare:web && node tests/check_html_ui.cjs"
+    "check:ui": "pnpm prepare:web && node tests/check_html_ui.cjs",
+    "check:remote": "pnpm prepare:web && node tests/check_remote_viewer.cjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.4",
@@ -15,6 +18,7 @@
   },
   "dependencies": {
     "@chenglou/pretext": "0.0.9",
-    "@fontsource/noto-sans": "5.2.8"
+    "@fontsource/noto-sans": "5.2.8",
+    "qrcode-generator": "2.0.4"
   }
 }

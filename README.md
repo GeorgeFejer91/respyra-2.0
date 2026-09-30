@@ -1,11 +1,25 @@
 # Respyra 2.0
 
-HTML/Tauri desktop setup for a Python breathing-belt validation study. The PsychoPy task asks
+HTML/Tauri experiment controller for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
-amplified, attenuated, or absent. Vernier Stream Mini publishes the raw belt
-signal through LSL; Respyra publishes a separate event-marker LSL stream.
+amplified, attenuated, or absent. Vernier Stream Mini can publish raw belt Force;
+Polar Stream Mini can publish two signed ACC-derived breathing candidates.
+Respyra accepts either source through LSL, publishes an event-marker stream,
+and records LSL to XDF automatically.
 
 The importable Python package keeps its original name, `mpi`.
+
+Respyra 2.0's original study, controller and packaging code is licensed under
+[GPL-3.0](LICENSE). Bundled third-party components retain their own licenses;
+see [third-party notices](docs/THIRD-PARTY.md).
+
+## Windows program
+
+The **Respyra 2.0** installer includes **respyrecorder**, the native LSL/XDF recorder, and a locked Python/PsychoPy engine.
+If WebView2 is missing, setup downloads it from Microsoft. It allows choosing the installation folder and
+creates a Start menu shortcut. See [Windows installation](docs/windows-install.md)
+for build/download checks, writable CSV location and qualification limits.
+The attributed original [Respyra logo](assets/branding/README.md) is included.
 
 ## Setup
 
@@ -14,74 +28,107 @@ and the Tauri Windows prerequisites (MSVC build tools and WebView2). From the
 checkout, launch the desktop app:
 
 ```powershell
-py -3.10 -m uv sync --frozen
+python -m uv sync --frozen --python 3.10.11
 pnpm install --frozen-lockfile
+pnpm prepare:recorder
 # If Cargo is not already in PATH:
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 pnpm tauri dev
 ```
 
-To build the workspace executable, run `pnpm tauri build --no-bundle`
-(`--debug` builds faster). This version requires the checkout and its `.venv`:
-the native shell uses the fixed Python environment in the build's workspace.
-Rebuild after moving the checkout. It is not a standalone installer.
+To build a development executable, run `pnpm tauri build --debug --no-bundle`;
+it uses the checkout's `.venv`. For the standalone release installer, run
+`pnpm package:windows`. Release builds require the packaged engine and never
+fall back to development Python.
 
-Running the experiment requires Vernier Stream Mini from
-[Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream) publishing
-its **Separate Streams** raw Vernier LSL outlet, an LSL recorder subscribed to
-both `VernierRaw` and `Respyra-Events`, and a working PsychoPy display.
+Running the experiment requires a working PsychoPy display and one accepted
+breathing input from [Polar-Mini-Stream](https://github.com/GeorgeFejer91/Polar-Mini-Stream):
+Vernier's raw Force outlet or Polar's signed PCA or signed Phan outlet in
+**Separate Streams** mode. [Polar input contracts](docs/polar-input-contracts.md)
+describe the exact waveform metadata, validity companions and calibration.
 Launch Respyra; its **Respyra-Events** outlet (type **Markers**) is advertised
 at Python-engine startup, before breathing-input selection or PsychoPy initialization.
-In LabRecorder, refresh the stream list, select **Respyra-Events** and the
-streamer's **VernierRaw** outlet, then start recording. Respyra waits for a marker
-subscriber without a 30-second deadline; participant controls remain disabled
-until one connects. Keep both streams recording through the final **Close**.
+**Start Experiment** starts the bundled **respyrecorder** and requires selected input
+samples and actual marker reception by the recorder before opening PsychoPy.
+Recording includes calibration and study cleanup. Additional LSL streams join
+when discovered, including streams started later. No separate recorder is required.
 The first window is
-the participant/session form with breathing-input setup. Click **Add LSL
-Stream**, select a compatible result, then **Use Selected Stream**. The scan
-lists visible streams and reasons for rejecting incompatible inputs. It
-requires the Vernier Stream Mini raw outlet, its metadata-identified Force
-channel in **N**, floating-point samples, and a unique stable source ID. Live
-Force values are checked before **Start Experiment** becomes available.
-The streamer's processed 0–1 breathing outlet is not used because the study's
-targets and errors are in Newtons.
-The run stops if no Force samples arrive during calibration or if the live
-Force stream stalls.
+the **Experiment control** panel with participant/session and breathing-input setup.
+The three-part control center shows participant/session inputs at the top,
+one shared plot with stacked live channels, stream tabs and event markers in the middle, and a
+red **Start Experiment** button at the bottom. All streams are included
+automatically. Additional channels are paged without dropping them. Enter the participant number and
+study session, then Start. The default session is 001; its parity determines
+the study's counterbalancing.
+
+Respyra automatically discovers and connects a unique compatible breathing
+input. The adjacent Vernier and Polar dropdowns show compatible streams found
+by the LSL scan; choosing one makes it the study input. Discovery lists visible
+streams and reasons for rejecting incompatible study inputs. It
+requires Vernier's metadata-identified Force channel in **N**, or one of the
+two exact Polar contracts with its live validity flags. All require floating-point
+samples and a unique stable source ID. Polar also requires the experimenter to
+choose whether inhalation raises or lowers the waveform. The run stops if valid
+samples disappear.
+
+**Respyra-Calibrated-Breathing** is advertised before recording and contains
+NaN until calibration. It then publishes the selected signal centered and
+scaled by its calibrated amplitude, retaining the raw inlet's synchronized
+timestamps and calibration metadata. Values are not clipped or adjusted by
+condition feedback gain. The recorder must receive this stream before trials
+begin, and final XDF verification requires its samples. Its compact indicator
+shows waiting, recording, then saved.
+
+Optional **Keyboard events** and **Mouse events** record Windows key down/up,
+mouse movement, buttons and wheel as markers during recording, within Respyra's
+controller and participant windows. Both default off. Callback LSL time is
+retained separately from marker publication time; normal study response markers
+remain automatic. CSV, source selection, marker naming and diagnostics are in
+**Settings**.
 
 The accepted source ID is saved in `%LOCALAPPDATA%/Respyra/lsl-source.json`
 on Windows (otherwise `$LOCALAPPDATA`, or `~/.config/Respyra`). Later launches
 automatically reconnect that exact source and recheck metadata and live data;
 no repeated scan or acceptance is needed. Missing, changed, duplicate, or
-incompatible outlets require selection again. There is no automatic switch to
-another belt. Each accepted inlet stays pinned to that outlet; a streamer
-restart requires a new validated connection. Settings contain only source
+incompatible outlets keep Start unavailable; missing/restarted outlets retry
+automatically. There is no automatic switch to
+another source. Each accepted inlet stays pinned to that outlet; a streamer
+restart is revalidated before connection. Settings contain only source
 identity/name, never breathing samples or participant details.
 `RESPYRA_LSL_SOURCE_ID`, when set, overrides
 the saved identity on launch; remove it to use remembered UI selections.
 
-The first window is a local HTML form in Tauri's WebView. After Start Experiment,
-the setup window hides and PsychoPy presents the original instructions,
-calibration, trials, and assessments. The form returns after the run with its
-result; keep the recorder running until **Close**. Discovery and connection
+The first window is the experimenter-facing HTML control window in Tauri's
+WebView. After Start Experiment, PsychoPy presents the original instructions,
+calibration, trials, and assessments in its separate participant window.
+Experiment control remains available for monitoring and **Stop experiment**;
+on one display it may sit behind PsychoPy's full-screen window. Use a second
+display or the phone controller to monitor without taking participant focus.
+**XDF recording** shows subscribed streams, the local file, bytes and completion
+status. Wait for **Saved** before closing. Discovery and connection
 run in one Python setup worker; experiment input keeps the existing nonblocking
 LSL read path. Qt is not used by this wrapper, although the installed PsychoPy
 and respyra distributions still include Qt dependencies.
 
-Respyra does **not** write session or self-assessment CSVs. The recorder owns
-the continuous breathing data and the event timeline. The one-channel
+**Save original CSV files locally** is off by default. Enabling it restores the
+original sample columns and the companion `-self-assessment.csv` file in ignored
+`data/`, using the existing respyra logger. CSV writes flush each row and may add
+disk latency. XDF recording is always enabled and independent of this CSV option. The one-channel
 `Respyra-Events` stream sends named JSON markers documented in
 [`src/mpi/event_markers/catalog.json`](src/mpi/event_markers/catalog.json).
-The experiment waits for a marker-stream subscriber before accepting participant
-input. The recorder must also select the Vernier raw stream; marker subscription
-alone cannot prove that the force stream is being saved. Marker publication
-fails if the subscriber disconnects; inspect the recorded file before using
-the run for analysis.
+Marker output is independent of recorder connection. Setup events sent before
+recording may be absent from the file. The final HTML result and Close markers
+follow XDF finalization. A complete `.xdf` requires matching chunk counts and
+closed footers, with data from both required streams. Failed files retain
+`.xdf.partial`; inspect them before analysis.
+The marker outlet's default name is **Respyra-Events**; change it in **Marker name**
+before any recorder subscribes or the experiment starts.
 The HTML participant form marks each field key press and text edit, Start/Cancel
 button clicks, accept/reject, and final field values. LSL selection, scan
 results, connection outcomes, saved-source actions, and source loss also send
 named markers. The final Close button and native closure also have markers.
-Python publishes the single marker stream in order. Setup actions include
-`ui_seq` and browser `ui_time_ms`; their LSL timestamp describes Python observing
+Python publishes the single marker stream in order. Controller actions include
+global `ui_seq`, `ui_origin`, browser `ui_client_seq` and `ui_time_ms`; their LSL timestamp describes Python observing
 the action after IPC. Browser time is a separate clock and must not be aligned
 directly with breathing samples. Experiment screen/phase onset markers remain
 on PsychoPy display flips, without desktop IPC. Animation frames are not
@@ -94,12 +141,12 @@ pnpm test:web
 pnpm check:ui
 ```
 
-`web/` owns the setup form; `src-tauri/` supervises its Python process through
-three closed native commands and a private control pipe. `src/mpi/` contains
+`web/` owns the shared setup/monitor/controller UI; `src-tauri/` supervises its Python process through
+closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
-helpers. `scripts/plot_session.py` remains for older local CSV sessions; the new
-experiment does not produce its input. `notebooks/` contains signal exploration,
-and `tests/` covers source and marker contracts.
+helpers. `scripts/plot_session.py` reads local CSV sessions. `notebooks/` contains signal exploration,
+and `tests/` covers source, marker and recorded-file contracts. Install notebook
+tools only when using those files: `python -m uv sync --frozen --python 3.10.11 --group notebooks`.
 
 Older session CSVs and generated plots remain in the ignored local `data/`
 folder. Review and de-identify any recording separately before sharing it.
@@ -108,3 +155,27 @@ Agent instructions start at [`AGENTS.md`](./AGENTS.md).
 
 The Qt checkpoint before this migration is the Git tag
 `qt-wrapper-checkpoint-2026-09-27`.
+
+## QR phone controller
+
+**Connect remote experiment controller** opens a QR popup and creates a private
+link automatically. Scanning it requests access; click **Approve** on the desktop
+before the phone receives study state or controls. **Reject** revokes the request.
+The phone can edit participant/session,
+scan/select/use LSL input, Start, Cancel, Stop experiment and Close the final
+screen. The phone opens **LSL data & markers**: select a raw Vernier channel,
+view its current value/unit and a ten-second trace with marker ticks and recent
+event names. **Experiment controls** contains setup. The preview coalesces live
+samples at four updates per second; XDF retains full-rate data. Both controllers
+show phase/trial progress and recording status.
+The named marker outlet, sent-event count and latest event stay visible; recent
+12 markers, identities and battery status expand under details. The current
+stream provides no battery telemetry, so battery reads **Not reported**.
+**Disconnect remote controller** revokes the session; phone disconnect does not stop an
+ongoing study. The link needs Internet signaling and must stay private.
+You can also paste it into Recorder's **+** tab; approved Recorder phones receive
+the same tab. The permanent descriptor is
+[`companion/panel.json`](companion/panel.json). See
+[remote-viewer.md](docs/remote-viewer.md) for pairing, one-controller lifecycle,
+hosting, privacy, checks and qualification limits. The static phone interface is
+hosted at [Respyra phone controller](https://georgefejer91.github.io/respyra-2.0/).

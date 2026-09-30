@@ -39,7 +39,7 @@ class MarkerOutlet:
     """Publish catalogued JSON events on one LSL string marker channel."""
 
     def __init__(self) -> None:
-        from pylsl import StreamInfo, StreamOutlet, cf_string, local_clock
+        from pylsl import local_clock
 
         self._clock = local_clock
         self.run_id = str(uuid4())
@@ -49,9 +49,18 @@ class MarkerOutlet:
         self.phase: str | None = None
         self.screen: str | None = None
         self.state = None
+        self.observer = None
         self.calibration_attempt_open = False
+        self.name = "Respyra-Events"
+        self.name_locked = False
+        self._pre_recording = []
+        self._create_outlet()
+
+    def _create_outlet(self, name=None):
+        from pylsl import StreamInfo, StreamOutlet, cf_string
+        name = name or self.name
         info = StreamInfo(
-            "Respyra-Events", "Markers", 1, 0.0, cf_string,
+            name, "Markers", 1, 0.0, cf_string,
             f"respyra-events-{self.run_id}",
         )
         desc = info.desc()
@@ -59,22 +68,26 @@ class MarkerOutlet:
         desc.append_child_value("payload_format", "json")
         desc.append_child_value("application", "Respyra 2.0")
         self._outlet = StreamOutlet(info)
+        self.name = name
+        self.online = True
 
-    def wait_for_recorder(self, timeout: float | None = 30.0, cancel_check=None) -> None:
-        """Keep the advertised outlet alive; None waits until subscription or cancellation."""
-        if cancel_check is None and timeout is not None:
-            connected = self._outlet.wait_for_consumers(timeout)
-        else:
-            deadline = float("inf") if timeout is None else time.monotonic() + timeout
-            connected = False
-            while time.monotonic() < deadline:
-                if cancel_check is not None:
-                    cancel_check()
-                if self._outlet.wait_for_consumers(min(0.1, deadline - time.monotonic())):
-                    connected = True
-                    break
-        if not connected:
-            raise RuntimeError("No LSL recorder subscribed to Respyra-Events")
+    def rename(self, name):
+        name = name.strip()
+        if not name or len(name) > 128 or any(ord(c) < 32 for c in name):
+            raise ValueError("Use a nonempty marker stream name, up to 128 characters")
+        if self.name_locked or self._outlet.have_consumers():
+            raise ValueError("Marker name is locked once a recorder subscribes")
+        if name != self.name:
+            self._create_outlet(name)
+
+    def health_snapshot(self):
+        return {"name": self.name, "source_id": "respyra-events-" + self.run_id,
+                "online": self.online,
+                "emitted": self.sequence}
+
+    @property
+    def uid(self):
+        return self._outlet.get_info().uid()
 
     def start_calibration_attempt(self) -> None:
         self.emit("calibration.attempt.started")
@@ -82,36 +95,53 @@ class MarkerOutlet:
 
     def end_calibration_attempt(self, outcome: str) -> None:
         if self.calibration_attempt_open and self.state is not None:
+            polar = bool(getattr(getattr(self.state, "belt", None), "contract_id", None))
             self.emit("calibration.attempt.ended", outcome=outcome,
-                      center_n=self.state.range_center,
-                      amplitude_n=self.state.global_amplitude,
-                      y_min_n=self.state.y_min, y_max_n=self.state.y_max)
+                      center_n=None if polar else self.state.range_center,
+                      amplitude_n=None if polar else self.state.global_amplitude,
+                      y_min_n=None if polar else self.state.y_min,
+                      y_max_n=None if polar else self.state.y_max,
+                      center_value=self.state.range_center,
+                      amplitude_value=self.state.global_amplitude,
+                      y_min_value=self.state.y_min, y_max_value=self.state.y_max,
+                      signal_unit="g" if polar else "N")
             self.calibration_attempt_open = False
 
     def emit(self, name: str, **fields) -> None:
         if name not in CATALOG["events"]:
             raise ValueError(f"Undocumented LSL marker: {name}")
+        if name == "recording.started":
+            fields["pre_recording_events"] = self._pre_recording
         missing = set(CATALOG["events"][name]["fields"]) - fields.keys()
         if missing:
             raise ValueError(f"{name} is missing marker fields: {sorted(missing)}")
-        if not self._outlet.have_consumers():
-            raise RuntimeError("Respyra-Events has no LSL recorder subscriber")
-        self.sequence += 1
         timestamp = self._clock()
         payload = {
             "schema": CATALOG["schema"], "event": name,
-            "run_id": self.run_id, "seq": self.sequence,
+            "run_id": self.run_id, "seq": self.sequence + 1,
             "lsl_time": timestamp, "trial": self.trial_num,
             "condition": self.condition, "phase": self.phase,
             "screen": self.screen, **fields,
         }
-        self._outlet.push_sample(
-            [json.dumps(payload, separators=(",", ":"), allow_nan=False)],
-            timestamp=timestamp,
-        )
+        try:
+            self._outlet.push_sample(
+                [json.dumps(payload, separators=(",", ":"), allow_nan=False)],
+                timestamp=timestamp,
+            )
+        except Exception:
+            self.online = False
+            raise
+        self.sequence += 1
+        self.online = True
+        if name == "recording.started":
+            self._pre_recording = None
+        elif self._pre_recording is not None:
+            self._pre_recording.append(payload)
+        if self.observer is not None:
+            self.observer(payload)
 
     @contextmanager
-    def observe_inputs_and_screens(self, cancel_check=None):
+    def observe_inputs_and_screens(self, cancel_check=None, idle_check=None):
         """Mark accepted/rejected keys and every known respyra text screen."""
         from psychopy import event
         from respyra.core import display, events
@@ -134,6 +164,9 @@ class MarkerOutlet:
             while True:
                 if cancel_check is not None:
                     cancel_check()
+                if idle_check is not None:
+                    idle_check()
+                if cancel_check is not None or idle_check is not None:
                     kwargs["maxWait"] = min(0.1, max(0, deadline - time.monotonic()))
                 keys = original_wait(*args, keyList=None, **kwargs)
                 if cancel_check is not None:

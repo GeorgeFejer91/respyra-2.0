@@ -3,12 +3,16 @@ from __future__ import annotations
 from collections import deque
 from contextlib import ExitStack, redirect_stdout
 import sys
+import time
 from typing import Any, TYPE_CHECKING
 
 from mpi.event_markers import MarkerOutlet, NullSampleLogger
-from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, isolate_control_input
-from mpi.lsl_force import LSLForceError
+from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, ExperimentStopped, isolate_control_input
+from mpi.lsl_force import LSLForceError, LSLForceSource
+from mpi.lsl_polar import LSLPolarSource
+from mpi.polar_calibration import PolarSampleLogger, run_polar_range_calibration
 from mpi.lsl_setup import run_source_setup
+from mpi.recording import NativeRecording, RecordingError
 if TYPE_CHECKING:
     from respyra.configs.experiment_config import ExperimentConfig
     from respyra.core.target_generator import TargetGenerator
@@ -22,32 +26,67 @@ def main():
     control_input = isolate_control_input(sys.stdin)
     with redirect_stdout(sys.stderr):
         bridge = DesktopBridge(control_input, writer)
+        import os
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        bridge.recorder = NativeRecording(
+            os.environ.get("RESPIRA_RECORDER_DIR", root / ".for-ai-local/recorder/runtime"),
+            os.environ.get("RESPIRA_DATA_DIR", root / "data"))
         markers = MarkerOutlet()
+        markers.observer = bridge.note_marker
+        bridge.markers = markers
+        from mpi.lsl_viewer import LSLViewer
+        bridge.viewer = LSLViewer(markers.health_snapshot()["source_id"])
+        bridge.send({"phase": "starting", "run_id": markers.run_id,
+                     "message": "Finding LSL streams…"})
+        bridge.start_progress()
         failure = None
         phase = "finished"
-        message = "Experiment ended. Check the LSL recording before closing."
+        message = "Experiment ended."
         try:
             # Advertise the outlet before importing the study or PsychoPy.
             from mpi.validation_study_jenny import CONFIG as _cfg
+
+            # Installed program files are read-only; keep original CSV schemas
+            # and relative filenames in the native shell's writable user folder.
+            import os
+            if os.environ.get("RESPIRA_DATA_DIR"):
+                from dataclasses import replace
+                _cfg = replace(_cfg, output_dir=os.environ["RESPIRA_DATA_DIR"])
 
             run_experiment(_cfg, bridge, markers)
         except DesktopCancelled:
             pass
         except SystemExit as exc:
             if exc.code not in (None, 0):
-                raise
+                phase, message = "error", f"Experiment exited with code {exc.code}"
+                failure = RuntimeError(message)
         except Exception as exc:
             phase, message = "error", str(exc)
             failure = exc
-        # Retain the one outlet through the final screen and desktop closure.
-        # A consumer is not proof of persisted data; keep the recorder running.
+        # Native recording includes study cleanup; the final screen reports the file.
+        if bridge.recorder.process is not None:
+            markers.emit("recording.finalizing")
+            if not bridge.closed.is_set():
+                bridge.send({"phase": "experiment", "message": "Finalizing XDF recording…"})
+            try:
+                bridge.recorder.stop()
+            except RecordingError as exc:
+                phase, message, failure = "error", str(exc), exc
+            else:
+                message = "XDF saved. Experiment ended." if failure is None else f"{message}\nXDF saved."
         if not bridge.closed.is_set():
+            if bridge.stop_action is not None:
+                bridge.finish_stop(failure)
+            if bridge.stopped and failure is None:
+                message = "XDF saved. Experiment stopped."
             if markers.sequence:
                 markers.emit("ui.wrapper.result.requested", outcome=phase, message=message)
             bridge.send({"phase": phase, "message": message})
             bridge.closed.wait()
         if markers.sequence:
             bridge.mark_close(markers)
+        bridge.viewer.close()
         if failure is not None:
             raise failure
 
@@ -98,6 +137,13 @@ def run_tracking(
             visual_force = s.range_center + feedback_gain * (force - s.range_center)
             compensated_error = target_force - visual_force
             trial_errors.append(abs(compensated_error))
+            s.logger.log_row(
+                timestamp=round(tracking_t, 4), frame=s.frame_count,
+                force_n=round(force, 4), target_force=round(target_force, 4),
+                error=round(target_force - force, 4),
+                compensated_error=round(compensated_error, 4), phase="tracking",
+                condition=condition_name, trial_num=trial_num, feedback_gain=feedback_gain,
+            )
 
         dot_y = _force_to_dot_y(target_force, s.y_min, s.y_max, trace_bottom, trace_top)
         target_dot.pos = (trace_right + cfg.dot.x_offset, dot_y)
@@ -132,6 +178,21 @@ def run_tracking(
     return trial_errors, False
 
 
+def show_polar_trial_feedback(state, cfg, trial_errors, trial_num):
+    from respyra.core.display import show_text_and_wait
+
+    mean_error = sum(trial_errors) / len(trial_errors) if trial_errors else float("nan")
+    state.all_trial_errors.append(mean_error)
+    key = show_text_and_wait(
+        state.win,
+        text=(f"Trial {trial_num} complete.\n\n"
+              f"Mean tracking error: {mean_error:.4f} g\n\n"
+              "Press SPACE to continue."),
+        key_list=["space", cfg.escape_key],
+    )
+    return key == cfg.escape_key
+
+
 def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=None) -> None:
     """Run the standard breath tracking experiment.
 
@@ -150,16 +211,11 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
     """
     if markers is None:
         markers = MarkerOutlet()
-    if bridge is None:
-        markers.wait_for_recorder()
-    else:
-        bridge.send({"phase": "waiting_recorder", "run_id": markers.run_id,
-                     "message": "Respyra-Events (Markers) is available. Refresh the LSL recorder, select it together with VernierRaw, and start recording. Waiting for a marker subscriber…"})
-        markers.wait_for_recorder(timeout=None, cancel_check=bridge.check_cancel)
-    markers.emit("run.recorder_connected")
     belt = None
     win = None
     state = None
+    logger = self_assessment_logger = None
+    input_capture = None
     hooks = ExitStack()
     abort_reason = None
     completed_trials = 0
@@ -189,12 +245,41 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             abort_reason = "participant_dialog_cancelled"
             return
 
+        polar_input = isinstance(belt, LSLPolarSource)
+        signal_unit = "g" if polar_input else "N"
+        if polar_input:
+            from dataclasses import replace
+            columns = [{"force_n": "signal_g", "target_force": "target_signal_g",
+                        "error": "error_g", "compensated_error": "compensated_error_g"}.get(name, name)
+                       for name in cfg.data_columns]
+            cfg = replace(cfg, data_columns=columns)
         participant = exp_info["participant"]
         session = exp_info["session"]
         markers.emit("participant.dialog.submitted", participant=participant, session=session)
+        if exp_info.get("record_keyboard") or exp_info.get("record_mouse"):
+            from mpi.input_capture import InputCapture
+            input_capture = InputCapture(exp_info.get("record_keyboard", False), exp_info.get("record_mouse", False))
+            if bridge is not None:
+                bridge.input_capture = input_capture
+
+        if exp_info.get("save_csv", False):
+            from pathlib import Path
+            from respyra.core.data_logger import DataLogger, create_session_file
+            # IDs become filename components in the original CSV format.
+            for value in (participant, session):
+                if not value or any(c in value for c in '<>:"/\\|?*') or any(ord(c) < 32 for c in value):
+                    raise ValueError("CSV participant/session IDs cannot contain filename characters")
+            filepath = create_session_file(participant, session, str(Path(cfg.output_dir).resolve()))
+            if Path(filepath).exists() or Path(filepath + "-self-assessment.csv").exists():
+                raise FileExistsError("A CSV already exists for this session timestamp; retry in a second")
+            logger = DataLogger(filepath, columns=cfg.data_columns)
+            self_assessment_logger = DataLogger(filepath + "-self-assessment.csv",
+                columns=["trial_num", "condition", "self_condition", "confidence", "self_accuracy"])
 
         if bridge is not None:
             bridge.check_cancel()
+            bridge.source = belt
+            bridge.experiment = True
             bridge.send({"phase": "experiment", "message": "Experiment running in PsychoPy."})
 
         win, stimuli = setup_display(cfg)
@@ -209,6 +294,7 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             dot_feedback_mode=cfg.dot.feedback_mode,
             range_percentiles=[cfg.range_cal.percentile_lo, cfg.range_cal.percentile_hi],
             range_scale=cfg.range_cal.scale,
+            input_contract=getattr(belt, "contract_id", "vernier-force/1"), signal_unit=signal_unit,
         )
         exp_clock = core.Clock()
         buffer = deque(maxlen=cfg.trace_buffer_size)
@@ -216,7 +302,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         state = ExperimentState(
             belt=belt,
             win=win,
-            logger=NullSampleLogger(),
+            logger=(PolarSampleLogger(logger or NullSampleLogger()) if polar_input
+                    else logger or NullSampleLogger()),
             clock=exp_clock,
             buffer=buffer,
             stimuli=stimuli,
@@ -224,7 +311,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             y_max=cfg.trace.y_range[1],
         )
         markers.state = state
-        observer = (markers.observe_inputs_and_screens(cancel_check=bridge.check_cancel)
+        observer = (markers.observe_inputs_and_screens(cancel_check=bridge.check_cancel,
+                                                       idle_check=belt.get_all)
                     if bridge is not None else markers.observe_inputs_and_screens())
         show_text_and_wait = hooks.enter_context(observer)
 
@@ -257,7 +345,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
 
         markers.phase = "calibration"
         try:
-            calibrated = run_range_calibration(state, cfg)
+            calibrated = (run_polar_range_calibration(state, cfg) if polar_input
+                          else run_range_calibration(state, cfg))
         except Exception:
             markers.end_calibration_attempt("error")
             raise
@@ -272,12 +361,38 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             abort_reason = "calibration_escape"
             return  # finally handles cleanup
         if used_defaults:
-            raise LSLForceError("Range calibration received no Force samples")
+            raise LSLForceError("Range calibration received no valid Polar waveform samples"
+                                if polar_input else "Range calibration received no Force samples")
+        if isinstance(belt, LSLForceSource):
+            belt.get_all()  # Keep buffered pre-calibration samples on the missing-value side.
         markers.emit(
-            "calibration.completed", center_n=state.range_center,
-            amplitude_n=state.global_amplitude,
-            y_min_n=state.y_min, y_max_n=state.y_max,
+            "calibration.completed",
+            center_n=None if polar_input else state.range_center,
+            amplitude_n=None if polar_input else state.global_amplitude,
+            y_min_n=None if polar_input else state.y_min,
+            y_max_n=None if polar_input else state.y_max,
+            center_value=state.range_center, amplitude_value=state.global_amplitude,
+            y_min_value=state.y_min, y_max_value=state.y_max, signal_unit=signal_unit,
+            input_polarity=getattr(belt, "polarity", 1) if polar_input else None,
         )
+        if polar_input:
+            from dataclasses import replace
+            amplitude = state.global_amplitude
+            cfg = replace(cfg, dot=replace(cfg.dot,
+                error_threshold_n=0.5 * amplitude,
+                error_threshold_mid_n=amplitude,
+                graded_max_error_n=1.5 * amplitude))
+        if isinstance(belt, LSLForceSource):
+            belt.calibrate(state.range_center, state.global_amplitude, markers.run_id)
+            if bridge is not None and bridge.recorder is not None:
+                deadline = time.monotonic() + 8
+                while belt.calibrated_sample is None:
+                    bridge.check_cancel()
+                    belt.get_all()
+                    if time.monotonic() >= deadline:
+                        raise LSLForceError("Calibrated breathing has no live input samples")
+                    time.sleep(.025)
+                bridge.recorder.wait_for_finite_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
 
         # 8. Build trial order
         conditions = (cfg.trial.build_conditions(session)
@@ -358,16 +473,19 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
 
             # b) Calibrate from baseline (center logged for diagnostics only;
             #    target generation uses the global range calibration values)
-            baseline_center, baseline_amp = calibrate_from_baseline(baseline_forces)
-            markers.emit("baseline.calculated", center_n=baseline_center,
-                         amplitude_n=baseline_amp)
+            baseline_center, baseline_amp = calibrate_from_baseline(
+                baseline_forces, min_amplitude=1e-5 if polar_input else 0.5)
+            markers.emit("baseline.calculated", center_n=None if polar_input else baseline_center,
+                         amplitude_n=None if polar_input else baseline_amp,
+                         center_value=baseline_center, amplitude_value=baseline_amp,
+                         signal_unit=signal_unit)
             target_gen = TargetGenerator(
                 condition_def, state.range_center, state.global_amplitude
             )
             print(
-                f"Trial {trial_num}: target center={state.range_center:.2f} N, "
-                f"amplitude={state.global_amplitude:.2f} N, "
-                f"baseline center={baseline_center:.2f} N, "
+                f"Trial {trial_num}: target center={state.range_center:.4f} {signal_unit}, "
+                f"amplitude={state.global_amplitude:.4f} {signal_unit}, "
+                f"baseline center={baseline_center:.2f} {signal_unit}, "
                 f"feedback_gain={condition_def.feedback_gain}"
             )
 
@@ -387,8 +505,10 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             win.callOnFlip(state.clock.reset)
             win.callOnFlip(
                 markers.emit, "tracking.started",
-                target_center_n=state.range_center,
-                target_amplitude_n=state.global_amplitude,
+                target_center_n=None if polar_input else state.range_center,
+                target_amplitude_n=None if polar_input else state.global_amplitude,
+                target_center_value=state.range_center,
+                target_amplitude_value=state.global_amplitude, signal_unit=signal_unit,
                 segments=[{"freq_hz": seg.freq_hz, "n_cycles": seg.n_cycles}
                           for seg in condition_def.segments],
                 feedback_gain=condition_def.feedback_gain,
@@ -456,6 +576,9 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                 abort_reason = "confidence_escape"
                 break
             markers.emit("assessment.confidence", value=confidence)
+            if self_assessment_logger is not None:
+                self_assessment_logger.log_row(trial_num=trial_num, condition=condition_name,
+                    self_condition=self_condition, confidence=confidence, self_accuracy=self_accuracy)
 
             markers.emit(
                 "assessment.completed", accuracy=self_accuracy,
@@ -463,7 +586,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             )
 
             # e) Feedback
-            if show_trial_feedback(state, cfg, trial_errors, trial_num):
+            if (show_polar_trial_feedback(state, cfg, trial_errors, trial_num)
+                    if polar_input else show_trial_feedback(state, cfg, trial_errors, trial_num)):
                 print("Escape pressed at feedback.")
                 markers.emit("trial.aborted", reason="feedback_escape")
                 abort_reason = "feedback_escape"
@@ -471,8 +595,10 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             markers.emit(
                 "trial.ended",
                 mean_abs_compensated_error_n=(
-                    sum(trial_errors) / len(trial_errors) if trial_errors else None
+                    sum(trial_errors) / len(trial_errors) if trial_errors and not polar_input else None
                 ),
+                mean_abs_compensated_error_value=(sum(trial_errors) / len(trial_errors)
+                                                  if trial_errors else None), signal_unit=signal_unit,
             )
             completed_trials += 1
 
@@ -482,19 +608,25 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                 sum(state.all_trial_errors) / len(state.all_trial_errors)
                 if state.all_trial_errors else None
             )
-            mean_text = f"{overall:.2f} N" if overall is not None else "unavailable"
+            mean_text = f"{overall:.4f} {signal_unit}" if overall is not None else "unavailable"
             show_text_and_wait(
                 win,
                 text=(
                     "Experiment complete!\n\n"
                     f"Overall mean tracking error: {mean_text}\n\n"
-                    "The LSL recorder manages the breathing and event recording.\n\n"
+                    "Your breathing and event data are being recorded automatically.\n\n"
                     "Press SPACE to exit."
                 ),
                 key_list=["space", cfg.escape_key],
             )
             markers.emit("run.completed", trials_completed=completed_trials)
 
+    except ExperimentStopped:
+        abort_reason = "experimenter_stop"
+        action = bridge.stop_action
+        markers.emit("ui.experiment.stop.requested", **{
+            key: action[key] for key in
+            ("ui_seq", "ui_time_ms", "ui_origin", "ui_client_seq") if key in action})
     except DesktopCancelled:
         abort_reason = "desktop_closed"
         bridge.mark_close(markers)
@@ -517,6 +649,15 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                     cleanup_error = exc
 
         cleanup(hooks.close)
+        if input_capture is not None:
+            if bridge is not None:
+                bridge.input_capture = None
+            cleanup(input_capture.close)
+            cleanup(lambda: input_capture.poll(markers))
+        if logger is not None:
+            cleanup(logger.close)
+        if self_assessment_logger is not None:
+            cleanup(self_assessment_logger.close)
         if abort_reason is not None:
             cleanup(lambda: markers.emit("run.aborted", reason=abort_reason,
                                          trials_completed=completed_trials))
@@ -534,6 +675,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             cleanup(lambda: markers.emit("display.closed"))
         if cleanup_error is not None and not error_occurred:
             raise cleanup_error
+        if bridge is not None:
+            bridge.finish_stop(cleanup_error)
         if not error_occurred and win is not None:
             core.quit()
 

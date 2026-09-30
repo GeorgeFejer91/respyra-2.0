@@ -2,6 +2,14 @@
 .for-ai-local/
 node_modules/
 web/vendor/
+web/marker-catalog.js
+companion/vendor/
+companion/style.css
+companion/text-fit.js
+companion/remote-profile.js
+companion/controller-ui.js
+companion/action-queue.js
+companion/lsl-monitor.js
 src-tauri/target/
 src-tauri/gen/
 src-tauri/icons/*

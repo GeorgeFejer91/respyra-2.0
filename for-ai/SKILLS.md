@@ -2,6 +2,9 @@
 
 Use the smallest applicable skill set. Read every selected skill completely
 before acting, but do not load unrelated skills merely because they exist.
+Use `VERIFICATION.md` to select checks by impact and `VERIFIED.md` to reuse
+unaffected passes. Generic skill verification lists do not require rerunning
+unrelated product checks; implementation/design requirements still apply.
 
 ## Nesting order
 
@@ -27,9 +30,13 @@ Higher-priority instructions and the current user request always win.
 | Analyzing or editing session CSVs | `spreadsheets:Spreadsheets` | Conditional for spreadsheet-style data work; keep participant data local unless sharing is explicitly cleared. |
 | Changing study flow, condition ownership, or logged-data contracts | `system-engineering` | Conditional alongside `ponytail`; check experiment and analysis consumers together. |
 | Changing LSL discovery, channel selection, timing, or the Vernier Stream Mini contract | `system-engineering` alongside `ponytail` | Check the publisher's actual raw/derived outlet metadata and the consumer's `force_n` units before editing; verify the mock stream and report physical-belt evidence separately. |
-| Changing prompts, input handling, phase timing, or LSL markers | `ponytail` and `system-engineering` | Trace all callers of the affected respyra phase, update `src/mpi/event_markers/catalog.json` with each new or removed event, and verify marker ordering and absence of local session CSV writes. Keep the event hook in one owner instead of copying the study phases. |
+| Native LSL/XDF recording or Start readiness | `system-engineering`, `tauri-rust-developer` and `ponytail` | Read `RECORDING.md` and `PACKAGING.md`. Reuse pinned native LabRecorder serialization; require file-level and packaged-runtime evidence, preserve partial recordings, and retain one lifecycle owner. |
+| Changing prompts, input handling, phase timing, or LSL markers | `ponytail` and `system-engineering` | Trace phase callers, update the marker catalog, verify ordered pushes independent of recorder readiness and optional CSV on/off with original schemas. Keep one event owner. |
+| Public initialization or explicit control-plane migration | `for-ai` | Reuse and tailor this existing control plane; never bootstrap over it. Verify public source contains no recordings/secrets and Pages contains only the static phone assets. |
 | Changing the Tauri shell, native commands, permissions, or Python process lifecycle | `tauri-rust-developer` alongside `ponytail` | Keep one supervised Python engine and a closed native command surface. Verify cancellation, abnormal exit, private pipe framing and least-privilege capabilities. Keep experiment timing and LSL publication in Python. |
-| Changing text-bearing HTML/CSS/JS setup UI | `uncodixfy-pretext` and its `uncodixfy` companion alongside `ponytail` | Use locked local Pretext/fonts, semantic controls, full readable status and stream identities. Verify rendered reflow/200% text and the target WebView; never route experiment stimuli into HTML. |
+| Standalone Windows installer, resources, icons or release preparation | `tauri-rust-developer` and `ponytail`; `multi-source-web-search` for current distribution APIs/provenance | Read `PACKAGING.md` and the skill's release/sidecar references. Use one locked embedded Python engine, installed runtime evidence and explicit distribution gates. |
+| Remote controller or Recorder panel | `tauri-remote-app-builder`, `browser-remote-sync-protocol`, `tauri-rust-developer` and `ponytail` | Read `docs/remote-viewer.md` and the experiment-panel reference. Preserve typed scopes, native ownership, backend receipts, private QR requests/local approval, opaque iframe support and evidence tiers. Verify the displayed QR decodes and the actual published page pairs. Never inject participant keys or move PsychoPy timing into HTML. |
+| Changing text-bearing HTML/CSS/JS setup UI | `uncodixfy-pretext` and its `uncodixfy` companion alongside `ponytail` | Read `HTML-UI.md`; always apply this route. Use locked local Pretext/fonts, semantic controls, full readable status and stream identities. Verify rendered reflow/200% text; use impact selection for fresh versus inherited target-WebView evidence. Never route experiment stimuli into HTML. |
 
 The repository is small enough for direct source inspection; no graph skill is
 part of its standing route.

@@ -25,9 +25,13 @@ the easiest interpretation.
 | Need | Read |
 | --- | --- |
 | Scope, goals, boundaries, architecture, current state | [`PROJECT.md`](./PROJECT.md) |
+| HTML interface design and viewport fitting | [`HTML-UI.md`](./HTML-UI.md) |
+| Native LSL/XDF recording, calibration boundary and completion evidence | [`RECORDING.md`](./RECORDING.md) |
 | Which installed skills apply and in what order | [`SKILLS.md`](./SKILLS.md) |
 | Acceptance criteria, commands, gates, evidence limits | [`VERIFICATION.md`](./VERIFICATION.md) |
+| Verification inventory, prior results and reuse limits | [`VERIFIED.md`](./VERIFIED.md) |
 | Session loop, updates, Git publication, handoff | [`WORKFLOW.md`](./WORKFLOW.md) |
+| Standalone Windows installer, runtime inputs, installation and release gates | [`PACKAGING.md`](./PACKAGING.md) |
 | Why a durable choice was made or superseded | [`DECISIONS.md`](./DECISIONS.md) |
 
 Do not read every file by default. Read this router, then only what the current
@@ -41,7 +45,11 @@ task touches.
 3. Inspect the existing owner before adding code, files, dependencies, or
    abstractions.
 4. Make the smallest complete change and preserve unrelated work.
-5. Run focused checks, then proportionate integration and publication gates.
+5. Select checks by change impact; reuse valid recorded passes and run only
+   affected focused/integration checks. The verification catalogue is not a
+   mandatory full-project checklist. Run checks in the background without
+   taking focus or displaying test windows on the user's active desktop;
+   `VERIFICATION.md` defines the headless/isolation requirements.
 6. Update the narrowest canonical control-plane file when a durable fact
    changed.
 7. Report evidence, limitations, commit/remote state, and any blocker.
@@ -51,6 +59,7 @@ task touches.
 Created: 2026-09-24
 Repository: https://github.com/GeorgeFejer91/respyra-2.0
 Visibility at initialization: private
+Current visibility: public, explicitly authorized by the user.
 
 The imported product is a Python 3.10 PsychoPy/respyra study. See `PROJECT.md`
 for source ownership and the local-data boundary.

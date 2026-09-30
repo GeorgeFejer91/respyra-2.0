@@ -52,7 +52,7 @@ def check_engine_lifecycle(tmp_path):
         inlet = None
         try:
             waiting = states.get(timeout=10)
-            assert waiting["phase"] == "waiting_recorder"
+            assert waiting["phase"] == "starting"
             streams = resolve_byprop("source_id", "respyra-events-" + waiting["run_id"], timeout=5)
             assert len(streams) == 1
             info = streams[0]
@@ -60,22 +60,33 @@ def check_engine_lifecycle(tmp_path):
                 "Respyra-Events", "Markers", 1, 0.0,
             )
             assert info.channel_format() == cf_string
-            # The recorder may be opened after the old 30-second startup deadline.
-            # No belt outlet or marker inlet exists yet: discovery is independent.
-            time.sleep(31)
-            assert child.poll() is None and states.empty(), list(states.queue)
-            rediscovered = resolve_byprop("source_id", info.source_id(), timeout=5)
-            assert len(rediscovered) == 1 and rediscovered[0].uid() == info.uid()
-            inlet = StreamInlet(streams[0], recover=False)
-            inlet.open_stream(timeout=5)
-            setup = states.get(timeout=8)
-            assert setup["phase"] == "setup" and not setup["can_start"]
+            # Setup is usable before any recorder subscribes.
+            setup = states.get(timeout=15)
+            while setup["phase"] != "setup": setup = states.get(timeout=15)
+            assert not setup["can_start"]
             for seq, action in enumerate([
-                {"action": "shown"},
+                {"action":"shown"},
+                {"action":"field_edit","field":"participant","value":"before-recorder"},
+                {"action":"field_edit","field":"marker_name","value":"Lab-Respyra-Events"},
+            ], 1):
+                child.stdin.write(json.dumps({**action,"ui_seq":seq,"ui_time_ms":float(seq)}) + "\n")
+                child.stdin.flush()
+            deadline = time.monotonic() + 5
+            while True:
+                state = states.get(timeout=5)
+                if state["phase"] == "setup" and state["marker_name"] == "Lab-Respyra-Events": break
+                assert time.monotonic() < deadline
+            time.sleep(1)
+            assert child.poll() is None
+            rediscovered = resolve_byprop("source_id", info.source_id(), timeout=5)
+            assert len(rediscovered) == 1 and rediscovered[0].name() == "Lab-Respyra-Events"
+            inlet = StreamInlet(rediscovered[0], recover=False)
+            inlet.open_stream(timeout=5)
+            for seq, action in enumerate([
                 {"action": "field_key", "field": "participant", "key": "A"},
                 {"action": "field_edit", "field": "participant", "value": "synthetic"},
                 {"action": "cancel"},
-            ], 1):
+            ], 4):
                 child.stdin.write(json.dumps({**action, "ui_seq": seq, "ui_time_ms": float(seq)}) + "\n")
                 child.stdin.flush()
             while states.get(timeout=5)["phase"] != "finished": pass
@@ -88,7 +99,7 @@ def check_engine_lifecycle(tmp_path):
                     payloads.append(json.loads(sample[0]))
                     if payloads[-1]["event"] == "run.aborted": break
             names = [p["event"] for p in payloads]
-            assert names[0] == "run.recorder_connected" and "run.aborted" in names
+            assert "run.aborted" in names
             assert "participant.field.key" in names and "participant.dialog.hidden" in names
             child.stdin.write('{"action":"shutdown","reason":"close_button"}\n')
             child.stdin.flush()
@@ -101,7 +112,7 @@ def check_engine_lifecycle(tmp_path):
                 if payloads[-1]["event"] == "ui.wrapper.closed": break
             assert payloads[-2]["event"] == "ui.wrapper.close_button.clicked"
             assert payloads[-1]["event"] == "ui.wrapper.closed"
-            assert [p["seq"] for p in payloads] == list(range(1, len(payloads) + 1))
+            assert [p["seq"] for p in payloads] == list(range(payloads[0]["seq"], payloads[0]["seq"] + len(payloads)))
             child.wait(timeout=5)
             assert child.returncode == 0
             assert not list(tmp_path.rglob("*.csv"))

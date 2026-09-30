@@ -9,20 +9,28 @@ import json
 import math
 import os
 import queue
+import re
 import threading
+from collections import deque
 
 
 PREFIX = "RESPYRA/1 "
-FIELDS = {"participant", "session"}
+FIELDS = {"participant", "session", "marker_name", "variables"}
 ACTION_FIELDS = {
     "shown": set(), "field_key": {"field", "key"},
     "field_edit": {"field", "value"}, "scan": set(), "select": {"row"},
-    "use": set(), "start": set(), "cancel": set(),
+    "use": set(), "start": set(), "cancel": set(), "abort": set(),
+    "option": {"field", "enabled"},
+    "record_stream": {"uid", "enabled"},
 }
 
 
 class DesktopCancelled(Exception):
     """The owning desktop window closed or its control pipe disappeared."""
+
+
+class ExperimentStopped(DesktopCancelled):
+    """An experimenter requested cleanup without closing the control window."""
 
 
 def isolate_control_input(reader):
@@ -42,17 +50,29 @@ def validate_action(action):
     if not isinstance(action, dict) or action.get("action") not in ACTION_FIELDS:
         raise ValueError("Unknown desktop action")
     expected = ACTION_FIELDS[action["action"]] | {"action", "ui_seq", "ui_time_ms"}
-    if action.keys() != expected:
+    metadata = {"ui_origin", "ui_client_seq"}
+    if action.keys() not in (expected, expected | metadata):
         raise ValueError("Unexpected desktop action fields")
+    if "ui_origin" in action and (
+        action["ui_origin"] not in {"local", "remote"}
+        or type(action["ui_client_seq"]) is not int or action["ui_client_seq"] < 1
+    ):
+        raise ValueError("Invalid UI origin")
     if type(action["ui_seq"]) is not int or action["ui_seq"] < 1:
         raise ValueError("Invalid UI sequence")
     timestamp = action["ui_time_ms"]
     if type(timestamp) not in (int, float) or not math.isfinite(timestamp) or timestamp < 0:
         raise ValueError("Invalid UI timestamp")
-    if "field" in action and action["field"] not in FIELDS:
+    if "field" in action and action["field"] not in ({"save_csv", "record_keyboard", "record_mouse", "polar_inverted"} if action["action"] == "option" else FIELDS):
         raise ValueError("Unknown participant field")
+    if "enabled" in action and type(action["enabled"]) is not bool:
+        raise ValueError("Invalid recording option")
+    if "uid" in action and (not isinstance(action["uid"], str)
+                            or re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", action["uid"]) is None):
+        raise ValueError("Invalid LSL stream identity")
     for key in ("key", "value"):
-        if key in action and (not isinstance(action[key], str) or len(action[key]) > 128):
+        limit = 2048 if key == "value" and action.get("field") == "variables" else 128
+        if key in action and (not isinstance(action[key], str) or len(action[key]) > limit):
             raise ValueError("Invalid participant input")
     if "row" in action and (type(action["row"]) is not int or action["row"] < 0):
         raise ValueError("Invalid stream row")
@@ -68,6 +88,17 @@ class DesktopBridge:
         self.sequence = 0
         self.close_reason = "window_closed"
         self.close_marked = False
+        self._write_lock = threading.Lock()
+        self._progress = None
+        self.markers = None
+        self.recent = deque(maxlen=12)
+        self.source = None
+        self.experiment = False
+        self.stop_action = None
+        self.stopped = False
+        self.recorder = None
+        self.viewer = None
+        self.input_capture = None
         threading.Thread(target=self._read, args=(reader,), daemon=True,
                          name="respyra-desktop-control").start()
 
@@ -94,10 +125,30 @@ class DesktopBridge:
             self.closed.set()
 
     def check_cancel(self):
+        if self.input_capture is not None:
+            self.input_capture.poll(self.markers)
         if self.error is not None:
             raise RuntimeError("Desktop control protocol failed") from self.error
         if self.closed.is_set():
             raise DesktopCancelled("Desktop window closed")
+        if self.recorder is not None and self.recorder.process is not None and self.recorder.phase in {"recording", "preparing", "error"}:
+            self.recorder.check_health()
+        if self.experiment:
+            try:
+                action = self.actions.get_nowait()
+            except queue.Empty:
+                return
+            self._accept_sequence(action)
+            if action["action"] == "abort":
+                self.stop_action = action
+                self.stopped = True
+                raise ExperimentStopped("Stopped by experimenter")
+            self.reply(action, False, "Setup is no longer available")
+
+    def _accept_sequence(self, action):
+        if action["ui_seq"] != self.sequence + 1:
+            raise ValueError("Desktop actions arrived out of order")
+        self.sequence = action["ui_seq"]
 
     def receive(self, timeout=0.025):
         if self.error is not None:
@@ -107,17 +158,58 @@ class DesktopBridge:
         except queue.Empty:
             self.check_cancel()
             return None
-        if action["ui_seq"] != self.sequence + 1:
-            raise ValueError("Desktop actions arrived out of order")
-        self.sequence = action["ui_seq"]
+        self._accept_sequence(action)
         return action
+
+    def reply(self, action, ok=True, message=None):
+        self.send({"phase": "action_result", "ui_seq": action["ui_seq"],
+                   "ok": ok, "message": message})
+
+    def finish_stop(self, error=None):
+        self.experiment = False
+        if self.stop_action is not None:
+            action, self.stop_action = self.stop_action, None
+            self.reply(action, error is None, str(error) if error else None)
 
     def send(self, snapshot):
         line = json.dumps(snapshot, separators=(",", ":"), allow_nan=False)
         if len(line.encode("utf-8")) > 1_000_000:
             raise ValueError("Oversized desktop state")
-        self.writer.write(PREFIX + line + "\n")
-        self.writer.flush()
+        with self._write_lock:
+            self.writer.write(PREFIX + line + "\n")
+            self.writer.flush()
+
+    def note_marker(self, payload):
+        """Replace the observer projection; no pipe/network I/O on a display flip."""
+        latest = {
+            key: payload[key] for key in
+            ("event", "seq", "lsl_time", "trial", "condition", "screen")
+        }
+        self.recent.append({key: payload[key] for key in ("event", "seq", "lsl_time")})
+        latest.update(phase="progress", experiment_phase=payload["phase"], recent=list(self.recent))
+        self._progress = latest
+
+    def start_progress(self):
+        def publish():
+            while not self.closed.wait(0.25):
+                latest = dict(self._progress or {"phase": "progress"})
+                if self.markers is not None:
+                    latest["markers"] = self.markers.health_snapshot()
+                if self.recorder is not None:
+                    latest["recording"] = self.recorder.snapshot()
+                if self.viewer is not None:
+                    latest["streams"] = self.viewer.snapshot()
+                    latest["viewer_error"] = self.viewer.error
+                latest["health"] = (self.source.health_snapshot() if self.source else
+                                    {"signal": "not_selected", "sample_age_ms": None,
+                                     "battery_percent": None})
+                try:
+                    self.send(latest)
+                except Exception as exc:
+                    self.error = exc
+                    self.closed.set()
+        threading.Thread(target=publish, daemon=True,
+                         name="respyra-viewer-projection").start()
 
     def mark_close(self, markers):
         if not self.close_marked:
