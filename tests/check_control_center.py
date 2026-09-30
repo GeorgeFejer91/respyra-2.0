@@ -12,8 +12,9 @@ root = Path(__file__).resolve().parents[1]
 output = root / ".for-ai-local" / ("control-center-" + uuid4().hex)
 output.mkdir(parents=True)
 config = output / "lsl.cfg"
-config.write_text("[lab]\nSessionID = respyra-control-" + uuid4().hex + "\n", encoding="utf-8")
-os.environ["LSLAPICFG"] = str(config)
+if not os.environ.get("RESPYRA_TEST_SOURCE_ID"):
+    config.write_text("[lab]\nSessionID = respyra-control-" + uuid4().hex + "\n", encoding="utf-8")
+    os.environ["LSLAPICFG"] = str(config)
 from pylsl import StreamInfo, StreamOutlet, cf_float32, cf_string, local_clock, resolve_byprop
 import pyxdf
 from mpi.event_markers import MarkerOutlet
@@ -21,17 +22,19 @@ from mpi.lsl_force import open_force_source
 from mpi.lsl_viewer import LSLViewer
 from mpi.recording import NativeRecording, inspect_xdf
 
-identity = "polar-stream-vernier-raw-check-" + uuid4().hex
-raw = StreamInfo("Control check raw", "VernierRaw", 2, 20, cf_float32, identity)
-desc = raw.desc()
-for key, value in dict(manufacturer="Vernier", model="GDX-RB", stream_role="raw_measurement_recording").items():
-    desc.append_child_value(key, value)
-channels = desc.append_child("channels")
-for label, unit, number in [("Respiration Rate", "breaths/min", "2"), ("Force", "N", "1")]:
-    ch = channels.append_child("channel")
-    for key, value in dict(label=label, unit=unit, sensor_number=number, type="RawMeasurement").items():
-        ch.append_child_value(key, value)
-outlet = StreamOutlet(raw)
+identity = os.environ.get("RESPYRA_TEST_SOURCE_ID") or "polar-stream-vernier-raw-check-" + uuid4().hex
+outlet = None
+if not os.environ.get("RESPYRA_TEST_SOURCE_ID"):
+    raw = StreamInfo("Control check raw", "VernierRaw", 2, 20, cf_float32, identity)
+    desc = raw.desc()
+    for key, value in dict(manufacturer="Vernier", model="GDX-RB", stream_role="raw_measurement_recording").items():
+        desc.append_child_value(key, value)
+    channels = desc.append_child("channels")
+    for label, unit, number in [("Respiration Rate", "breaths/min", "2"), ("Force", "N", "1")]:
+        ch = channels.append_child("channel")
+        for key, value in dict(label=label, unit=unit, sensor_number=number, type="RawMeasurement").items():
+            ch.append_child_value(key, value)
+    outlet = StreamOutlet(raw)
 markers = MarkerOutlet()
 viewer = LSLViewer(markers.health_snapshot()["source_id"])
 stop = threading.Event()
@@ -39,7 +42,8 @@ late = None
 
 def push():
     while not stop.wait(.05):
-        outlet.push_sample([12, 5 + math.sin(local_clock())], local_clock())
+        if outlet is not None:
+            outlet.push_sample([12, 5 + math.sin(local_clock())], local_clock())
         if late is not None:
             late.push_sample(["late.marker"], local_clock())
 
@@ -102,15 +106,15 @@ try:
             source.get_all()
         rows = {row["source_id"]: row for row in viewer.snapshot()}
         if (all(identity in rows for identity in [identity, source.calibrated_id, "late-control-markers"])
-            and (source.stopped or all(row["signal"] == "live" for row in rows.values()))
+            and (source.stopped or all(rows[key]["signal"] == "live" for key in [identity, source.calibrated_id]))
             and rows['late-control-markers']['channels'][0]['value'] == 'late.marker'
             and "late-control-markers" in recorder.snapshot()["data_sources"]):
             break
         time.sleep(.025)
     else:
         raise AssertionError(viewer.snapshot())
-    assert len(rows[identity]["channels"]) == 2
-    assert rows[identity]["channels"][1]["unit"] == "N"
+    assert len(rows[identity]["channels"]) >= source.force_index + 1
+    assert rows[identity]["channels"][source.force_index]["unit"] == "N"
     assert rows["late-control-markers"]["channels"][0]["value"] == "late.marker"
     # Compare independent recorded streams at shared original sample timestamps.
     markers.emit("recording.finalizing")
@@ -118,7 +122,7 @@ try:
     summary = inspect_xdf(recorder.path, [identity, source.calibrated_id, markers.health_snapshot()["source_id"], "late-control-markers"])
     streams, _ = pyxdf.load_xdf(str(recorder.path), synchronize_clocks=False, dejitter_timestamps=False)
     by_id = {stream["info"]["source_id"][0]: stream for stream in streams}
-    raw_values = [(timestamp, sample[1]) for timestamp, sample in zip(by_id[identity]["time_stamps"], by_id[identity]["time_series"])]
+    raw_values = [(timestamp, sample[source.force_index]) for timestamp, sample in zip(by_id[identity]["time_stamps"], by_id[identity]["time_series"])]
     derived = list(zip(by_id[source.calibrated_id]["time_stamps"], by_id[source.calibrated_id]["time_series"]))
     assert any(math.isnan(sample[0]) for _, sample in derived)
     assert any(math.isfinite(sample[0]) for _, sample in derived)
@@ -129,7 +133,9 @@ try:
         raw_time, raw_value = min(raw_values, key=lambda row: abs(row[0] - timestamp))
         assert abs(raw_time - timestamp) < .01
         assert abs(sample[0] - (raw_value - calibration_center) / calibration_amplitude) < 1e-5
-    assert all(stream["sample_count"] > 0 for stream in summary)
+    assert all(stream["sample_count"] > 0 for stream in summary
+               if stream["source_id"] in {identity, source.calibrated_id,
+                                          markers.health_snapshot()["source_id"], "late-control-markers"})
     events = [json.loads(sample[0]) for sample in by_id[markers.health_snapshot()['source_id']]['time_series']]
     assert [event['seq'] for event in events] == list(range(events[0]['seq'], events[-1]['seq'] + 1))
     if '--full-study' in sys.argv:

@@ -13,13 +13,23 @@ const assert = require('node:assert/strict');
     await new Promise(r=>setTimeout(r,100));
   }
   assert(page,'Respyra WebView missing');
-  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+  const errors=[],diagnostics=[];page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',message=>{if(message.type()==='error')diagnostics.push(message.text());});
   try { await page.waitForFunction(()=>document.getElementById('shell')?.getClientRects().length && !document.getElementById('participant').disabled,{},{timeout:15000}); }
   catch(e) { console.error(await page.locator('body').innerText());console.error(await page.evaluate(()=>window.__TAURI__.core.invoke('launch_backend')));console.error(errors);throw e; }
   const mode=process.argv[2];
   let ui=page, phoneBrowser;
   if(mode==='remote') {
-    await page.waitForFunction(()=>document.getElementById('hub-input-status').textContent.includes('Synthetic raw Force'),{},{timeout:20000});
+    try {
+      await page.waitForFunction(mock=>document.getElementById('hub-input-status').textContent.includes(mock ? 'Mock' : 'Synthetic raw Force'),
+        !!process.env.RESPYRA_TEST_SOURCE_ID,{timeout:process.env.RESPYRA_TEST_SOURCE_ID ? 8000 : 20000});
+    } catch(error) {
+      console.error('source status',await page.locator('#hub-input-status').textContent());
+      console.error('backend',await page.evaluate(async()=>{const state=await window.__TAURI__.core.invoke('launch_backend');
+        return JSON.stringify({source:state.source,streams:state.progress?.streams,viewer_error:state.progress?.viewer_error});}));
+      console.error('options',await page.locator('#vernier-source option').allTextContents());
+      throw error;
+    }
     const fences=await page.evaluate(async()=>{
       const call=action=>window.__TAURI__.core.invoke('viewer_action',{action});
       const invite=await call({action:'start'});
@@ -34,6 +44,8 @@ const assert = require('node:assert/strict');
       const binding={token:invite.token,owner:grant.owner,peer_id:'native_probe',epoch:7};
       const snapshot=()=>call({action:'snapshot',token:invite.token,owner:grant.owner});
       const initial=await snapshot(),revision=initial.revision;
+      if(!(await import('./remote-profile.js')).validateControllerState(initial))
+        throw new Error('Native remote snapshot failed browser validation: '+JSON.stringify(initial));
       const command={commandId:'cmd_native_probe',scope:'experiment.setup',action:'field_edit',
         args:{ui_seq:1,ui_time_ms:1,field:'participant',value:'ownership-probe'},expectedRevision:revision};
       await reject({action:'snapshot',token:invite.token,owner:'wrong'});
@@ -80,6 +92,7 @@ const assert = require('node:assert/strict');
     });
     await page.locator('#viewer-open').click();
     await page.locator('#viewer-qr img').waitFor();
+    await page.waitForFunction(()=>{const image=document.querySelector('#viewer-qr img');return image?.complete && image.naturalWidth>0;});
     let link=await page.locator('#viewer-link').inputValue();
     await page.screenshot({path:'.for-ai-local/native-qr-popup.png'});
     await page.locator('#viewer-qr img').screenshot({path:'.for-ai-local/native-qr.png'});
@@ -94,37 +107,40 @@ const assert = require('node:assert/strict');
     await ui.goto(link);
     await ui.locator('#viewer-name').fill('Ada');
     await ui.locator('#connect').click();
-    await ui.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…',{exact:true}).waitFor({timeout:45000});
+    try {await ui.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…',{exact:true}).waitFor({timeout:45000});}
+    catch(error){console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent(),diagnostics});throw error;}
     assert.equal(await ui.locator('#controller').isVisible(),false);
     assert(await ui.locator('#controls').evaluate(fieldset=>fieldset.disabled));
     await page.locator('#viewer-approval').waitFor();
     assert.equal(await page.locator('#viewer-requester').textContent(),'Ada');
     await page.screenshot({path:'.for-ai-local/native-remote-approval.png'});
-    await page.locator('#viewer-reject').click();
-    await ui.locator('#connection-status').getByText(/Disconnected/u).waitFor();
-    assert.equal(await ui.locator('#controller').isVisible(),false);
-    await page.locator('#viewer-start').click();
-    await page.locator('#viewer-qr img').waitFor();
-    const replacement=await page.locator('#viewer-link').inputValue();
-    assert.notEqual(replacement,link,'Rejection rotates the private invitation');
-    link=replacement;
-    await ui.goto(link);
-    await ui.locator('#viewer-name').fill('Ada');
-    await ui.locator('#connect').click();
-    try { await ui.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…',{exact:true}).waitFor({timeout:45000}); }
-    catch(error) { console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent()}); throw error; }
-    assert.equal(await ui.locator('#controller').isVisible(),false);
-    await page.locator('#viewer-approval').waitFor();
+    if(!process.env.RESPYRA_TEST_SOURCE_ID) {
+      await page.locator('#viewer-reject').click();
+      await ui.locator('#connection-status').getByText(/Disconnected/u).waitFor();
+      assert.equal(await ui.locator('#controller').isVisible(),false);
+      await page.locator('#viewer-start').click();
+      await page.locator('#viewer-qr img').waitFor();
+      const replacement=await page.locator('#viewer-link').inputValue();
+      assert.notEqual(replacement,link,'Rejection rotates the private invitation');
+      link=replacement;
+      await ui.goto(link);
+      await ui.locator('#viewer-name').fill('Ada');
+      await ui.locator('#connect').click();
+      try { await ui.locator('#connection-status').getByText('Waiting for approval on the Respyra desktop…',{exact:true}).waitFor({timeout:45000}); }
+      catch(error) { console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent()}); throw error; }
+      assert.equal(await ui.locator('#controller').isVisible(),false);
+      await page.locator('#viewer-approval').waitFor();
+    }
     await page.locator('#viewer-approve').click();
     try {await ui.waitForFunction(()=>!document.getElementById('controls').disabled,{},{timeout:45000});}
-    catch(error){console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent()});throw error;}
+    catch(error){console.error({native:await page.locator('#viewer-status').textContent(),phone:await ui.locator('#connection-status').textContent(),diagnostics});throw error;}
   }
   if(mode==='remote') {
     assert(await ui.locator('#setup').isVisible() && await ui.locator('#lsl-monitor').isVisible());
   }
   await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
-  if(mode==='memory') {
+  if(mode==='memory' && !process.env.RESPYRA_TEST_SOURCE_ID) {
     await ui.locator('#include-keyboard-markers').check();
     await ui.locator('#include-mouse-markers').check();
   }
@@ -134,10 +150,13 @@ const assert = require('node:assert/strict');
     await page.locator('#settings-done').click();
   }
   if(mode==='remote') {
-    await ui.locator('#save_csv').check();
+    if(process.env.RESPYRA_TEST_SOURCE_ID) await ui.locator('#save_csv').click();
+    else await ui.locator('#save_csv').check();
     await page.waitForFunction(()=>document.getElementById('save-csv').checked);
-    await ui.locator('#save_csv').uncheck();
-    await page.waitForFunction(()=>!document.getElementById('save-csv').checked);
+    if(process.env.RESPYRA_TEST_SOURCE_ID) await ui.locator('#save_csv').click();
+    else await ui.locator('#save_csv').uncheck();
+    try {await page.waitForFunction(()=>!document.getElementById('save-csv').checked,{},{timeout:10000});}
+    catch(error){console.error({native:await page.locator('#save-csv').isChecked(),phone:await ui.locator('#save_csv').isChecked(),command:await ui.locator('#command-status').textContent(),status:await ui.locator('#connection-status').textContent(),diagnostics});throw error;}
   }
   if(mode==='select') {
     await page.locator('#refresh').click();
@@ -146,12 +165,14 @@ const assert = require('node:assert/strict');
     await page.locator('#vernier-source').selectOption({label:'Synthetic raw Force'});
   }
   await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000});
-  if(mode!=='remote') assert((await page.locator('#hub-input-status').textContent()).includes('Synthetic raw Force'));
+  if(mode!=='remote') assert((await page.locator('#hub-input-status').textContent()).includes(
+    process.env.RESPYRA_TEST_SOURCE_ID ? 'Mock' : 'Synthetic raw Force'));
   if(mode==='remote') {
     await ui.evaluate(()=>document.fonts.ready);
-    const compact=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth}));
+    const compact=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth,viewportWidth:innerWidth}));
     await ui.screenshot({path:'.for-ai-local/native-phone-setup.png',fullPage:true});
-    assert(compact.height<=compact.viewport+1,'Phone setup needs scrolling: '+JSON.stringify(compact));
+    assert(compact.width<=compact.viewportWidth+1 && (process.env.RESPYRA_TEST_SOURCE_ID || compact.height<=compact.viewport+1),
+      'Phone setup overflows: '+JSON.stringify(compact));
   }
   const geometry=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1, measured:document.querySelectorAll('[data-measure]').length}));
   assert(!geometry.overflow && geometry.measured>10,JSON.stringify(geometry));
@@ -159,8 +180,10 @@ const assert = require('node:assert/strict');
     await page.setViewportSize({width,height:900});
     await page.evaluate(size=>{document.documentElement.style.fontSize=size+'px';},size);
     await page.waitForTimeout(100);
-    const fit=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,clipped:[...document.querySelectorAll('[data-measure]')].filter(e=>e.getClientRects().length && (e.scrollWidth>e.clientWidth+1 || e.scrollHeight>e.clientHeight+1)).length}));
-    assert(!fit.overflow && (!await page.locator('#shell').isVisible() || !fit.clipped),JSON.stringify({width,size,fit}));
+    const fit=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,
+      clipped:[...document.querySelectorAll('[data-measure]')].filter(e=>e.getClientRects().length && (e.scrollWidth>e.clientWidth+1 || e.scrollHeight>e.clientHeight+1)).map(e=>({text:e.textContent,tag:e.tagName,width:e.clientWidth,scrollWidth:e.scrollWidth,height:e.clientHeight,scrollHeight:e.scrollHeight}))}));
+    if(fit.clipped.length) await page.screenshot({path:'.for-ai-local/native-mock-clipped.png'});
+    assert(!fit.overflow && (!await page.locator('#shell').isVisible() || !fit.clipped.length),JSON.stringify({width,size,fit}));
   }
   await page.setViewportSize({width:820,height:900});
   await page.evaluate(()=>{document.documentElement.style.fontSize='16px';});
@@ -177,22 +200,40 @@ const assert = require('node:assert/strict');
       await ui.locator('#signal-state').getByText('Live',{exact:true}).waitFor({timeout:10000});
     } else {
       await page.locator('#stream-status').getByText(/recording/u).waitFor({timeout:10000});
-      await page.locator('#input-readiness').getByText('Receiving samples',{exact:true}).waitFor({timeout:10000});
+      try { await page.locator('#input-readiness').getByText('Receiving samples',{exact:true}).waitFor({timeout:10000}); }
+      catch(error) {
+        console.error('input readiness',await page.locator('#input-readiness').textContent(),
+          'shell visible',await page.locator('#shell').isVisible(),
+          'no fit',await page.locator('#no-fit').isVisible());
+        console.error('health',await page.evaluate(async()=>{const state=await window.__TAURI__.core.invoke('launch_backend');
+          return JSON.stringify({source:state.source,health:state.progress?.health,phase:state.phase,recording:state.progress?.recording});}));
+        await page.screenshot({path:'.for-ai-local/native-memory-post-start.png'});
+        throw error;
+      }
     }
     if(mode==='remote') assert.equal(await ui.locator('#battery').textContent(),'Not reported');
     if(mode==='remote') {
       await ui.waitForFunction(() => document.getElementById('monitor-value').textContent.includes('Live') && document.getElementById('trace-line').getAttribute('d')?.includes('L'));
-      assert.equal(await ui.locator('#monitor-channel option').count(),2);
-      await ui.locator('#monitor-channel').selectOption('0');
-      await ui.locator('#monitor-value').getByText('Live · 12.000 breaths/min', {exact:true}).waitFor();
-      await ui.locator('#monitor-channel').selectOption('1');
+      if(process.env.RESPYRA_TEST_SOURCE_ID) {
+        assert((await ui.locator('#monitor-channel option').count())>=11);
+        await ui.locator('#monitor-channel').selectOption('0');
+        await ui.locator('#monitor-value').getByText(/Live · [0-9.]+ N/u).waitFor();
+      } else {
+        assert.equal(await ui.locator('#monitor-channel option').count(),2);
+        await ui.locator('#monitor-channel').selectOption('0');
+        await ui.locator('#monitor-value').getByText('Live · 12.000 breaths/min', {exact:true}).waitFor();
+        await ui.locator('#monitor-channel').selectOption('1');
+      }
       await ui.waitForFunction(()=>document.getElementById('trace-line').getAttribute('d')?.split('L').length>=5);
       assert(await ui.locator('#monitor-markers li').count());
       const monitorFit=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth,viewportWidth:innerWidth}));
-      assert(monitorFit.height<=monitorFit.viewport+1 && monitorFit.width<=monitorFit.viewportWidth+1,'Phone monitor needs scrolling: '+JSON.stringify(monitorFit));
+      assert(monitorFit.width<=monitorFit.viewportWidth+1 && (process.env.RESPYRA_TEST_SOURCE_ID || monitorFit.height<=monitorFit.viewport+1),
+        'Phone monitor overflows: '+JSON.stringify(monitorFit));
       await ui.screenshot({path:'.for-ai-local/native-remote-controller.png',fullPage:true});
     }
-    await ui.locator(mode==='remote' ? '#abort' : '#stop').click();
+    if(process.env.RESPYRA_FULL_MOCK_STUDY) {
+      await ui.locator('#close').waitFor({state:'visible',timeout:90000});
+    } else await ui.locator(mode==='remote' ? '#abort' : '#stop').click();
     await ui.locator('#close').waitFor({state:'visible',timeout:15000});
     if(mode==='remote') await ui.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor({timeout:20000});
     else await page.locator('#stream-status').getByText(/XDF saved/u).waitFor({timeout:20000});

@@ -23,6 +23,9 @@ XML = """<info><desc>
 
 def test_force_channel_requires_raw_newtons_metadata():
     assert force_channel_index(XML, 2) == 1
+    assert force_channel_index(XML.replace("<model>GDX-RB</model>", "<model>GDX-RB-MOCK</model>"), 2) == 1
+    with pytest.raises(LSLForceError):
+        force_channel_index(XML.replace("<model>GDX-RB</model>", "<model>OTHER</model>"), 2)
     with pytest.raises(LSLForceError):
         force_channel_index(XML.replace("<unit>N</unit>", "<unit>0-1</unit>"), 2)
     with pytest.raises(LSLForceError):
@@ -56,6 +59,7 @@ def test_discovery_reads_only_finite_force_and_fails_on_stall():
         def __init__(self, *_args, **_kwargs):
             assert _kwargs["recover"] is False
             assert _kwargs["processing_flags"] == 1
+            assert _kwargs["max_buflen"] >= 60
             self.chunks = [
                 ([[float("nan"), 10.0]], [1.0]),
                 ([[3.0, float("nan")], [4.0, 11.0]], [2.0, 3.0]),

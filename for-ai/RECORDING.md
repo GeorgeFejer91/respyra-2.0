@@ -23,6 +23,15 @@ Source/provenance is in `native/recorder/README.md`.
   or condition feedback gain applies. Wait for native reception of finite derived
   values through its first-finite receipt before trials. Verify nonempty raw,
   marker and derived data in final XDF.
+- The installed Vernier Stream Mini mock identifies its raw outlet as model
+  `GDX-RB-MOCK`; the physical belt uses `GDX-RB`. Both require the same raw
+  Vernier Force channel in N. The selected inlet retains 60 seconds of samples
+  during PsychoPy startup so early raw samples are still emitted on the derived
+  outlet. `scripts/audit_mock_xdf.py` independently checks mock sequence,
+  Force waveform, the raw Force copy, the Mini's own normalized breathing
+  waveform and combined stream, Respyra calibration, trial markers and XDF
+  footers. Its reconstruction covers the protocol, response markers and breathing
+  samples; exact rendered frame pixels and flip times are not in XDF.
 - One native watch query records visible streams and discovers later streams.
   The setup Record checkboxes can exclude specific discovered LSL UIDs before
   Start; the accepted raw input, Respyra derived outlet and event markers override

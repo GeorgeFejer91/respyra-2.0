@@ -17,28 +17,37 @@ modes=parser.parse_args().modes or ['select','memory','remote']
 if any(mode not in {'select','memory','remote'} for mode in modes):
     parser.error('modes must be select, memory or remote')
 # Configure before importing liblsl; keep test streams out of live lab sessions.
-config = root / '.for-ai-local' / ('native-lsl-' + uuid.uuid4().hex + '.cfg')
-config.parent.mkdir(exist_ok=True)
-config.write_text('[lab]\nSessionID = respyra-native-' + uuid.uuid4().hex + '\n', encoding='utf-8')
-os.environ['LSLAPICFG'] = str(config)
+external = os.environ.get('RESPYRA_TEST_SOURCE_ID')
+full_mock = os.environ.get('RESPYRA_FULL_MOCK_STUDY') == '1'
+config = None
+if not external:
+    config = root / '.for-ai-local' / ('native-lsl-' + uuid.uuid4().hex + '.cfg')
+    config.parent.mkdir(exist_ok=True)
+    config.write_text('[lab]\nSessionID = respyra-native-' + uuid.uuid4().hex + '\n', encoding='utf-8')
+    os.environ['LSLAPICFG'] = str(config)
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, cf_float32, local_clock, resolve_byprop
 from pylsl.util import LostError
 
-identity = 'polar-stream-vernier-raw-native-' + uuid.uuid4().hex
-raw = StreamInfo('Synthetic raw Force', 'VernierRaw', 2, 20, cf_float32, identity)
-desc = raw.desc()
-for key,value in {'manufacturer':'Vernier','model':'GDX-RB','stream_role':'raw_measurement_recording'}.items(): desc.append_child_value(key,value)
-channels = desc.append_child('channels')
-for label,unit,number in [('Respiration Rate','breaths/min','2'),('Force','N','1')]:
-    ch=channels.append_child('channel')
-    for key,value in {'label':label,'unit':unit,'sensor_number':number,'type':'RawMeasurement'}.items(): ch.append_child_value(key,value)
-outlet=StreamOutlet(raw)
-derived=StreamOutlet(StreamInfo('Synthetic normalized','Respiration',1,20,cf_float32,'native-derived-'+uuid.uuid4().hex))
+identity = external or 'polar-stream-vernier-raw-native-' + uuid.uuid4().hex
+if external:
+    raw = resolve_byprop('source_id', identity, timeout=10)[0]
+    outlet = derived = None
+else:
+    raw = StreamInfo('Synthetic raw Force', 'VernierRaw', 2, 20, cf_float32, identity)
+    desc = raw.desc()
+    for key,value in {'manufacturer':'Vernier','model':'GDX-RB','stream_role':'raw_measurement_recording'}.items(): desc.append_child_value(key,value)
+    channels = desc.append_child('channels')
+    for label,unit,number in [('Respiration Rate','breaths/min','2'),('Force','N','1')]:
+        ch=channels.append_child('channel')
+        for key,value in {'label':label,'unit':unit,'sensor_number':number,'type':'RawMeasurement'}.items(): ch.append_child_value(key,value)
+    outlet=StreamOutlet(raw)
+    derived=StreamOutlet(StreamInfo('Synthetic normalized','Respiration',1,20,cf_float32,'native-derived-'+uuid.uuid4().hex))
 stop=threading.Event()
 def push():
     while not stop.wait(.05):
-        outlet.push_sample([12,5+math.sin(local_clock())],local_clock())
-        derived.push_sample([.5],local_clock())
+        if outlet is not None:
+            outlet.push_sample([12,5+math.sin(local_clock())],local_clock())
+            derived.push_sample([.5],local_clock())
 thread=threading.Thread(target=push);thread.start()
 env=os.environ.copy()
 env.pop('RESPYRA_LSL_SOURCE_ID',None)
@@ -46,7 +55,9 @@ env['LOCALAPPDATA']=str(root/'.for-ai-local'/('native-settings-'+uuid.uuid4().he
 env['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS']='--remote-debugging-port=9227'
 env['WEBVIEW2_USER_DATA_FOLDER']=str(root/'.for-ai-local'/('native-webview-'+uuid.uuid4().hex))
 env['RESPYRA_UI_TEST_READY_PATH']=str(root/'.for-ai-local'/('instructions-'+uuid.uuid4().hex))
-exe=Path(os.environ['RESPIRA_INSTALLED_EXE']) if os.environ.get('RESPIRA_INSTALLED_EXE') else root/'src-tauri/target/debug/respyra-desktop.exe'
+exe=(Path(os.environ['RESPIRA_INSTALLED_EXE']) if os.environ.get('RESPIRA_INSTALLED_EXE') else
+     Path(os.environ['RESPYRA_DEBUG_EXE']) if os.environ.get('RESPYRA_DEBUG_EXE') else
+     root/'src-tauri/target/debug/respyra-desktop.exe')
 work=root/'.for-ai-local/packaging/run elsewhere' if os.environ.get('RESPIRA_INSTALLED_EXE') else root
 work.mkdir(parents=True,exist_ok=True)
 if os.environ.get('RESPIRA_INSTALLED_EXE'):
@@ -93,21 +104,28 @@ try:
             names=[m['event'] for m in markers]
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             assert 'run.failed' not in names,names
-            for expected in ['participant.dialog.shown','participant.field.edited','participant.field.key','source.connected','source.connection.accepted','source.disconnected','run.aborted']:assert expected in names,(expected,names)
+            for expected in ['participant.dialog.shown','participant.field.edited','participant.field.key','source.connected','source.connection.accepted','source.disconnected',
+                             'run.completed' if full_mock else 'run.aborted']:assert expected in names,(expected,names)
             assert [m['seq'] for m in markers]==list(range(markers[0]['seq'],markers[0]['seq']+len(markers)))
             if mode=='select':
                 assert 'source.memory.saved' in names and 'source.scan.completed' in names
                 assert 'participant.dialog.rejected' in names
             else:
-                assert 'source.memory.loaded' in names and 'source.memory.saved' not in names
+                assert 'source.memory.saved' not in names
+                if not external:
+                    assert 'source.memory.loaded' in names
                 assert 'source.scan.started' not in names
                 assert 'participant.dialog.accepted' in names and 'display.opened' in names
                 assert 'ui.instructions.shown' in names and 'ui.wrapper.closed' in names
                 assert 'display.closed' in names
-                assert 'ui.experiment.stop.requested' in names
-                stopped=next(m for m in markers if m['event']=='ui.experiment.stop.requested')
-                assert stopped['ui_origin']==('remote' if mode=='remote' else 'local')
-                assert next(m for m in markers if m['event']=='run.aborted')['reason']=='experimenter_stop'
+                if full_mock:
+                    assert mode == 'remote' and 'run.aborted' not in names
+                    assert sum(m['event']=='trial.ended' for m in markers) == 48
+                else:
+                    assert 'ui.experiment.stop.requested' in names
+                    stopped=next(m for m in markers if m['event']=='ui.experiment.stop.requested')
+                    assert stopped['ui_origin']==('remote' if mode=='remote' else 'local')
+                    assert next(m for m in markers if m['event']=='run.aborted')['reason']=='experimenter_stop'
                 from mpi.recording import inspect_xdf
                 import pyxdf
                 file=Path(json.loads((root/f'.for-ai-local/native-{mode}-xdf.json').read_text())['file'])
@@ -119,14 +137,21 @@ try:
                 recorded_events=[json.loads(row[0]) for row in by_id[marker_id]['time_series']]
                 recorded_names=[m['event'] for m in recorded_events]
                 for expected in ['recording.started','participant.dialog.accepted','display.opened',
-                                 'ui.instructions.shown','run.aborted','source.disconnected','display.closed','recording.finalizing']:
+                                 'ui.instructions.shown','run.completed' if full_mock else 'run.aborted',
+                                 'source.disconnected','display.closed','recording.finalizing']:
                     assert expected in recorded_names,(expected,recorded_names)
                 assert by_id[identity]['time_stamps'][0] < next(m['lsl_time'] for m in recorded_events if m['event']=='display.opened')
                 assert recorded_names.index('display.closed') < recorded_names.index('recording.finalizing')
                 assert [m['seq'] for m in recorded_events]==list(range(recorded_events[0]['seq'],recorded_events[-1]['seq']+1))
-                assert len(recorded)==4 and all(s['sample_count'] for s in summaries)
+                assert (len(recorded)>=3 if external else len(recorded)==4)
+                assert all(s['sample_count'] for s in summaries if s['source_id'] in {identity, marker_id, derived_id})
                 import math
-                assert all(math.isnan(float(row[0])) for row in by_id[derived_id]['time_series'])
+                if full_mock:
+                    assert any(math.isfinite(float(row[0])) for row in by_id[derived_id]['time_series'])
+                    from scripts.audit_mock_xdf import audit
+                    print(json.dumps(audit(file)),flush=True)
+                else:
+                    assert all(math.isnan(float(row[0])) for row in by_id[derived_id]['time_series'])
                 print(json.dumps({'native_xdf':'passed','mode':mode,'file':str(file),'streams':summaries}),flush=True)
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             print(out.strip(),flush=True)
@@ -157,4 +182,4 @@ try:
     print(json.dumps({'result':'passed','runs':results}),flush=True)
 finally:
     stop.set();thread.join()
-    config.unlink()
+    if config is not None: config.unlink()

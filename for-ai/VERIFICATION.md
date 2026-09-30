@@ -288,6 +288,14 @@ metadata, fresh samples, marker order, early/normal/failed endings, and an LSL
 recording containing both streams. Then verify the physical belt separately.
 Mark unavailable surfaces `NOT RUN`; an LSL subscriber is not proof that the
 recorder persisted the recording.
+On Windows, `tests/run_private_mock.py remote-full --respyra-exe <debug exe>`
+starts the installed Mini in mock mode and the native app on a private Win32
+desktop, while the phone controller runs headless. `--published-phone` uses the
+hosted phone page. The explicit test-only Python site hook accelerates all 48
+trials and simulates participant key responses; it does not alter product code.
+The runner decodes the final XDF with `scripts/audit_mock_xdf.py` and retains
+logs/XDF under ignored `.for-ai-local/`. The direct native and PsychoPy scripts
+still require isolation and must not run on the active desktop.
 
 ## Gate 4: publication
 

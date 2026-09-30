@@ -297,6 +297,7 @@ pub fn projection(
         recording.remove("summary");
         recording.remove("streams");
         recording.remove("data_sources");
+        recording.remove("finite_sources");
         if !recording["error"].is_null() {
             recording.insert("error".into(), recording_error.clone());
         }
@@ -309,6 +310,12 @@ pub fn projection(
         if let Some(setup) = setup.as_object_mut() {
             setup.remove("record_keyboard");
             setup.remove("record_mouse");
+            setup.remove("excluded_streams");
+            setup.remove("polar_direction_set");
+            setup.remove("polar_inverted");
+        }
+        if let Some(source) = setup["source"].as_object_mut() {
+            source.remove("contract_id");
         }
         if recording_failed {
             setup["message"] = recording_error;
@@ -559,6 +566,25 @@ mod tests {
         let view = projection(&snapshot, &Value::Null, 1, 2, true);
         assert!(view.to_string().len() <= 8192);
         assert!(view["setup"]["omitted_streams"].as_u64().unwrap() > 0);
+    }
+
+    #[test]
+    fn phone_projection_omits_local_only_fields() {
+        let snapshot = json!({"phase":"setup","message":"Ready","streams":[],
+            "source":{"source_id":"raw","stream_name":"Vernier","contract_id":"vernier-force/1"},
+            "excluded_streams":[],"polar_direction_set":false,"polar_inverted":false});
+        let progress = json!({"recording":{"phase":"idle","bytes_written":0,
+            "error":null,"finite_sources":[]}});
+        let view = projection(&snapshot, &progress, 1, 2, true);
+        assert!(view["setup"].get("excluded_streams").is_none());
+        assert!(view["setup"].get("polar_direction_set").is_none());
+        assert!(view["setup"].get("polar_inverted").is_none());
+        assert!(view["setup"]["source"].get("contract_id").is_none());
+        assert!(
+            view["progress"]["recording"]
+                .get("finite_sources")
+                .is_none()
+        );
     }
 
     #[test]

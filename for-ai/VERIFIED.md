@@ -17,8 +17,8 @@ Reclassify affected checks when their launchers or descendants change.
 | `pnpm check:ui`, `pnpm check:remote`, including the latter's live-VDO browser mode | Playwright launches headless Chrome. Preserve that setting and isolated browser contexts; inspect rendered results without showing a browser. |
 | Python focused tests excluding the real Windows hook test, including marker/study-flow tests with fake `Window` objects and the desktop pipe process check | Nonvisual as inspected; keep fake-display/controlled-input boundaries and console children hidden. Real focus/input-hook behavior requires isolation. |
 | `tests/check_recording.py` and `tests/check_control_center.py` without `--full-study` | Nonvisual LSL/recorder workers as inspected; hide console children, retain private sessions and observe cleanup. |
-| `tests/check_native_lsl.py` (every mode), its `check_native_ui.cjs` helper, and installed-runtime variants | Requires isolated GUI execution. The Python harness launches a real Tauri executable; headless phone Chrome does not hide its native target or PsychoPy windows. No established desktop isolation in the harness. |
-| `tests/check_control_center.py --full-study` | Requires isolated GUI execution: launches actual PsychoPy displays even though responses are simulated. No established desktop isolation in the harness. |
+| `tests/check_native_lsl.py` (every mode), its `check_native_ui.cjs` helper, and installed-runtime variants | Requires isolated GUI execution. `tests/run_private_mock.py` provides a private Win32 desktop and private LSL SessionID for the installed Mini mock; direct invocation remains intrusive. Headless phone Chrome does not hide the native target or PsychoPy windows. |
+| `tests/check_control_center.py --full-study` | Requires isolated GUI execution: launches actual PsychoPy displays even though responses are simulated. The same private-desktop runner supports `full`. |
 | `tests/test_input_capture.py`, installer wizard, native focus/input checks and physical display/device qualification | Requires a compatible isolated environment or a later explicit user request for a visible check. The hook test registers real Windows hooks. Quiet/silent installation alone does not prove wizard behavior or suppress later GUI children. |
 
 If an isolated runner is unavailable, mark the applicable GUI check `NOT RUN`
@@ -55,16 +55,16 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Recorder readiness, missing/failed/hung child, participant list, partial files and XDF completeness: `src/mpi/recording.py` | `tests/test_recording.py` | verified for current inputs; see hub/recorder receipt | `NativeRecording`, `inspect_xdf`, child/readiness protocol or XDF validation changes. |
 | Native XDF persistence, calibration/cleanup markers, late/source-less streams and Unicode paths: `native/recorder/`, recording owner | `tests/check_recording.py` | verified for current inputs; see hub/recorder receipt | Recorder source/binary/DLLs, supervision or serialized data/marker contract changes. |
 | All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | verified for current inputs; see hub/recorder receipt | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
-| Complete 48-trial synthetic study: study/calibration/recording owners | `tests/check_control_center.py --full-study` | historical-unbound; see full-study receipt below | Complete-study triggers in `VERIFICATION.md`; panel presentation does not invalidate it. |
+| Complete 48-trial Vernier Mini mock study: study/calibration/recording owners | `tests/run_private_mock.py full` and `remote-full`, then `scripts/audit_mock_xdf.py` | verified for current mock inputs; see Mini pipeline receipt | Study, inlet buffering, calibration, marker or recorder inputs change. |
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | reusable; see experiment fields receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
-| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for combined source selector and marker inventory inputs; see integration receipt below | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
+| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for current inputs; see Mini pipeline receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
 | Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for mocked current inputs; see hub/recorder receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | verified for current inputs; see hub/recorder receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
-| Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | reusable; see remote approval receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility changes. |
-| Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/check_native_lsl.py` after a matching native build | NOT RUN for current inputs: isolated GUI runner unavailable; historical native receipt below | Native/pipe/lifecycle/remote contracts or consuming runtime change; UI-sensitive changes need focused WebView evidence rather than automatically this whole harness. |
-| Current public phone page pairing and published byte parity | Published mode in `tests/check_native_lsl.py`; deployment/parity readback | see published approval receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
+| Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | verified for current inputs; see Mini pipeline receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility change. |
+| Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/run_private_mock.py` after a matching native build | verified for installed Mini mock, early Stop and complete phone controlled study; see Mini pipeline receipt | Native/pipe/lifecycle/remote contracts or consuming runtime change. |
+| Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | public page pairing and full run verified; byte parity not checked in Mini pipeline receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
 | Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | partial local install; see naming/install receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
 | Windows shortcut icon transparency and circle tint: `assets/icon.svg`, packaging generator, PNG/ICO | Direct SVG icon generation, alpha/color assertions and 48 px preview | reusable; see shortcut icon receipt | SVG, icon generation, generated PNG/ICO or icon tooling changes. A new installer has its own packaging gate. |
 | Physical belt/phone, scientific timing and other operating systems | Separate named hardware/platform qualification | NOT RUN / unverified in `PROJECT.md` | Those surfaces are requested or claimed; synthetic/browser evidence does not qualify them. |
@@ -386,3 +386,59 @@ the respective scope needs current evidence; panel styling does not need it.
   the Polar contract receipt remains reusable for unchanged inputs. Native
   WebView2/PsychoPy, physical sensors, full study and installer remain untested
   for this revision because no isolated GUI runner was available.
+
+### Vernier Mini mock XDF and phone controlled full study
+
+- Result/date: `VERIFIED`, 2026-09-30, on base commit
+  `4c176e4d356566a4f1551551b81b12e87c092552` plus the uncommitted
+  source/test inputs and exact runtime/XDF hashes in ignored
+  `.for-ai-local/vernier-mini-mock-inputs-20260930.json` (SHA-256
+  `c19dc6d193192c9cb5a6d55a9d28df049ca539b9cf64bb5414bf3f52fc2537c7`).
+  The manifest also binds the mock generator and breathing-algorithm source at
+  Polar Mini Stream commit `a236479d4c8e2a07ed7b8424215b4364f6c8d4e9`.
+  Installed Vernier Stream Mini 0.6.3 ran `--mock`; Respyra 0.3.0 was rebuilt
+  as the debug native app. The runner used a private Win32 desktop and private
+  LSL SessionID without switching the user's input desktop.
+- Direct full-study checks: three private-desktop runs completed 48 trials
+  each with actual PsychoPy windows, accelerated timings and simulated
+  responses; the last used checked-in `tests/run_private_mock.py full`.
+  Independent `scripts/audit_mock_xdf.py` accepted XDFs in ignored
+  `control-center-160184e796c4499ca72eda5c95b5d293/` (800 raw rows) and
+  `control-center-e87d2ec0dd4149f4bc6eafbc314147d3/` (1,120 raw rows),
+  and `control-center-ffa5a300df11435b847c63e635b6a43a/` (970 raw rows).
+  The pre-fix run failed the audit with 289 raw rows missing from the derived
+  stream; a 60-second inlet buffer repaired the PsychoPy startup gap.
+- Native/phone checks: a local Start/Stop and a phone-controlled early Stop
+  passed with saved XDFs. Three `remote-full` runs completed all 48 trials:
+  one locally routed phone and one public hosted phone through the scratch
+  isolated runner, then one locally routed phone through checked-in
+  `tests/run_private_mock.py`. Their independently decoded XDFs are under
+  ignored `native-recordings-81e8346386d34dd4813dfe9defbba414/` (791 raw),
+  `native-recordings-34fd4b9b377e42e7a973aced2ecc9901/` (751 raw), and
+  `native-recordings-ef59238009ff4e17bd909362ce91fca4/` (751 raw).
+  A fourth full XDF under `native-recordings-538e98eda17c4719b0a7405759060647/`
+  independently passed the same audit (741 raw); its live-subscriber harness
+  assertion joined after setup markers and was corrected before the final pass.
+  Each full native XDF had 1,468 recorded markers and eight completed trials
+  per condition. Raw Mini sequence was contiguous, Force matched the mock sine
+  formula exactly, raw Force copy retained values/timestamps, producer drop
+  diagnostics were zero, the Mini's 0–1 breathing stream and sparse combined
+  stream matched an independent replay sample for sample, Respyra derived values
+  matched calibration and sample times, and all required stream footers matched.
+  The expanded audit passed all seven retained full-study XDFs.
+- Focused gates: 43 Python tests, six web tests, `pnpm check:ui` (eight layouts,
+  15 actions), `pnpm check:remote` with real public VDO (direct route, 12
+  layouts/mutations and mocked native backend), Rust tests (10), Rust clippy,
+  native debug build, private WebView fit and QR decode all passed. The public
+  phone page also paired and controlled a complete native run. Captured logs,
+  screenshots and XDFs remain in ignored `.for-ai-local/`.
+- Limits: the XDF reconstructs trial order, condition/target parameters,
+  phase and response markers, calibration and breathing samples. It does not
+  contain exact rendered pixels or frame flip times, and setup markers sent
+  before Start cannot be in the recording. The Mini's optional signal-status
+  stream may have zero rows when no status change occurs. Phone setup/monitor
+  can scroll vertically with the Mini's 11 channels while retaining 390 px
+  width fit. Tests used mock force, simulated responses, shortened phase times,
+  headless Chrome and private-desktop WebView/PsychoPy. A physical belt/phone,
+  full-duration participant timing, installed Respyra package, and public asset
+  byte parity remain unverified.

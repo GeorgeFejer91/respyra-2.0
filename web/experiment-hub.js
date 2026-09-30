@@ -444,7 +444,7 @@ import { EVENT_MARKERS } from './marker-catalog.js';
       streams.sort((a, b) => Number(b.id === selectedSource) - Number(a.id === selectedSource) ||
         Number(b.id === 'pending-calibrated' || b.name === 'Respyra-Calibrated-Breathing') - Number(a.id === 'pending-calibrated' || a.name === 'Respyra-Calibrated-Breathing'));
 
-      const signature = JSON.stringify([selectedSource, discoveryError, eligible.map(row => [row.uid, row.type]), streams.map(({ id, name, shortName, signal, required, pending, record }) => [id, name, shortName, signal, required, pending, record])]);
+      const signature = JSON.stringify([selectedSource, discoveryError, nativeProgress.health?.signal, eligible.map(row => [row.uid, row.type]), streams.map(({ id, name, shortName, signal, required, pending, record }) => [id, name, shortName, signal, required, pending, record])]);
       if (signature !== discoverySignature) {
         discoverySignature = signature;
         renderSourceOptions(eligible);
@@ -470,7 +470,7 @@ import { EVENT_MARKERS } from './marker-catalog.js';
         select.disabled = !options.length;
       }
       const source = streams.find(stream => stream.id === selectedSource);
-      const live = native ? !!nativeState.source && nativeProgress.health?.signal === 'live' : source?.signal === 'live';
+      const live = native ? !!source && source.id === eligible.find(row => row.source_id === nativeSelectedId)?.uid && nativeProgress.health?.signal === 'live' : source?.signal === 'live';
       const polar = !!nativeState.source?.contract_id?.startsWith('respyra-polar-');
       $('polar-direction-field').hidden = !native || !polar;
       $('input-readiness').dataset.state = discoveryError ? 'error' : live ? 'live' : 'waiting';

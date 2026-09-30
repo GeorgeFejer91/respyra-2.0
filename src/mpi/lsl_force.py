@@ -23,7 +23,7 @@ def force_channel_index(xml: str, channel_count: int) -> int:
     desc = root.find("desc")
     if desc is None or desc.findtext("manufacturer") != "Vernier":
         raise LSLForceError("LSL stream is missing Vernier metadata")
-    if desc.findtext("model") != "GDX-RB" or desc.findtext("stream_role") != "raw_measurement_recording":
+    if desc.findtext("model") not in {"GDX-RB", "GDX-RB-MOCK"} or desc.findtext("stream_role") != "raw_measurement_recording":
         raise LSLForceError("LSL stream is not a raw GDX-RB recording")
     channels = desc.findall("channels/channel")
     if len(channels) != channel_count:
@@ -273,7 +273,9 @@ def open_force_source(resolved, timeout: float = 5.0) -> LSLForceSource:
         return open_polar_source(resolved, timeout=max(timeout, 20.0))
 
     # Pin this outlet after validation; a restart requires fresh metadata validation.
-    inlet = StreamInlet(resolved, max_buflen=2, processing_flags=proc_clocksync, recover=False)
+    # The Mini advertises an irregular-rate raw outlet. Retain startup samples
+    # while PsychoPy imports and creates its display before the study drains it.
+    inlet = StreamInlet(resolved, max_buflen=60, processing_flags=proc_clocksync, recover=False)
     try:
         info = inlet.info(timeout=timeout)
         if info.source_id() != resolved.source_id():
