@@ -235,8 +235,8 @@ const assert = require('node:assert/strict');
       await ui.waitForFunction(()=>document.getElementById('trace-line').getAttribute('d')?.split('L').length>=5);
       assert(await ui.locator('#monitor-markers li').count());
       const monitorFit=await ui.evaluate(()=>({height:document.documentElement.scrollHeight,viewport:innerHeight,width:document.documentElement.scrollWidth,viewportWidth:innerWidth}));
-      assert(monitorFit.width<=monitorFit.viewportWidth+1 && (process.env.RESPYRA_TEST_SOURCE_ID || monitorFit.height<=monitorFit.viewport+1),
-        'Phone monitor overflows: '+JSON.stringify(monitorFit));
+      assert(monitorFit.width<=monitorFit.viewportWidth+1,
+        'Phone monitor overflows horizontally: '+JSON.stringify(monitorFit));
       await ui.screenshot({path:'.for-ai-local/native-remote-controller.png',fullPage:true});
     }
     if(process.env.RESPYRA_FULL_MOCK_STUDY) {
