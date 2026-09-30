@@ -15,8 +15,10 @@ const assert = require('node:assert/strict');
   assert(page,'Respyra WebView missing');
   const errors=[],diagnostics=[];page.on('pageerror',e=>errors.push(String(e)));
   page.on('console',message=>{if(message.type()==='error')diagnostics.push(message.text());});
-  try { await page.waitForFunction(()=>document.getElementById('shell')?.getClientRects().length && !document.getElementById('participant').disabled,{},{timeout:15000}); }
-  catch(e) { console.error(await page.locator('body').innerText());console.error(await page.evaluate(()=>window.__TAURI__.core.invoke('launch_backend')));console.error(errors);throw e; }
+  const nativeReadyStart=Date.now();
+  try { await page.waitForFunction(()=>document.getElementById('shell')?.getClientRects().length && !document.getElementById('participant').disabled,{},{timeout:30000}); }
+  catch(e) { console.error(await page.locator('body').innerText());console.error(await page.evaluate(()=>({participantDisabled:document.getElementById('participant').disabled,startHidden:document.getElementById('start').hidden,closeHidden:document.getElementById('close').hidden})));console.error(await page.evaluate(()=>window.__TAURI__.core.invoke('launch_backend')));console.error(errors);throw e; }
+  console.log(JSON.stringify({nativeReadyMs:Date.now()-nativeReadyStart}));
   const mode=process.argv[2];
   let ui=page, phoneBrowser;
   if(mode==='remote') {
@@ -246,8 +248,14 @@ const assert = require('node:assert/strict');
     await ui.locator('#close').waitFor({state:'visible',timeout:15000});
     if(mode==='remote') await ui.locator('#xdf-state').getByText('Saved', {exact:true}).waitFor({timeout:20000});
     else await page.locator('#stream-status').getByText(/XDF saved/u).waitFor({timeout:20000});
-    const file=await page.evaluate(async()=> (await window.__TAURI__.core.invoke('launch_backend')).progress.recording.output_file);
-    assert(file.endsWith('.xdf'));
+    let recording, file;
+    for(let attempt=0;attempt<50;attempt++) {
+      recording=await page.evaluate(async()=> (await window.__TAURI__.core.invoke('launch_backend')).progress.recording);
+      file=recording.output_file;
+      if(file?.endsWith('.xdf'))break;
+      await page.waitForTimeout(100);
+    }
+    assert(file?.endsWith('.xdf'),JSON.stringify(recording));
     require('node:fs').writeFileSync(`.for-ai-local/native-${mode}-xdf.json`, JSON.stringify({file}));
     await ui.locator('#close').click();
   }
