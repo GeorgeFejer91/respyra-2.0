@@ -16,8 +16,10 @@ its bootstrapper and runtime from Microsoft; that first installation requires
 Internet access. Later launches do not need it for the local study.
 The Windows Universal C Runtime supplied by Windows 10/11 is required.
 QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and
-also needs Internet access. Hardware acquisition remains a separate
-Vernier Stream Mini program. Respyra 2.0 owns recording; a separate LSL recorder is unnecessary.
+also needs Internet access. Hardware acquisition uses a separate
+[Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Vernier-Stream-Mini_0.6.3_x64-setup.exe)
+or [Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Polar-Stream-Mini_0.6.3_x64-setup.exe)
+program. Respyra 2.0 owns recording; a separate LSL recorder is unnecessary.
 
 Open Respyra 2.0 to use **Experiment control**. Enter participant/session and any
 custom variable labels and values. These fields save automatically and reload on the

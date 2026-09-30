@@ -129,9 +129,12 @@ Never publish an invitation inside a panel descriptor.
 
 Source lives here in companion/ with shared presentation/profile generated
 from web/. pnpm prepare:web produces reviewed static assets and pinned vendor
-licenses. The configured GitHub Pages destination for these assets is:
+licenses. The configured GitHub Pages site is:
 https://georgefejer91.github.io/respyra-2.0/
-The gh-pages branch contains static companion files and their source SHA only.
+It introduces the desktop app and links the installer. The phone controller is
+at `/remote.html`; existing QR invitations to the root redirect there without
+changing the private invitation or desktop installer. The gh-pages branch
+contains static site/controller files and their source SHA only.
 Python, session data and grants are never deployed. The Recorder iframe is
 opaque and denies parent/native access and storage; the pinned SDK connector
 disables only its unavailable optional cache hooks.

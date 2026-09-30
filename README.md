@@ -1,11 +1,17 @@
 # Respyra 2.0
 
-HTML/Tauri experiment controller for a Python breathing target-tracking study. The PsychoPy task asks
+**[Project website](https://georgefejer91.github.io/respyra-2.0/)** · **[Download the Windows installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.2)** · [Installation guide](docs/windows-install.md)
+
+Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
 amplified, attenuated, or absent. Vernier Stream Mini can publish raw belt Force;
 Polar Stream Mini can publish two signed ACC-derived breathing candidates.
 Respyra accepts either source through LSL, publishes an event-marker stream,
 and records LSL to XDF automatically.
+
+The study builds on [the original respyra toolbox by Micah Allen and the Embodied Computation Group](https://github.com/embodied-computation-group/respyra). Cite its preprint when using that work: Allen, M. (2026). *respyra: A General-Purpose Respiratory Tracking Toolbox for Interoception Research*. [PsyArXiv](https://osf.io/preprints/psyarxiv/wjuce_v1).
+
+The separate [Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Vernier-Stream-Mini_0.6.3_x64-setup.exe) and [Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Polar-Stream-Mini_0.6.3_x64-setup.exe) Windows installers provide compatible LSL streams; see their [project and releases](https://github.com/GeorgeFejer91/Polar-Mini-Stream).
 
 The importable Python package keeps its original name, `mpi`.
 
@@ -107,8 +113,9 @@ display or the phone controller to monitor without taking participant focus.
 **XDF recording** shows subscribed streams, the local file, bytes and completion
 status. Wait for **Saved** before closing. Discovery and connection
 run in one Python setup worker; experiment input keeps the existing nonblocking
-LSL read path. Qt is not used by this wrapper, although the installed PsychoPy
-and respyra distributions still include Qt dependencies.
+LSL read path. Qt is not used by this study or controller; Qt modules are
+omitted from the Windows installer while PsychoPy's study and timing modules
+remain bundled.
 
 **Save original CSV files locally** is off by default. Enabling it restores the
 original sample columns and the companion `-self-assessment.csv` file in ignored
@@ -178,4 +185,4 @@ the same tab. The permanent descriptor is
 [`companion/panel.json`](companion/panel.json). See
 [remote-viewer.md](docs/remote-viewer.md) for pairing, one-controller lifecycle,
 hosting, privacy, checks and qualification limits. The static phone interface is
-hosted at [Respyra phone controller](https://georgefejer91.github.io/respyra-2.0/).
+hosted at [Respyra phone controller](https://georgefejer91.github.io/respyra-2.0/remote.html).

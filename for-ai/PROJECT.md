@@ -69,8 +69,10 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   BRSP/VDO grants `experiment.observe`, `experiment.setup`, `experiment.run`;
   enabling the private link explicitly shares setup fields. `companion/` supplies Remote
   Panel/1 assets hosted on Respyra's own GitHub Pages site at
-  `https://georgefejer91.github.io/respyra-2.0/`. Only static companion files
-  and source provenance are published on gh-pages; Python/data/grants stay local.
+  `https://georgefejer91.github.io/respyra-2.0/`. The root is a public app
+  overview; existing private QR links redirect to the static controller at
+  `/remote.html`. Only static site/controller files and source provenance are
+  published on gh-pages; Python/data/grants stay local.
   The experiment control window remains available during PsychoPy, without
   taking participant focus. A second display or phone avoids focus changes.
   Stop cleans up the study; phone loss revokes control but leaves a run active.

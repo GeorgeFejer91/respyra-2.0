@@ -10,9 +10,12 @@ const snapshot = { profile:'respyra.controller/1', revision:2, monitorRevision:1
 test('invitation, state and commands have closed bounded contracts', () => {
   const url = invitationUrl(invite);
   assert.deepEqual(parseInvitation(url), invite);
+  assert.deepEqual(parseInvitation(url.replace('/respyra-2.0/#', '/respyra-2.0/remote.html#')), invite);
   assert.equal(new URL(PANEL.url).hash, '');
+  assert.equal(new URL(PANEL.url).pathname, '/respyra-2.0/remote.html');
   for (const bad of [url.replace('https:','http:'), url.replace('georgefejer91.github.io','evil.example'),
-    url + '&extra=x', url.replace('#','?'), url.replace(invite.secret,'short')]) assert.equal(parseInvitation(bad),null);
+    url + '&extra=x', url.replace('#','?'), url.replace(invite.secret,'short'),
+    url.replace('/respyra-2.0/#', '/respyra-2.0/other.html#')]) assert.equal(parseInvitation(bad),null);
   assert.equal(validateControllerState(snapshot),true);
   assert.equal(validateControllerState({ ...snapshot,participant:'private' }),false);
   assert.equal(validateControllerState({ ...snapshot,progress:{ ...snapshot.progress,lsl_time:NaN } }),false);

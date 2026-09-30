@@ -47,7 +47,7 @@ if ((RunGit $publishRoot @('branch', '--show-current')) -ne 'gh-pages' -or
 if (@(RunGit $publishRoot @('status', '--porcelain')).Count) {
     throw 'The publication worktree has changes; review them before publishing.'
 }
-$files = @('index.html', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js',
+$files = @('index.html', 'remote.html', 'site.css', 'site.js', 'logo.svg', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js',
            'controller-ui.js', 'action-queue.js', 'lsl-monitor.js', 'panel.json', 'vendor')
 foreach ($name in $files) {
     Copy-Item -LiteralPath (Join-Path $sourceRoot "companion/$name") -Destination $publishRoot -Recurse -Force
@@ -58,8 +58,8 @@ $provenance | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $publishRoot 
 RunGit $publishRoot (@('add', '--') + $files + @('source.json', '.nojekyll'))
 & git -C $publishRoot diff --cached --quiet
 if ($LASTEXITCODE -eq 1) {
-    RunGit $publishRoot @('commit', '-m', "Publish Respyra phone controller from $($sourceCommit.Substring(0,7))")
+    RunGit $publishRoot @('commit', '-m', "Publish Respyra site from $($sourceCommit.Substring(0,7))")
 } elseif ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the publication diff.' }
 if ($Push) { RunGit $publishRoot @('push', 'origin', 'HEAD:gh-pages') }
-Write-Output "Static phone source: $sourceCommit"
+Write-Output "Static site source: $sourceCommit"
 Write-Output "Pages commit: $(RunGit $publishRoot @('rev-parse', 'HEAD'))"

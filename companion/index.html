@@ -4,23 +4,88 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src wss://wss.vdo.ninja https://turn.vdo.ninja; img-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Respyra experiment control</title>
-  <link rel="stylesheet" href="./style.css">
-  <script src="./vendor/vdoninja-sdk.min.js" defer></script>
-  <script type="module" src="./app.js"></script>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Respyra 2.0 is a Windows app for PsychoPy breathing target-tracking studies with LSL input and XDF recording.">
+  <title>Respyra 2.0 — breathing research app</title>
+  <link rel="stylesheet" href="./site.css">
+  <script type="module" src="./site.js"></script>
 </head>
-<body class="remote"><main>
-  <header><h1 data-measure>Respyra 2.0</h1><p data-measure>Remote Viewer</p></header>
-  <div class="connection-row">
-  <p id="connection-status" role="status" aria-live="polite" data-measure>Disconnected. Open Remote Viewer in Respyra for a fresh QR code.</p>
-  <form id="pairing" autocomplete="off">
-    <label id="viewer-name-field"><span data-measure>Your name</span><input id="viewer-name" type="text" maxlength="64" autocomplete="off" required spellcheck="false"></label>
-    <label id="invitation-field"><span data-measure>Private Respyra control link</span><input id="invitation" type="url" maxlength="4096" spellcheck="false" required></label>
-    <div class="actions"><button id="connect" type="submit" data-measure>Request access</button><button id="disconnect" type="button" disabled data-measure>Disconnect</button></div>
-  </form>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="./" data-measure>Respyra 2.0</a>
+      <nav aria-label="Site navigation">
+        <a href="#about" data-measure>About</a>
+        <a href="#download" data-measure>Download</a>
+        <a href="#streamers" data-measure>Stream apps</a>
+        <a href="#origin" data-measure>Origins</a>
+        <a href="./remote.html" data-measure>Phone controller</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro" id="about">
+        <img class="brand-art" src="./logo.svg" width="148" height="148" alt="Original Respyra logo, recreated as the app icon">
+        <div class="intro-content">
+          <h1 data-measure>Breathing target-tracking studies on Windows</h1>
+          <p data-measure>Respyra 2.0 gives researchers an experimenter control window, a PsychoPy participant task, and a native LSL/XDF recorder in one installable app. Participants follow a breathing target while the study varies the visual feedback they receive.</p>
+          <div class="primary-links">
+            <a class="download-link" href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.2/Respyra-2.0_0.3.2_x64-setup.exe" data-measure>Download for Windows</a>
+            <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.2" data-measure>Release notes and checksums</a>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="does-title">
+        <h2 id="does-title" data-measure>What it does</h2>
+        <ul>
+          <li data-measure>Runs calibration, baseline, countdown, target tracking, and participant assessments in PsychoPy.</li>
+          <li data-measure>Receives a compatible raw Force stream from Vernier Stream Mini or a signed breathing waveform from Polar Stream Mini over LSL.</li>
+          <li data-measure>Records raw input, calibrated breathing, and named event markers to a local XDF file. Original CSV export is optional.</li>
+          <li data-measure>Offers an optional, approval-based phone controller for monitoring and study controls.</li>
+        </ul>
+      </section>
+
+      <section id="streamers" aria-labelledby="streamers-title">
+        <h2 id="streamers-title" data-measure>Get a breathing stream</h2>
+        <p data-measure>Respyra receives live data over LSL. Sensor acquisition comes from a separate Mini app; choose the one that matches your device.</p>
+        <div class="streamer">
+          <h3 data-measure>Vernier Stream Mini</h3>
+          <p data-measure>For a Vernier Go Direct Respiration Belt. Publishes the raw Force signal that Respyra uses for this study.</p>
+          <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Vernier-Stream-Mini_0.6.3_x64-setup.exe" data-measure>Download Vernier Stream Mini for Windows</a>
+        </div>
+        <div class="streamer">
+          <h3 data-measure>Polar Stream Mini</h3>
+          <p data-measure>For a Polar H10. Publishes signed acceleration-derived breathing waveforms and validity signals accepted by Respyra.</p>
+          <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Polar-Stream-Mini_0.6.3_x64-setup.exe" data-measure>Download Polar Stream Mini for Windows</a>
+        </div>
+        <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream" data-measure>Mini apps source and setup information</a>
+      </section>
+
+      <section id="download" aria-labelledby="download-title">
+        <h2 id="download-title" data-measure>Download and set up</h2>
+        <p data-measure>The current installer supports Windows 10/11 x64. It includes its own Python/PsychoPy environment and recorder; you do not need to install Python or compile the project. A compatible Vernier or Polar Mini app must publish the breathing stream before a study can start.</p>
+        <p data-measure>Recordings are saved in %LOCALAPPDATA%\Respira\data, outside the program folder. Setup downloads Microsoft WebView2 if it is absent. Phone control needs an Internet connection.</p>
+        <div class="link-list">
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.2" data-measure>Windows installer and source archive</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/main/docs/windows-install.md" data-measure>Installation and study guide</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0" data-measure>Source code and issues</a>
+        </div>
+        <p class="qualification" data-measure>The installer is unsigned. Synthetic installed-app checks passed; physical sensors and full-duration scientific display timing still need validation on the study computer.</p>
+      </section>
+
+      <section id="origin" aria-labelledby="origin-title">
+        <h2 id="origin-title" data-measure>Built on the original respyra</h2>
+        <p data-measure>Respyra 2.0 builds on the original respyra Python toolbox by Micah Allen and the Embodied Computation Group. Their work supplies the PsychoPy breathing target-tracking foundations and the original logo artwork. This project packages a configured study with LSL input selection, local recording, and experimenter controls.</p>
+        <p class="citation" data-measure>Allen, M. (2026). respyra: A General-Purpose Respiratory Tracking Toolbox for Interoception Research. PsyArXiv.</p>
+        <div class="link-list">
+          <a href="https://osf.io/preprints/psyarxiv/wjuce_v1" data-measure>Read the original preprint</a>
+          <a href="https://github.com/embodied-computation-group/respyra" data-measure>Original respyra source</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/main/docs/THIRD-PARTY.md" data-measure>Licenses and attribution</a>
+        </div>
+      </section>
+    </main>
+    <footer><p data-measure>Respyra 2.0 project code is GPL-3.0-only. The original respyra package and other dependencies retain their own licenses.</p></footer>
   </div>
-  <p id="pairing-note" data-measure>Enter your name to request desktop approval. Disconnecting leaves the study running.</p>
-  <div id="controller" hidden></div>
-  <p id="route" data-measure></p>
-</main></body></html>
+</body>
+</html>
