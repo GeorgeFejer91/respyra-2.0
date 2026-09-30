@@ -1,6 +1,6 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra 2.0_0.3.2_x64-setup.exe` on Windows 10/11 x64. The installer lets you
+Run `Respyra-2.0_0.3.2_x64-setup.exe` on Windows 10/11 x64. The installer lets you
 choose a destination folder, creates a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
