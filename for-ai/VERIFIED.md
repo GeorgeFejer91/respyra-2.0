@@ -459,3 +459,8 @@ the respective scope needs current evidence; panel styling does not need it.
   and one source-loss XDF passed independent recorded-sample/marker audits.
 - Exact commands, commits, all XDF paths/counts, defects and limits:
   [`POLAR-MOCK-VERIFIED.md`](./POLAR-MOCK-VERIFIED.md).
+
+### Tower PC Windows installer candidate
+
+- Result/date: `VERIFIED` for the exact installed mock runtime, `BLOCKED` for public release, 2026-09-30. A clean 0.3.0 installer from commit `617621f` passed deep-path manifest parity, embedded engine/XDF, installed Polar PCA and signed Phan abort/XDF, hosted QR, LSL Data viewer, Vernier/CSV regression, and native select/memory/remote checks. Public promotion remains blocked by corresponding-source review for GPL FFmpeg native libraries in bundled wheels.
+- Exact installer hash, commands, XDF paths/counts, fixes, and limits: [`WINDOWS-INSTALLER-TOWER-2026-09-30.md`](./WINDOWS-INSTALLER-TOWER-2026-09-30.md).
