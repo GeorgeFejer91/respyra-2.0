@@ -82,6 +82,10 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   `data/` inside the program folder. Packaging/release gates are in `PACKAGING.md`. App identity is
   `dev.georgefejer.respyra2`.
 - `scripts/plot_session.py` remains a reader for historical local CSVs.
+  `scripts/xdf_to_csv.py` is a separate, user-invoked offline export of an
+  existing XDF to one timestamped CSV per stream; it does not enable or alter
+  the study's opt-in CSV logger. `notebooks/xdf_to_csv_tutorial.ipynb` explains
+  the export. Synthetic and participant XDF files stay out of Git.
   `tests/test_lsl_force.py`, `tests/test_event_markers.py`,
   `tests/test_experiment_flow.py`, `tests/test_desktop_bridge.py`,
   `tests/test_desktop_process.py`,
