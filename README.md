@@ -59,13 +59,14 @@ samples and actual marker reception by the recorder before opening PsychoPy.
 Recording includes calibration and study cleanup. Additional LSL streams join
 when discovered, including streams started later. No separate recorder is required.
 The first window is
-the **Experiment control** panel with participant/session and breathing-input setup.
-The three-part control center shows participant/session inputs at the top,
+the **Experiment control** panel with participant and breathing-input setup.
+The three-part control center shows a participant-number dropdown (0–100) at the top,
 one shared plot with stacked live channels, stream tabs and event markers in the middle, and a
 red **Start Experiment** button at the bottom. All streams are included
-automatically. Additional channels are paged without dropping them. Enter the participant number and
-study session, then Start. The default session is 001; its parity determines
-the study's counterbalancing.
+automatically. Additional channels are paged without dropping them. Select the
+participant number, then Start. Odd/even participant parity determines the study's
+block order. Numbers with a previously verified XDF are red and remain selectable;
+the legacy session metadata defaults to 001.
 
 Respyra automatically discovers and connects a unique compatible breathing
 input. The adjacent Vernier and Polar dropdowns show compatible streams found
@@ -168,7 +169,7 @@ The Qt checkpoint before this migration is the Git tag
 **Connect remote experiment controller** opens a QR popup and creates a private
 link automatically. Scanning it requests access; click **Approve** on the desktop
 before the phone receives study state or controls. **Reject** revokes the request.
-The phone can edit participant/session,
+The phone can select the participant number,
 scan/select/use LSL input, Start, Cancel, Stop experiment and Close the final
 screen. The phone opens **LSL data & markers**: select a raw Vernier channel,
 view its current value/unit and a ten-second trace with marker ticks and recent

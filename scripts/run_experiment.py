@@ -393,7 +393,7 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                 bridge.recorder.wait_for_finite_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
 
         # 8. Build trial order
-        conditions = (cfg.trial.build_conditions(session)
+        conditions = (cfg.trial.build_conditions(participant)
                       if cfg.trial.build_conditions is not None
                       else cfg.trial.conditions)
 

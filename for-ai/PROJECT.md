@@ -115,9 +115,11 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   Polar projection as force or silently replace raw Force with the normalized
   Vernier 0–1 outlet.
 - The opening desktop UI is one two-segment Experiment hub and LSL streams page.
-  It shows participant number and remembered custom variables beside compatible
+  It shows a participant-number dropdown (0–100) with previously recorded numbers
+  marked red, and remembered custom variables beside compatible
   input selection, compact stream rows and a shared live plot. The Remote Viewer
-  popup pairs the phone. A legacy session value remains internal. See
+  popup pairs the phone. Participant parity chooses block order; a legacy `001`
+  session value remains internal for recording metadata. See
   `HTML-UI.md` for the no-scroll and explicit no-fit contract.
   Discovery lists visible outlets with compatibility
   reasons; only raw Force (N) or the two exact signed Polar waveforms with their
@@ -185,8 +187,8 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   virtual environment and generated files.
 - Raw legacy session files from the archive are present only in the ignored
   local `data/` directory; their sharing status is **Undecided**.
-- The study module's header says 12 trials per session, while its
-  `build_conditions()` lists 48; the intended protocol needs confirmation.
+- `build_conditions()` lists 48 trials in four blocks of 12; the intended
+  protocol trial count still needs confirmation.
 - Physical experiment runtime and hardware behavior have not been verified here.
 - The locked `respyra==0.4.0` PyPI package differs from the sibling local
   `respyra` checkout; integration checks must use the installed package.

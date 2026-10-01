@@ -23,7 +23,7 @@ const path = require('node:path');
     let listener;
     const rawId = 'polar-stream-vernier-raw-ui';
     const polarId = 'polar-h10-StudyPolar_adrPcaWaveform';
-    const state = { phase:'setup', ui_seq:0, values:{ participant:'', session:'001' }, variables:[], marker_name:'Respyra-Events', save_csv:false,
+    const state = { phase:'setup', ui_seq:0, values:{ participant:'', session:'001' }, recorded_participants:[24,100], variables:[], marker_name:'Respyra-Events', save_csv:false,
       message:'Choose a raw Force stream', can_start:false, busy:false, record_keyboard:false, record_mouse:false,
       excluded_streams:[],
       streams:[{ source_id:rawId, stream_name:'Vernier Stream Mini', stream_type:'VernierRaw', compatible:true,
@@ -76,7 +76,7 @@ const path = require('node:path');
           state.progress.health.signal = 'live';
         }
         if (action.action === 'option' && action.field === 'polar_inverted') state.polar_direction_set = true;
-        state.can_start = !!state.source && !!state.values.participant.trim() &&
+        state.can_start = !!state.source && /^(?:100|[1-9]?\d)$/.test(state.values.participant) &&
           state.variables.every(row => row.label.trim() && row.value.trim()) &&
           (!state.source.contract_id.startsWith('respyra-polar-') || state.polar_direction_set);
         if (action.action === 'start') {
@@ -115,7 +115,13 @@ const path = require('node:path');
     assert(await page.locator('#marker-inventory-dialog').isHidden());
     assert(await page.locator('#hub').isVisible() && await page.locator('#streams').isVisible());
     assert(await page.locator('#start').isDisabled());
-    await page.locator('#participant').fill('P024');
+    assert.equal(await page.locator('#participant option').count(), 102);
+    assert.equal(await page.locator('#participant option[value="0"]').textContent(), '0');
+    assert.equal(await page.locator('#participant option[value="100"]').getAttribute('data-recorded'), 'true');
+    assert.equal(await page.locator('#participant option[value="24"]').getAttribute('data-recorded'), 'true');
+    assert.equal(await page.locator('#participant option[value="24"]').evaluate(option => getComputedStyle(option).color), 'rgb(233, 94, 96)');
+    await page.locator('#participant').selectOption('24');
+    assert.equal(await page.locator('#participant').getAttribute('data-recorded'), 'true');
     await page.locator('#add-field').click();
     await page.locator('#variable-list .variable-row input').first().fill('Age');
     await page.locator('#variable-list .variable-row input').nth(1).fill('28');

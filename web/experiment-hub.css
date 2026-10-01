@@ -98,6 +98,8 @@
     .text-input, select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #455d6c; border-radius: 4px; color: #e9f1f4; background: #15252e; }
 
     .participant { display: block; width: 100%; }
+    #participant[data-recorded="true"] { color: #e95e60; }
+    #participant option[data-recorded="true"] { color: #e95e60; }
 
     .variable-head, .variable-row { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr) 38px; gap: var(--inline-gap); align-items: center; }
 

@@ -9,6 +9,7 @@ companion/style.css
 companion/text-fit.js
 companion/remote-profile.js
 companion/controller-ui.js
+companion/participant-options.js
 companion/action-queue.js
 companion/lsl-monitor.js
 src-tauri/target/

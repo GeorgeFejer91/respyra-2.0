@@ -68,7 +68,7 @@ const assert = require('node:assert/strict');
       if(!(await import('./remote-profile.js')).validateControllerState(initial))
         throw new Error('Native remote snapshot failed browser validation: '+JSON.stringify(initial));
       const command={commandId:'cmd_native_probe',scope:'experiment.setup',action:'field_edit',
-        args:{ui_seq:1,ui_time_ms:1,field:'participant',value:'ownership-probe'},expectedRevision:revision};
+        args:{ui_seq:1,ui_time_ms:1,field:'participant',value:'7'},expectedRevision:revision};
       await reject({action:'snapshot',token:invite.token,owner:'wrong'});
       await reject({action:'claim',token:invite.token,peer_id:'second_phone',epoch:7,scopes:['experiment.observe'],name:'Second phone'});
       await reject({action:'dispatch',...binding,peer_id:'wrong_peer',sequence:1,command});
@@ -80,7 +80,7 @@ const assert = require('node:assert/strict');
       const after=await snapshot();
       if(after.setup.ui_seq!==initial.setup.ui_seq+1)throw new Error('Duplicate produced a second Python effect');
       const stale=await call({action:'dispatch',...binding,sequence:3,command:{...command,commandId:'cmd_stale_probe',args:{...command.args,value:'stale'}}});
-      if(stale.ok || (await snapshot()).setup.values.participant!=='ownership-probe')throw new Error('Stale mutation applied');
+      if(stale.ok || (await snapshot()).setup.values.participant!=='7')throw new Error('Stale mutation applied');
       const unknown=await call({action:'dispatch',...binding,sequence:4,command:{...command,commandId:'cmd_unknown_probe',action:'shell',expectedRevision:after.revision}});
       if(unknown.ok)throw new Error('Unknown action applied');
       await reject({action:'dispatch',...binding,sequence:5,command:{...command,args:{...command.args,value:'changed-body'}}});
@@ -160,8 +160,16 @@ const assert = require('node:assert/strict');
   if(mode==='remote') {
     assert(await ui.locator('#setup').isVisible() && await ui.locator('#lsl-monitor').isVisible());
   }
-  await ui.locator('#participant').fill(process.env.RESPYRA_TEST_PARTICIPANT || 'synthetic-native');
-  await ui.locator('#participant').press('ArrowLeft');
+  const participant = process.env.RESPYRA_TEST_PARTICIPANT || '99';
+  if (await ui.locator('#participant').evaluate(element => element.tagName === 'SELECT'))
+    await ui.locator('#participant').selectOption(participant);
+  else await ui.locator('#participant').fill(participant);
+  await ui.locator('#participant').press('Tab');
+  if (process.env.RESPYRA_TEST_RUN_ID && !await ui.locator('#variable-list input').count()) {
+    await ui.locator(mode === 'remote' ? '#add-variable' : '#add-field').click();
+    await ui.locator('#variable-list input').first().fill('TestRun');
+    await ui.locator('#variable-list input').nth(1).fill(process.env.RESPYRA_TEST_RUN_ID);
+  }
   if(mode==='memory' && !process.env.RESPYRA_TEST_SOURCE_ID) {
     await ui.locator('#include-keyboard-markers').check();
     await ui.locator('#include-mouse-markers').check();

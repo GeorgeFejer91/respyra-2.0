@@ -63,7 +63,10 @@ exe=(Path(os.environ['RESPYRA_INSTALLED_EXE']) if os.environ.get('RESPYRA_INSTAL
 work=root/'.for-ai-local/packaging/run elsewhere' if os.environ.get('RESPYRA_INSTALLED_EXE') else root
 work.mkdir(parents=True,exist_ok=True)
 if os.environ.get('RESPYRA_INSTALLED_EXE'):
-    env['RESPYRA_TEST_PARTICIPANT']='packaging-test-'+uuid.uuid4().hex[:12]
+    env['RESPYRA_TEST_PARTICIPANT']='99'
+    env['RESPYRA_TEST_RUN_ID']='packaging-test-'+uuid.uuid4().hex[:12]
+    installed_output = exe.parent/'data'
+    previous_csv = set(installed_output.glob('sub-99_ses-001_*.csv'))
 else:
     env['RESPYRA_DATA_DIR']=str(root/'.for-ai-local'/('native-recordings-'+uuid.uuid4().hex))
 results=[]
@@ -184,8 +187,8 @@ try:
     if os.environ.get('RESPYRA_INSTALLED_EXE') and 'memory' in modes:
         # The installed program saves data beside its executable.
         # Only inspect/remove this test's unique IDs.
-        output=exe.parent/'data'
-        files=sorted(output.glob('*'+env['RESPYRA_TEST_PARTICIPANT']+'*.csv'))
+        output=installed_output
+        files=sorted(set(output.glob('sub-99_ses-001_*.csv')) - previous_csv)
         assert len(files)==2,files  # one CSV-on run; the other two create none
         from mpi.validation_study_jenny import CONFIG
         for file in files:

@@ -19,7 +19,7 @@ const path = require('node:path');
     message:'Marker outlet online', setup:null, progress:null,
   };
   const setup = { phase:'setup',ui_seq:0,study_name:'Respyra breathing validation',
-    values:{participant:'',session:'001'},variables:[],message:'Choose a Force stream',busy:false,
+    values:{participant:'',session:'001'},recorded_participants:[2],variables:[],message:'Choose a Force stream',busy:false,
     can_start:false,can_use:false,selected_row:null,streams:[],source:null,omitted_streams:0,
     marker_name:'Respyra-Events',save_csv:false };
   let mutations = 0, ownerClaimed = false, approvalPending = false;
@@ -177,9 +177,11 @@ const path = require('node:path');
       progress:{phase:'progress',health:{signal:'not_selected',sample_age_ms:null,battery_percent:null}}};
     await child.locator('#setup').waitFor({ state:'visible' });
     assert(await child.locator('#setup').isVisible() && await child.locator('#lsl-monitor').isVisible(), 'phone setup and monitor share one page');
-    await child.locator('#participant').fill('synthetic-phone');
-    await child.locator('#participant').press('ArrowLeft');
-    await child.locator('#session').fill('002');
+    assert.equal(await child.locator('#participant option').count(), 102);
+    assert.equal(await child.locator('#participant option[value="2"]').getAttribute('data-recorded'), 'true');
+    assert.equal(await child.locator('#participant option[value="2"]').evaluate(option => getComputedStyle(option).color), 'rgb(233, 94, 96)');
+    await child.locator('#participant').selectOption('2');
+    await child.locator('#participant').press('Tab');
     await child.locator('#add-variable').click();
     await child.locator('#variable-list input').first().fill('Age');
     await child.locator('#variable-list input').nth(1).fill('28');
@@ -192,9 +194,11 @@ const path = require('node:path');
     await child.waitForFunction(()=>document.querySelector('input[value="1"]').checked && !document.getElementById('controls').disabled);
     await child.locator('#use').click();
     await child.waitForFunction(()=>!document.getElementById('start').disabled);
-    assert.equal(setup.values.participant,'synthetic-phone');
-    assert.equal(setup.values.session,'002');
+    assert.equal(setup.values.participant,'2');
+    assert.equal(setup.values.session,'001');
     assert.deepEqual(setup.variables,[{label:'Age',value:'28'}]);
+    await viewer.setViewportSize({ width:390, height:844 });
+    await child.locator('#setup').screenshot({ path:path.join(root, '.for-ai-local/remote-viewer-setup.png') });
     assert.equal(await child.locator('#battery').textContent(),'Not reported');
     await child.locator('#start').click();
     await child.locator('#phase').getByText('Running', {exact:true}).waitFor();
@@ -263,8 +267,8 @@ const path = require('node:path');
     console.log(JSON.stringify({ result:'passed',transport:process.env.RESPYRA_REAL_VDO ? 'public VDO' : 'deterministic BRSP bridge',route,iframe:'opaque',layouts:12,native:'mocked ownership and backend',mutationCalls:mutations }));
   } catch (error) {
     console.error({ started: [...started], targetStatus: await target.locator('#viewer-status').textContent(), viewerStatus: await child?.locator('#connection-status').textContent(), errors,
-      layout:await target.evaluate(()=>({view:document.body.dataset.view,mainHidden:document.querySelector('main').hidden,
-        height:document.querySelector('main').getBoundingClientRect().height,viewport:innerHeight,notice:document.getElementById('viewport-notice').hidden})),
+      layout:await target.evaluate(()=>({view:document.body.dataset.view,mainHidden:document.querySelector('main')?.hidden,
+        height:document.querySelector('main')?.getBoundingClientRect().height,viewport:innerHeight,notice:document.getElementById('viewport-notice')?.hidden})),
       controls:await child?.evaluate(()=>({view:document.body.dataset.view,phase:document.getElementById('controller').dataset.phase,hidden:document.getElementById('controller').hidden})) });
     throw error;
   } finally { await context.close(); await browser.close(); }

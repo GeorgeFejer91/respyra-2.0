@@ -21,7 +21,7 @@ const companion = path.join(root, 'companion');
 await cp(path.join(root, 'assets/icon.svg'), path.join(companion, 'logo.svg'));
 await cp(path.join(root, 'assets/branding/LICENSE.upstream.txt'), path.join(companion, 'vendor/RESPYRA-ARTWORK-LICENSE.txt'));
 await cp(path.join(root, 'assets/branding/README.md'), path.join(companion, 'vendor/RESPYRA-ARTWORK.md'));
-for (const file of ['style.css', 'text-fit.js', 'remote-profile.js', 'controller-ui.js', 'action-queue.js', 'lsl-monitor.js']) {
+for (const file of ['style.css', 'text-fit.js', 'remote-profile.js', 'controller-ui.js', 'participant-options.js', 'action-queue.js', 'lsl-monitor.js']) {
   await cp(path.join(root, 'web', file), path.join(companion, file));
 }
 await cp(vendor, path.join(companion, 'vendor'), { recursive: true });

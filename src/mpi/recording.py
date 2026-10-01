@@ -16,6 +16,30 @@ class RecordingError(RuntimeError):
     pass
 
 
+def participant_number(value):
+    """Return a selected participant number, accepting older P-prefixed entries."""
+    match = re.fullmatch(r"[Pp]?(\d{1,3})", value.strip()) if isinstance(value, str) else None
+    number = int(match.group(1)) if match else None
+    return number if number is not None and number <= 100 else None
+
+
+def recorded_participant_numbers(output):
+    """Read numbers listed only after verified XDF promotion."""
+    path = Path(output) / "participant-list.jsonl"
+    if not path.exists():
+        return []
+    try:
+        numbers = set()
+        for line in path.read_text(encoding="utf-8").splitlines():
+            record = json.loads(line)
+            number = participant_number(record.get("participant_number"))
+            if number is not None:
+                numbers.add(number)
+        return sorted(numbers)
+    except (OSError, ValueError, AttributeError) as exc:
+        raise RecordingError("Participant recording history could not be read") from exc
+
+
 def _filename_part(value):
     part = re.sub(r"-+", "-", "".join(c if c.isalnum() else "-" for c in value.strip())).strip("-")
     if not part:

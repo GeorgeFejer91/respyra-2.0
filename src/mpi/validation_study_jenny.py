@@ -1,17 +1,17 @@
-"""Configuration for the validation study (4 sessions, 12 trials each).
+"""Configuration for the validation study (48 trials in four blocks).
 
 Extends the base breath_tracking config with:
 - 4 breath cycles per trial (40 s at 0.1 Hz)
-- 12 trials per session (6 slow_steady + 6 perturbed_slow)
-- Counterbalanced starting condition across sessions (ABAB/BABA)
+- 12 trials per block, with feedback and no-feedback conditions
+- Counterbalanced block order across odd/even participant numbers
 
 To use: change the import in breath_tracking_task.py from
     from respyra.configs.breath_tracking import ...
 to
     from respyra.configs.validation_study import ...
 
-The session number entered in the participant dialog determines
-counterbalancing: odd sessions start slow_steady, even start perturbed.
+The selected participant number determines the block order. Odd participants
+start with a feedback block; even participants (including 0) start without feedback.
 """
 
 # ------------------------------------------------------------------ #
@@ -50,6 +50,7 @@ from respyra.configs.breath_tracking import (  # noqa: F401, E402
 )
 from respyra.core.target_generator import SegmentDef
 from mpi.condition import ConditionDef
+from mpi.recording import participant_number
 
 # ------------------------------------------------------------------ #
 #  Display override                                                    #
@@ -95,7 +96,7 @@ TRACKING_DURATION_SEC = 40.0
 OUTPUT_DIR = "data/"
 
 
-def build_conditions(session_num: str) -> list[ConditionDef]:
+def build_conditions(participant: str) -> list[ConditionDef]:
     veridical_fb = SLOW_STEADY
     veridical_no_fb = SLOW_STEADY_NO_FEEDBACK
     deep_fb = PERTURBED_DEEP
@@ -103,7 +104,10 @@ def build_conditions(session_num: str) -> list[ConditionDef]:
     shallow_fb = PERTURBED_SHALLOW
     shallow_no_fb = PERTURBED_SHALLOW_NO_FEEDBACK
 
-    if int(session_num) % 2 == 1:
+    number = participant_number(participant)
+    if number is None:
+        raise ValueError("Choose a participant number from 0 to 100")
+    if number % 2 == 1:
         return (
             # block 1
             [veridical_fb] * 4

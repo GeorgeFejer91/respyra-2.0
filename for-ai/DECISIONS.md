@@ -312,3 +312,21 @@ decision and link both entries.
   writable per-user location. The NSIS uninstaller removes listed program files
   and leaves the unlisted data folder, including during upgrade.
 - Supersedes: The legacy data-folder and private-identifier retention in D-0012.
+
+## D-0016 — Select participant parity and show prior recordings
+
+- Date: 2026-10-01
+- Status: Accepted
+- Context: The compact desktop hub hid the session number while trial order still
+  depended on it. The experimenter requested a 0–100 participant dropdown,
+  odd/even counterbalancing, and red marks for previously processed numbers.
+- Decision: Use the selected participant number's parity for block order on both
+  controllers. Default session to `001` as legacy recording metadata. Read
+  `participant-list.jsonl`, appended after XDF verification, to mark previously
+  recorded numbers red without disabling them. Keep a text label alongside color.
+- Consequences: A red number indicates a saved XDF, including a stopped run;
+  it does not certify that all 48 trials were completed. Earlier recordings
+  without a participant-list entry are not marked. Published phone assets need
+  deployment before the live phone receives the new selector.
+- Supersedes: The hidden-session UI choice in D-0013 and session-based order in
+  the imported study configuration.

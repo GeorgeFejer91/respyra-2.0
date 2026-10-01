@@ -11,7 +11,7 @@ import pytest
 from mpi.condition import ConditionDef
 from mpi.event_markers import MarkerOutlet
 from mpi.lsl_polar import LSLPolarSource
-from mpi.validation_study_jenny import CONFIG
+from mpi.validation_study_jenny import CONFIG, build_conditions
 from respyra.core.target_generator import SegmentDef
 
 
@@ -82,6 +82,16 @@ class Polar(LSLPolarSource):
         self.stopped = True
 
 
+def test_participant_parity_counterbalances_block_order():
+    for value, first_feedback in [('0', False), ('1', True), ('2', False), ('P003', True), ('100', False)]:
+        conditions = build_conditions(value)
+        assert len(conditions) == 48
+        assert [condition.feedback for condition in conditions[::12]] == [first_feedback, not first_feedback, first_feedback, not first_feedback]
+        assert conditions[0].name == ('normal' if first_feedback else 'normal_no_feedback')
+    with pytest.raises(ValueError, match='participant number'):
+        build_conditions('101')
+
+
 @pytest.mark.parametrize("scenario", [
     "complete", "polar_complete", "ready_escape", "tracking_error", "no_force",
 ])
@@ -141,7 +151,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
 
     monkeypatch.setattr(study, "MarkerOutlet", lambda: marker)
     monkeypatch.setattr(study, "run_source_setup", lambda _cfg, _markers: ({
-        "participant": "test", "session": "001", "save_csv": save_csv,
+        "participant": "2", "session": "001", "save_csv": save_csv,
     }, force))
     monkeypatch.setattr(runner, "setup_display", lambda _cfg: (win, stimuli))
     monkeypatch.setattr(display, "show_text_and_wait", show)
@@ -158,9 +168,11 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
 
     cfg = copy.deepcopy(CONFIG)
     cfg.output_dir = str(tmp_path)
-    cfg.trial.build_conditions = lambda _session: [
-        ConditionDef("normal", [SegmentDef(0.1, 1)]),
-    ]
+    selected_participants = []
+    def one_condition(selected):
+        selected_participants.append(selected)
+        return [ConditionDef("normal", [SegmentDef(0.1, 1)])]
+    cfg.trial.build_conditions = one_condition
     cfg.timing.range_cal_duration_sec = 0.01
     cfg.timing.baseline_duration_sec = 0.01
     cfg.timing.countdown_duration_sec = 0.01
@@ -176,6 +188,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
 
     payloads = [row for row, _timestamp in marker._outlet.samples]
     names = [row["event"] for row in payloads]
+    assert selected_participants == ([] if scenario == "no_force" else ["2"])
     for expected in ("run.started", "calibration.attempt.started",
                      "calibration.attempt.ended", "source.disconnected", "display.closed"):
         assert expected in names

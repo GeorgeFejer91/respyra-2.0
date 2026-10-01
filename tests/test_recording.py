@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from mpi.recording import NativeRecording, RecordingError, inspect_xdf, recording_stem
+from mpi.recording import NativeRecording, RecordingError, inspect_xdf, participant_number, recorded_participant_numbers, recording_stem
 from mpi.lsl_setup import SourceSetup, SetupRejected
 
 
@@ -43,7 +43,7 @@ def test_recorder_failure_prevents_setup_acceptance():
     setup = SourceSetup(SimpleNamespace(name='Study'), markers, recorder)
     setup.source = SimpleNamespace(get_all=lambda: [], start_derived=lambda _: None,
                                    source_id='raw-test', stream_name='Force')
-    setup.values['participant'] = 'synthetic'
+    setup.values['participant'] = '2'
     setup.shown = True
     try:
         with pytest.raises(SetupRejected, match='disk unavailable'):
@@ -83,6 +83,18 @@ def test_filename_uses_number_and_custom_fields():
     values = {'participant':'2', 'session':'001', 'variables':[
         {'label':'Age', 'value':'28'}, {'label':'Study group', 'value':'Control'}]}
     assert recording_stem(values) == 'P002_Session-001_Age-28_Study-group-Control'
+
+
+def test_participant_number_and_verified_history(tmp_path):
+    assert [participant_number(value) for value in ('0', 'P001', '100', '101', 'other')] == [0, 1, 100, None, None]
+    assert recorded_participant_numbers(tmp_path) == []
+    (tmp_path / 'participant-list.jsonl').write_text('\n'.join(json.dumps(row) for row in [
+        {'participant_number':'P000'}, {'participant_number':'P100'}, {'participant_number':'P001'},
+        {'participant_number':'P001'}, {'participant_number':'synthetic'}]) + '\n', encoding='utf-8')
+    assert recorded_participant_numbers(tmp_path) == [0, 1, 100]
+    (tmp_path / 'participant-list.jsonl').write_text('{bad json\n', encoding='utf-8')
+    with pytest.raises(RecordingError, match='history'):
+        recorded_participant_numbers(tmp_path)
 
 
 def test_participant_list_appends_only_after_verified_xdf(tmp_path):

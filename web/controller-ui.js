@@ -1,5 +1,6 @@
 // Shared presentation and intents. Python decides whether an action is valid.
 import { MONITOR_HTML, mountLslMonitor } from './lsl-monitor.js';
+import { participantOptions, selectParticipant } from './participant-options.js';
 export const CONTROL_HTML = `
   <p id="status" role="status" aria-live="polite" data-measure>Waiting for the experiment engine…</p>
   <p id="command-status" role="status" aria-live="polite" data-measure></p>
@@ -7,8 +8,7 @@ export const CONTROL_HTML = `
     <fieldset id="controls" disabled>
       <legend class="sr-only">Experiment setup</legend>
       <div class="fields">
-        <label><span data-measure>Participant number</span><input id="participant" name="participant" maxlength="128" required spellcheck="false" placeholder="P001"></label>
-        <label><span data-measure>Session</span><input id="session" name="session" maxlength="128" required spellcheck="false"></label>
+        <label><span data-measure>Participant number</span><select id="participant" name="participant" required></select></label>
       </div>
       <section class="custom-variables" aria-labelledby="variables-title">
         <div class="variable-heading"><h2 id="variables-title" data-measure>Custom variables</h2><button id="add-variable" type="button" aria-label="Add custom variable">+</button></div>
@@ -178,9 +178,8 @@ export function mountController(root, send, onReady) {
     for (const [id,key] of [['event','event'],['sequence','seq'],['lsl-time','lsl_time']]) byId(id).textContent = progress[key] == null ? '—' : String(progress[key]);
     byId('sequence').textContent = String(progress.markers?.emitted ?? progress.seq ?? 0);
     if (snapshot.phase === 'setup' && snapshot.values) {
-      for (const field of ['participant','session']) {
-        if (!edits.has(field) && byId(field).value !== snapshot.values[field]) byId(field).value = snapshot.values[field];
-      }
+      participantOptions(byId('participant'), snapshot.recorded_participants);
+      if (!edits.has('participant')) selectParticipant(byId('participant'), snapshot.values.participant);
       if (!edits.has('variables') && JSON.stringify(variables) !== JSON.stringify(snapshot.variables || [])) {
         variables = (snapshot.variables || []).map(row => ({...row}));
         renderVariables();
@@ -224,11 +223,12 @@ export function mountController(root, send, onReady) {
     availability();
   }
 
-  for (const field of ['participant','session']) {
-    const input = byId(field);
-    input.addEventListener('keydown', event => { void request('field_key', { field, key:event.key }); });
-    input.addEventListener('input', () => { void request('field_edit', { field, value:input.value }); });
-  }
+  participantOptions(byId('participant'), []);
+  byId('participant').addEventListener('keydown', event => { void request('field_key', { field:'participant', key:event.key }); });
+  byId('participant').addEventListener('change', () => {
+    selectParticipant(byId('participant'), byId('participant').value);
+    void request('field_edit', { field:'participant', value:byId('participant').value });
+  });
   byId('add-variable').addEventListener('click', () => {
     if (variables.length >= 6) return;
     variables.push({label:'', value:''}); renderVariables();
@@ -252,6 +252,6 @@ export function mountController(root, send, onReady) {
   if (!document.body.classList.contains('desktop')) byId('input-details').append(byId('record_keyboard').closest('.input-options'));
   return { render, setEnabled(value) { enabled = value; monitor.render(progress, enabled); availability(); },
     clearMonitor() { monitor.clear(); },
-    clearSetup() { variables = []; renderVariables(); byId('participant').value = ''; byId('session').value = ''; },
+    clearSetup() { variables = []; renderVariables(); selectParticipant(byId('participant'), ''); },
     fail(message) { enabled = false; monitor.render(progress, false); byId('command-status').textContent = message; availability(); } };
 }

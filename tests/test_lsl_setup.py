@@ -74,6 +74,20 @@ def test_experiment_fields_save_without_a_button_and_restore_on_restart(setup):
         send(setup, "field_edit", field="variables", value="not json")
 
 
+def test_participant_choice_uses_verified_recording_history(setup, tmp_path):
+    (tmp_path / "participant-list.jsonl").write_text(
+        json.dumps({"participant_number": "P000"}) + "\n" +
+        json.dumps({"participant_number": "P100"}) + "\n", encoding="utf-8")
+    setup.recorder = SimpleNamespace(output=tmp_path)
+    setup.restore()
+    send(setup, "shown")
+    assert setup.snapshot()["recorded_participants"] == [0, 100]
+    with pytest.raises(lsl_setup.SetupRejected, match="0 to 100"):
+        send(setup, "field_edit", field="participant", value="101")
+    send(setup, "field_edit", field="participant", value="0")
+    assert setup.values["participant"] == "0"
+
+
 def test_record_stream_choice_is_reflected_in_setup_snapshot(setup):
     send(setup, "shown")
     send(setup, "record_stream", uid="polar-heart-rate-uid", enabled=False)
@@ -95,7 +109,7 @@ def test_polar_input_requires_explicit_inhale_direction(monkeypatch, setup):
     monkeypatch.setattr(lsl_setup, "open_force_source", lambda _info: source)
     monkeypatch.setattr(lsl_setup, "save_force_selection", lambda _source: None)
     send(setup, "shown")
-    send(setup, "field_edit", field="participant", value="polar")
+    send(setup, "field_edit", field="participant", value="0")
     send(setup, "scan")
     finish(setup)
     send(setup, "select", row=0)
@@ -129,7 +143,7 @@ def test_scan_rejects_wrong_units_and_remembers_only_live_selection(monkeypatch,
     setup.restore()
     finish(setup)
     send(setup, "shown")
-    send(setup, "field_edit", field="participant", value="test")
+    send(setup, "field_edit", field="participant", value="1")
     assert not setup.snapshot()["can_start"] and not saved
     send(setup, "scan")
     finish(setup)
@@ -141,7 +155,7 @@ def test_scan_rejects_wrong_units_and_remembers_only_live_selection(monkeypatch,
     finish(setup)
     assert saved == [source.source_id] and setup.snapshot()["can_start"]
     send(setup, "start")
-    assert setup.accepted and setup.values == {"participant": "test", "session": "001"}
+    assert setup.accepted and setup.values == {"participant": "1", "session": "001"}
     names = setup.markers.names
     assert names.index("source.scan.started") < names.index("source.scan.completed")
     assert names.index("source.ui.use.clicked") < names.index("source.connected") < names.index("participant.dialog.accepted")
@@ -166,7 +180,7 @@ def test_saved_identity_reconnects_without_resaving_and_loss_gates_start(monkeyp
     finish(setup)
     send(setup, "shown")
     assert not setup.snapshot()["can_start"]
-    send(setup, "field_edit", field="participant", value="repeat")
+    send(setup, "field_edit", field="participant", value="100")
     assert setup.snapshot()["can_start"]
     if lose_source:
         monkeypatch.setattr(lsl_setup, "scan_force_streams", lambda: [])
@@ -192,7 +206,7 @@ def test_automatic_discovery_connects_unique_belt_without_clicks(monkeypatch, se
     setup.poll()
     finish(setup)
     send(setup, "shown")
-    send(setup, "field_edit", field="participant", value="auto")
+    send(setup, "field_edit", field="participant", value="2")
     assert setup.snapshot()["can_start"] and saved == [source.source_id]
     assert "source.ui.use.clicked" not in setup.markers.names
 
@@ -269,7 +283,7 @@ def test_marker_failure_does_not_leak_handed_off_source(monkeypatch, setup):
     source = live_source()
     setup.source = source
     send(setup, "shown")
-    send(setup, "field_edit", field="participant", value="p")
+    send(setup, "field_edit", field="participant", value="3")
     original = setup.markers.emit
     def failing(name, **fields):
         if name == "participant.dialog.accepted": raise RuntimeError("Recorder disconnected")

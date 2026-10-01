@@ -1,6 +1,7 @@
 import { measureTextRegions } from './text-fit.js';
 import { actionQueue } from './action-queue.js';
 import { EVENT_MARKERS } from './marker-catalog.js';
+import { participantOptions, selectParticipant } from './participant-options.js';
 
     import { prepareWithSegments, measureLineStats, measureNaturalWidth, setLocale } from './vendor/pretext/layout.js';
 
@@ -21,7 +22,8 @@ import { EVENT_MARKERS } from './marker-catalog.js';
     let saved;
     if (!native) try { saved = JSON.parse(localStorage.getItem('respyra-preview-fields') || 'null'); } catch { saved = null; }
     let variables = native ? [] : Array.isArray(saved?.variables) ? saved.variables : [{ label: 'Age', value: '' }, { label: 'Study group', value: '' }];
-    $('participant').value = typeof saved?.participant === 'string' ? saved.participant : '';
+    participantOptions($('participant'), []);
+    selectParticipant($('participant'), saved?.participant || '');
     const fail = error => {
       $('stream-status').textContent = 'Experiment control failed: ' + String(error);
       native?.core.invoke('close_app', { reason:'protocol_failure' }).catch(() => {});
@@ -43,7 +45,8 @@ import { EVENT_MARKERS } from './marker-catalog.js';
     const saveFields = () => native
       ? void request('field_edit', { field:'variables', value:JSON.stringify(variables) })
       : localStorage.setItem('respyra-preview-fields', JSON.stringify({ participant: $('participant').value, variables }));
-    $('participant').addEventListener('input', () => {
+    $('participant').addEventListener('change', () => {
+      selectParticipant($('participant'), $('participant').value);
       if (native) void request('field_edit', { field:'participant', value:$('participant').value });
       else saveFields();
     });
@@ -683,8 +686,9 @@ import { EVENT_MARKERS } from './marker-catalog.js';
         nativeSelectedId = snapshot.source?.source_id || '';
         $('polar-direction').value = snapshot.polar_direction_set ? (snapshot.polar_inverted ? 'decreasing' : 'increasing') : '';
         nativeExcluded = new Set(snapshot.excluded_streams || []);
+        participantOptions($('participant'), snapshot.recorded_participants);
         if (document.activeElement !== $('participant') && snapshot.values)
-          $('participant').value = snapshot.values.participant || '';
+          selectParticipant($('participant'), snapshot.values.participant || '');
         if (!document.activeElement?.closest?.('#variable-list') && JSON.stringify(variables) !== JSON.stringify(snapshot.variables || [])) {
           variables = (snapshot.variables || []).map(row => ({ ...row }));
           renderVariables();

@@ -54,14 +54,16 @@ Source/provenance is in `native/recorder/README.md`.
   Respyra installation folder, survive uninstall, and never enter Git/Pages.
   CSV remains opt-in and unchanged. Earlier recordings in
   `%LOCALAPPDATA%/Respira/data` remain untouched.
-- Participant and up to six custom label/value pairs are saved atomically
-  on setup edits in local user settings and restored on launch. The existing
-  session value remains in recording metadata but is hidden in the desktop hub.
-  Numeric participant
-  entries render as `P001`, `P002`, etc. in XDF names; session and label-value pairs
+- Participant number (0–100) and up to six custom label/value pairs are saved
+  atomically on setup edits in local user settings and restored on launch.
+  Odd/even participant parity chooses the study block order; the legacy session
+  value defaults to `001` in recording metadata. Numeric participant
+  entries render as `P000`, `P001`, etc. in XDF names; session and label-value pairs
   form underscore-separated filename parts before the unique suffix. Python appends
   a `participant-list.jsonl` record with full values only after XDF verification
   and promotion. A list-write failure reports an error while preserving the closed XDF.
+  The setup dropdown marks numbers in this list red while leaving them selectable.
+  A marked number means a verified XDF was saved, even if the run stopped early.
 - Local `mpi.lsl_viewer.LSLViewer` owns separate display-only subscriptions to all
   visible numeric and string streams, with UID identity, full channel metadata
   and late discovery. The selected study inlet remains its only acquisition and

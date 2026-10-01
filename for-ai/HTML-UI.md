@@ -17,7 +17,8 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
 - Never use page or panel scrollbars. All content in the active view fits the
   viewport. Do not hide scrollbars or clip overflow to pretend it fits.
 - Keep the Experiment hub and LSL streams on the same page. The compact hub has
-  participant number, up to six remembered custom label/value pairs, and Start.
+  a participant-number dropdown (0–100), up to six remembered custom label/value
+  pairs, and Start. Previously recorded numbers are red but remain selectable.
   The streams segment has side-by-side Vernier and Polar breathing-input
   dropdowns populated by validated LSL discovery. Selecting one makes it the sole
   study input; the Polar dropdown offers the two exact signed waveforms.
@@ -48,8 +49,11 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
   Layout work must preserve existing remote contracts.
 - The setup form saves participant and custom variable entries on edits;
   do not add a Save field labels button. The labels and values are restored on
-  launch and must fit the compact local and phone controls. A legacy internal
-  session value remains in recording metadata; the desktop hub does not ask for it.
+  launch and must fit the compact local and phone controls. Participant parity
+  selects the study block order. The internal session value defaults to `001` in
+  recording metadata; neither controller asks for it. Numbers marked recorded
+  come from the local list written after verified XDF promotion; this marks a
+  prior recording, including an early-stopped run, not completion of all trials.
 
 ## Restrained utility design
 

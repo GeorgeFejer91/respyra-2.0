@@ -1,6 +1,6 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra-2.0_0.3.3_x64-setup.exe` on Windows 10/11 x64. The installer lets you
+Run `Respyra-2.0_0.3.4_x64-setup.exe` on Windows 10/11 x64. The installer lets you
 choose a destination folder, creates a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
@@ -21,9 +21,13 @@ also needs Internet access. Hardware acquisition uses a separate
 or [Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Polar-Stream-Mini_0.6.3_x64-setup.exe)
 program. Respyra 2.0 owns recording; a separate LSL recorder is unnecessary.
 
-Open Respyra 2.0 to use **Experiment control**. Enter participant/session and any
-custom variable labels and values. These fields save automatically and reload on the
-next launch; there is no separate Save button. A unique
+Open Respyra 2.0 to use **Experiment control**. Select a participant number from
+0 to 100 and enter any custom variable labels and values. These fields save
+automatically and reload on the next launch; there is no separate Save button.
+Numbers with a previously verified XDF are red in the dropdown and remain
+selectable. The selected number's odd/even parity chooses the block order;
+session defaults to `001` and remains only in recording metadata. A red number may have an
+early-stopped recording and does not certify all trials were completed. A unique
 live raw Force LSL stream connects automatically (ambiguous choices are in
 **Settings**). The middle panel includes all streams and stacked live channel
 previews in one plot with stream tabs and event-marker lines. The red **Start Experiment** button waits for native
@@ -54,7 +58,7 @@ original sample and assessment CSV schemas/filenames are saved in
 the same `data` folder inside the Respyra installation. Source identity remains in
 `%LOCALAPPDATA%\Respyra\lsl-source.json` for compatibility with prior launches.
 The uninstaller is intended to remove the program and retain user
-recordings/settings. That behavior has not been qualified for v0.3.3.
+recordings/settings. That behavior has not been qualified for v0.3.4.
 Startup diagnostics are in `engine.log` beside the installed Respyra program (replaced on each
 launch); keep this local when it contains experiment identifiers.
 

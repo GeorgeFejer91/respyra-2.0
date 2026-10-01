@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from mpi.desktop_bridge import DesktopCancelled, validate_action
-from mpi.recording import RecordingError
+from mpi.recording import RecordingError, participant_number, recorded_participant_numbers
 from mpi.lsl_force import (
     LSLForceError, LSLForceSource, connect_force_source, load_force_selection,
     open_force_source, save_force_selection, scan_force_streams,
@@ -69,6 +69,7 @@ class SourceSetup:
         self.cfg, self.markers = cfg, markers
         self.recorder, self.cancel_check = recorder, cancel_check
         self.values = {"participant": "", "session": "001"}
+        self.recorded_participants = []
         self.variables = []
         self.save_csv = False
         self.record_keyboard = self.record_mouse = False
@@ -87,10 +88,17 @@ class SourceSetup:
 
     def restore(self):
         self.automatic = True
+        if self.recorder is not None and hasattr(self.recorder, "output"):
+            try:
+                self.recorded_participants = recorded_participant_numbers(self.recorder.output)
+            except RecordingError as exc:
+                self.recorded_participants = None
+                self.message = str(exc)
         try:
             saved_fields = load_fields()
             if saved_fields:
                 self.values, self.variables = saved_fields
+                self.values["session"] = "001"
         except SetupRejected as exc:
             self.message = str(exc)
         try:
@@ -122,6 +130,7 @@ class SourceSetup:
     def snapshot(self):
         selected = self.candidates[self.row] if self.row is not None else None
         return {"phase": "setup", "ui_seq": self.sequence, "study_name": self.cfg.name, "values": self.values.copy(),
+                "recorded_participants": self.recorded_participants,
                 "variables": [row.copy() for row in self.variables],
                 "marker_name": self.markers.name, "save_csv": self.save_csv,
                 "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
@@ -131,7 +140,7 @@ class SourceSetup:
                 "message": self.message, "busy": self.pending is not None,
                 "can_start": bool(self.source and not self.pending and
                                   (not getattr(self.source, "contract_id", None) or self.polar_direction_set) and
-                                  all(v.strip() for v in self.values.values()) and
+                                  participant_number(self.values["participant"]) is not None and
                                   all(row["label"].strip() and row["value"].strip() for row in self.variables) and
                                   len({row["label"].strip().casefold() for row in self.variables}) == len(self.variables)),
                 "can_use": bool(selected and selected.force_index is not None and not self.pending),
@@ -165,6 +174,8 @@ class SourceSetup:
                 except ValueError as exc:
                     raise SetupRejected(str(exc)) from exc
             else:
+                if action["field"] == "participant" and action["value"] and participant_number(action["value"]) is None:
+                    raise SetupRejected("Choose a participant number from 0 to 100")
                 if action["field"] == "variables":
                     try:
                         variables = json.loads(action["value"])

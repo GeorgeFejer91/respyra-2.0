@@ -54,7 +54,7 @@ recorder = NativeRecording(root / ".for-ai-local/recorder/runtime", output)
 try:
     source = open_force_source(resolve_byprop('source_id', identity, timeout=5)[0])
     source.start_derived(markers.run_id)
-    recorder.start(dict(participant="synthetic-control", session="001"), source, markers)
+    recorder.start(dict(participant="2", session="001"), source, markers)
     assert source.calibrated_id in recorder.snapshot()["data_sources"]
     assert source.calibrated_sample is None
     if '--full-study' in sys.argv:
@@ -77,7 +77,7 @@ try:
         cfg.timing.tracking_duration_sec = .15
         bridge = SimpleNamespace(recorder=recorder, check_cancel=recorder.check_health,
                                  send=lambda _: None, finish_stop=lambda _: None)
-        study.run_source_setup = lambda *args: (dict(participant='synthetic-control', session='001'), source)
+        study.run_source_setup = lambda *args: (dict(participant='2', session='001'), source)
         event.getKeys = lambda **kwargs: []
         event.waitKeys = lambda **kwargs: ['1' if markers.screen in {'accuracy', 'confidence'}
                                          else 'n' if markers.screen == 'breathing_judgment' else 'space']
