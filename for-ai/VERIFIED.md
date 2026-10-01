@@ -599,6 +599,8 @@ the respective scope needs current evidence; panel styling does not need it.
   `NO_AUTHORS` warning. MNE 1.10.2 read the Polar raw ECG physiology at 130 Hz
   and the irregular selected breathing waveform at an explicitly requested
   100 Hz; returned original timestamp counts matched 384 and 295 samples.
+  MNE also read Vernier's 11-channel raw outlet and one-channel derived waveform
+  at an explicitly requested 50 Hz, returning 661 original timestamps for each.
 - Inputs: ignored Polar mock XDF SHA-256
   `3d1762ca8215da2e12bb1715c171ca3762a2a90a3e86154520192f086ca1d254`;
   ignored Vernier mock XDF SHA-256
