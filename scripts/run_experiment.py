@@ -30,8 +30,8 @@ def main():
         from pathlib import Path
         root = Path(__file__).resolve().parents[1]
         bridge.recorder = NativeRecording(
-            os.environ.get("RESPIRA_RECORDER_DIR", root / ".for-ai-local/recorder/runtime"),
-            os.environ.get("RESPIRA_DATA_DIR", root / "data"))
+            os.environ.get("RESPYRA_RECORDER_DIR", root / ".for-ai-local/recorder/runtime"),
+            os.environ.get("RESPYRA_DATA_DIR", root / "data"))
         markers = MarkerOutlet()
         markers.observer = bridge.note_marker
         bridge.markers = markers
@@ -47,12 +47,10 @@ def main():
             # Advertise the outlet before importing the study or PsychoPy.
             from mpi.validation_study_jenny import CONFIG as _cfg
 
-            # Installed program files are read-only; keep original CSV schemas
-            # and relative filenames in the native shell's writable user folder.
-            import os
-            if os.environ.get("RESPIRA_DATA_DIR"):
+            # Keep original CSV schemas and relative filenames in the app's data folder.
+            if os.environ.get("RESPYRA_DATA_DIR"):
                 from dataclasses import replace
-                _cfg = replace(_cfg, output_dir=os.environ["RESPIRA_DATA_DIR"])
+                _cfg = replace(_cfg, output_dir=os.environ["RESPYRA_DATA_DIR"])
 
             run_experiment(_cfg, bridge, markers)
         except DesktopCancelled:

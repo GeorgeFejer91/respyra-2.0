@@ -146,7 +146,7 @@ class NativeRecording:
                 return
             line = raw.decode("utf-8", errors="replace").strip()
             with self._lock:
-                if line.startswith("RESPIRA_RECORDER/1 "):
+                if line.startswith("RESPYRA_RECORDER/1 "):
                     try:
                         identity, name = (bytes.fromhex(s).decode("utf-8") for s in line.split()[1:])
                         if len(self.streams) >= 512 and identity not in self.streams:
@@ -154,17 +154,17 @@ class NativeRecording:
                         self.streams[identity] = name
                     except (ValueError, UnicodeError):
                         self.error = "Invalid native recorder readiness message."
-                elif line.startswith("RESPIRA_RECORDER_DATA/1 "):
+                elif line.startswith("RESPYRA_RECORDER_DATA/1 "):
                     try:
                         self.data_sources.add(bytes.fromhex(line.split()[1]).decode("utf-8"))
                     except (ValueError, UnicodeError, IndexError):
                         self.error = "Invalid native recorder data message."
-                elif line.startswith("RESPIRA_RECORDER_FINITE/1 "):
+                elif line.startswith("RESPYRA_RECORDER_FINITE/1 "):
                     try:
                         self.finite_sources.add(bytes.fromhex(line.split()[1]).decode("utf-8"))
                     except (ValueError, UnicodeError, IndexError):
                         self.error = "Invalid native recorder finite-data message."
-                elif "RESPIRA_RECORDER_ERROR" in line:
+                elif "RESPYRA_RECORDER_ERROR" in line:
                     self.error = "Native recording failed; the partial XDF has been preserved."
                 if self.error:
                     self.phase = "error"

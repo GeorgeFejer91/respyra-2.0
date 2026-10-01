@@ -14,7 +14,7 @@ int record(const std::string &path, const std::string &watch_query) {
         std::cin.get(); // Parent owns this private pipe; EOF also finalizes XDF.
         return 0;
     } catch (const std::exception &error) {
-        std::cerr << "RESPIRA_RECORDER_ERROR " << error.what() << std::endl;
+        std::cerr << "RESPYRA_RECORDER_ERROR " << error.what() << std::endl;
         return 1;
     }
 }

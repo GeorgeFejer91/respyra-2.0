@@ -32,6 +32,25 @@ const assert = require('node:assert/strict');
       console.error('options',await page.locator('#vernier-source option').allTextContents());
       throw error;
     }
+    if (process.env.RESPYRA_TEST_POLAR_METRIC) {
+      await page.waitForFunction(async () => {
+        const state = await window.__TAURI__.core.invoke('launch_backend');
+        const samples = state.progress?.streams?.find(row => row.name.endsWith('_rawECG'))?.samples;
+        return samples?.length >= 5 && samples.every((sample, index) =>
+          Number.isFinite(sample[0]) && Number.isFinite(sample[1]) &&
+          (!index || sample[0] > samples[index - 1][0]));
+      }, {}, { timeout: 15000 });
+      console.log('Installed Polar ECG preview received ordered sample batches');
+      const ecgDisplay = page.getByRole('checkbox', { name: /^Display .*rawECG$/u });
+      for (let attempt = 0; attempt < 10 && !await ecgDisplay.count(); attempt++)
+        await page.locator('#stream-next').click();
+      await ecgDisplay.check();
+      await page.waitForFunction(() => [...document.querySelectorAll('#plot-canvas .plot-trace')]
+        .some(path => path.dataset.channel?.toLowerCase().includes('ecg') && (path.getAttribute('d').match(/[ML]/gu) || []).length >= 100),
+      {}, { timeout: 15000 });
+      await page.screenshot({ path: '.for-ai-local/native-ecg-preview.png' });
+      console.log('Installed Polar ECG plot retained at least 100 samples');
+    }
     const fences=await page.evaluate(async()=>{
       const call=action=>window.__TAURI__.core.invoke('viewer_action',{action});
       const invite=await call({action:'start'});
@@ -141,13 +160,13 @@ const assert = require('node:assert/strict');
   if(mode==='remote') {
     assert(await ui.locator('#setup').isVisible() && await ui.locator('#lsl-monitor').isVisible());
   }
-  await ui.locator('#participant').fill(process.env.RESPIRA_TEST_PARTICIPANT || 'synthetic-native');
+  await ui.locator('#participant').fill(process.env.RESPYRA_TEST_PARTICIPANT || 'synthetic-native');
   await ui.locator('#participant').press('ArrowLeft');
   if(mode==='memory' && !process.env.RESPYRA_TEST_SOURCE_ID) {
     await ui.locator('#include-keyboard-markers').check();
     await ui.locator('#include-mouse-markers').check();
   }
-  if(process.env.RESPIRA_INSTALLED_EXE && mode==='memory') {
+  if(process.env.RESPYRA_INSTALLED_EXE && mode==='memory') {
     await page.locator('#settings-open').click();
     await page.locator('#save-csv').check();
     await page.locator('#settings-done').click();

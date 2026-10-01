@@ -11,6 +11,7 @@
       "nsis": {
         "installMode": "currentUser",
         "startMenuFolder": "Respyra 2.0",
+        "installerHooks": "windows/recordings.nsh",
         "installerIcon": "icons/icon.ico",
         "compression": "lzma"
       }

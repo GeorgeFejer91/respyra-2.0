@@ -40,6 +40,7 @@ const path = require('node:path');
           { uid:'aux-ui', source_id:'polar-heart-ui', name:'Polar H10 heart rate', type:'HeartRate', numeric:true,
             signal:'live', lsl_time:1, channels:[{ index:0, label:'HR', unit:'BPM', value:72 }] }] } };
     window.testActions = [];
+    window.testCommands = [];
     window.testSnapshot = () => structuredClone(state);
     window.testProgress = progress => {
       state.progress = { ...state.progress, ...progress };
@@ -53,6 +54,7 @@ const path = require('node:path');
       core:{ invoke:async (command, args) => {
         if (command === 'launch_backend') return structuredClone(state);
         if (command === 'close_app' || command === 'viewer_action') return null;
+        if (command === 'open_recordings_folder') { window.testCommands.push(command); return null; }
         const action = args.action;
         window.testActions.push(action);
         state.ui_seq = action.ui_seq;
@@ -96,6 +98,8 @@ const path = require('node:path');
     assert.deepEqual(await page.locator('#polar-source option').allTextContents(), ['Choose Polar stream', 'StudyPolar_adrPcaWaveform']);
     assert.equal(await page.title(), 'Respyra 2.0 — Experiment control');
     assert(await page.locator('#viewer-open').isVisible());
+    await page.locator('#recordings-open').click();
+    assert.deepEqual(await page.evaluate(() => window.testCommands), ['open_recordings_folder']);
     const catalog = JSON.parse(await fs.readFile(path.resolve(__dirname, '../src/mpi/event_markers/catalog.json'), 'utf8'));
     const planned = Object.entries(catalog.events).filter(([, event]) => event.active !== false).map(([name]) => name);
     await page.locator('#marker-inventory-open').click();

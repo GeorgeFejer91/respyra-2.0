@@ -30,7 +30,7 @@ const screenshots = path.resolve('.for-ai-local');
     await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
     assert.notEqual(await page.locator('html').getAttribute('data-pretext-fit'), 'unavailable');
     assert.equal(await page.getByRole('link', { name:'Download for Windows' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.2/Respyra-2.0_0.3.2_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.3/Respyra-2.0_0.3.3_x64-setup.exe');
     for (const name of ['Download Vernier Stream Mini for Windows', 'Download Polar Stream Mini for Windows', 'Read the original preprint']) {
       assert(await page.getByRole('link', { name }).isVisible(), name);
     }

@@ -50,8 +50,10 @@ Source/provenance is in `native/recorder/README.md`.
   Completion checks XDF bounds, headers, sample-chunk counts and matching footers
   for all streams, plus nonempty exact required streams. Promote `.xdf.partial`
   only on success. Preserve failures; never report an outlet/subscriber as disk evidence.
-- Installed XDF/optional original CSV files use the writable user data folder,
-  survive uninstall, and never enter Git/Pages. CSV remains opt-in and unchanged.
+- Installed XDF/optional original CSV files use `data/` inside the selected
+  Respyra installation folder, survive uninstall, and never enter Git/Pages.
+  CSV remains opt-in and unchanged. Earlier recordings in
+  `%LOCALAPPDATA%/Respira/data` remain untouched.
 - Participant and up to six custom label/value pairs are saved atomically
   on setup edits in local user settings and restored on launch. The existing
   session value remains in recording metadata but is hidden in the desktop hub.
@@ -65,8 +67,11 @@ Source/provenance is in `native/recorder/README.md`.
   and late discovery. The selected study inlet remains its only acquisition and
   calibrated-output owner. The study marker display uses the owner's projection;
   its readiness indicator uses native receipt, preserving pre-subscription naming.
-  HTML stacks channels in one paged, ten-second plot (100 points each), with
-  marker lines crossing the visible lanes. Its event catalog tab is generated
+  HTML stacks channels in one paged, ten-second plot. The display-only LSL
+  viewer forwards timestamped numeric batches, retaining every sample at Polar
+  ECG's 130 Hz rate; the desktop updates in batches and keeps up to 4,096
+  points per channel. The native recorder remains the full-rate authority.
+  Marker lines cross the visible lanes. The event catalog tab is generated
   from `src/mpi/event_markers/catalog.json` during web preparation.
 - Optional Windows keyboard/mouse hooks (`mpi.input_capture`) capture only the
   Python study and native desktop windows while XDF recording is active. Rust

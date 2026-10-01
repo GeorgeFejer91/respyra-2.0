@@ -47,6 +47,21 @@ fn engine_paths(
     Err("The bundled experiment engine is missing. Reinstall Respyra 2.0.".into())
 }
 
+fn data_directory(workspace: &Path, packaged: bool) -> Result<PathBuf, String> {
+    let directory = if packaged {
+        std::env::current_exe()
+            .map_err(|e| e.to_string())?
+            .parent()
+            .ok_or("Cannot locate the Respyra installation folder")?
+            .join("data")
+    } else {
+        workspace.join("data")
+    };
+    std::fs::create_dir_all(&directory)
+        .map_err(|e| format!("Cannot create recording data folder: {e}"))?;
+    Ok(directory)
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum Field {
@@ -283,20 +298,8 @@ fn launch_backend(
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
     let (python, entry) = engine_paths(&resources, root, cfg!(debug_assertions))?;
     let packaged = entry.starts_with(resources.join("engine"));
-    let working_dir = if packaged {
-        let directory = app
-            .path()
-            .local_data_dir()
-            .map_err(|e| e.to_string())?
-            .join("Respira");
-        std::fs::create_dir_all(&directory)
-            .map_err(|e| format!("Cannot create application data folder: {e}"))?;
-        std::fs::create_dir_all(directory.join("data"))
-            .map_err(|e| format!("Cannot create recording data folder: {e}"))?;
-        directory
-    } else {
-        root.to_path_buf()
-    };
+    let data_dir = data_directory(root, packaged)?;
+    let working_dir = data_dir.parent().ok_or("Missing recording folder parent")?;
     let mut command = Command::new(python);
     if packaged {
         command.args(["-I", "-B", "-X", "utf8"]); // Isolate imports; keep JSON pipes UTF-8.
@@ -305,9 +308,9 @@ fn launch_backend(
         .arg("-u")
         .arg(entry)
         .arg("--desktop")
-        .current_dir(&working_dir)
+        .current_dir(working_dir)
         .env("PYTHONIOENCODING", "utf-8")
-        .env("RESPIRA_CONTROLLER_PID", std::process::id().to_string())
+        .env("RESPYRA_CONTROLLER_PID", std::process::id().to_string())
         .env("PYTHONDONTWRITEBYTECODE", "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -316,12 +319,12 @@ fn launch_backend(
         let log = std::fs::File::create(working_dir.join("engine.log"))
             .map_err(|e| format!("Cannot open engine diagnostics: {e}"))?;
         command
-            .env("RESPIRA_DATA_DIR", working_dir.join("data"))
-            .env("RESPIRA_RECORDER_DIR", resources.join("engine/recorder"))
+            .env("RESPYRA_DATA_DIR", &data_dir)
+            .env("RESPYRA_RECORDER_DIR", resources.join("engine/recorder"))
             .stderr(Stdio::from(log));
     } else {
         command.env(
-            "RESPIRA_RECORDER_DIR",
+            "RESPYRA_RECORDER_DIR",
             root.join(".for-ai-local/recorder/runtime"),
         );
     }
@@ -707,6 +710,29 @@ fn close_app(app: tauri::AppHandle, reason: CloseReason) {
     );
 }
 
+#[tauri::command]
+fn open_recordings_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("Missing workspace root")?;
+    let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
+    let (_, entry) = engine_paths(&resources, workspace, cfg!(debug_assertions))?;
+    let directory = data_directory(workspace, entry.starts_with(resources.join("engine")))?;
+    #[cfg(windows)]
+    {
+        Command::new("explorer.exe")
+            .arg(directory)
+            .spawn()
+            .map_err(|e| format!("Cannot open recordings folder: {e}"))?;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = directory;
+        Err("Opening the recordings folder is supported on Windows".into())
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(Desktop::default())
@@ -714,6 +740,7 @@ fn main() {
             launch_backend,
             setup_action,
             close_app,
+            open_recordings_folder,
             viewer_action
         ])
         .on_window_event(|window, event| {
@@ -738,8 +765,8 @@ mod tests {
     fn release_engine_is_bundled_and_never_falls_back_to_checkout() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
         let scratch =
-            std::env::temp_dir().join(format!("respira-paths-{}", getrandom::u64().unwrap()));
-        let resources = scratch.join("Respira Ü with spaces");
+            std::env::temp_dir().join(format!("respyra-paths-{}", getrandom::u64().unwrap()));
+        let resources = scratch.join("Respyra Ü with spaces");
         assert!(engine_paths(&resources, root, false).is_err());
         assert!(engine_paths(&resources, root, true).is_ok());
         let python = resources.join("engine/python/python.exe");

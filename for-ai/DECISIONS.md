@@ -294,3 +294,21 @@ decision and link both entries.
   availability as study inputs does not establish respiratory agreement or
   comparable performance; paired data is needed. The contract details live in
   `docs/polar-input-contracts.md`.
+
+## D-0015 — Keep recordings inside the Respyra installation
+
+- Date: 2026-10-01
+- Status: Accepted
+- Context: The user requested consistent Respyra naming, a precreated permanent
+  data folder beside the installed program, and a folder button in the desktop GUI.
+- Decision: NSIS creates `data/` within the selected per-user installation.
+  The native shell writes XDF and opt-in CSV files there and opens that fixed
+  folder from the GUI. Rename private Respira environment/protocol identifiers
+  to Respyra. Preserve prior `%LOCALAPPDATA%/Respira/data` recordings in place;
+  users can copy them into the new directory. Keep the existing app ID and
+  `%LOCALAPPDATA%/Respyra` identity/settings files.
+- Consequences: The default path is `%LOCALAPPDATA%/Respyra 2.0/data` and a
+  custom installation uses its chosen folder. Installation must target a
+  writable per-user location. The NSIS uninstaller removes listed program files
+  and leaves the unlisted data folder, including during upgrade.
+- Supersedes: The legacy data-folder and private-identifier retention in D-0012.

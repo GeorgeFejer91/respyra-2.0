@@ -191,7 +191,7 @@ class DesktopBridge:
 
     def start_progress(self):
         def publish():
-            while not self.closed.wait(0.25):
+            while not self.closed.wait(0.1):
                 latest = dict(self._progress or {"phase": "progress"})
                 if self.markers is not None:
                     latest["markers"] = self.markers.health_snapshot()

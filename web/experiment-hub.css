@@ -121,8 +121,10 @@
     #hub .text-input { min-height: 36px; padding-block: 5px; }
     .hub-foot { display: flex; align-items: stretch; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid #2a414e; }
     .hub-foot p { margin: 0; }
+    .start-row { display: flex; gap: 6px; min-width: 0; }
+    #recordings-open { flex: none; width: 42px; min-height: 42px; display: grid; place-items: center; padding: 0; }
 
-    .start { width: 100%; min-height: 42px; border-color: #e95e60; background: #e95e60; color: #111a20; font-weight: 600; }
+    .start { flex: 1; min-width: 0; min-height: 42px; border-color: #e95e60; background: #e95e60; color: #111a20; font-weight: 600; }
     .start:hover { background: #f07878; }
     #stop { width: 100%; border-color: #e95e60; color: #e95e60; }
     #close { width: 100%; }

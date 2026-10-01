@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-**[Project website](https://georgefejer91.github.io/respyra-2.0/)** · **[Download the Windows installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.2)** · [Installation guide](docs/windows-install.md)
+**[Project website](https://georgefejer91.github.io/respyra-2.0/)** · **[Download the Windows installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.3)** · [Installation guide](docs/windows-install.md)
 
 Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,

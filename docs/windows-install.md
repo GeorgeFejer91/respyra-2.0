@@ -1,6 +1,6 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra-2.0_0.3.2_x64-setup.exe` on Windows 10/11 x64. The installer lets you
+Run `Respyra-2.0_0.3.3_x64-setup.exe` on Windows 10/11 x64. The installer lets you
 choose a destination folder, creates a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
@@ -32,27 +32,30 @@ calibration/cleanup, and discovers additional streams during the run. **XDF reco
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
 
-The app creates `%LOCALAPPDATA%\Respira\data` when it first opens. XDFs are
-always saved there, with unique filenames.
+The installer creates a `data` folder inside the chosen Respyra 2.0 program
+folder. With the default per-user installation, recordings are in
+`%LOCALAPPDATA%\Respyra 2.0\data`. Click the folder icon beside **Start experiment**
+to open the exact folder. XDFs are saved there with unique filenames.
 Numeric participant entries become `P001`, `P002`, and so on in the filename;
 session and each filled `label-value` pair follow as underscore-separated parts,
 then a unique suffix. After a verified XDF closes, Respyra appends its filename,
 participant number, session and full custom variables to `participant-list.jsonl`
 in the same folder. Setup memory is stored locally in
 `%LOCALAPPDATA%\Respyra\experiment-fields.json`.
-The data folder keeps its previous name so existing recordings stay in place.
+Recordings made by earlier versions remain in `%LOCALAPPDATA%\Respira\data`;
+copy them into the new folder if you want them together. The installer does not
+delete that older folder.
 **Saved** means required stream data and closed XDF footers passed verification.
 Failures preserve `.xdf.partial` files. The phone opens a live LSL channel/marker
 monitor; select **Experiment controls** to set up the study.
 
 **Save original CSV files locally** stays off by default. When enabled, the
 original sample and assessment CSV schemas/filenames are saved in
-`%LOCALAPPDATA%\Respira\data`. Program files and the source checkout are never
-the installed app's recording destination. Source identity remains in
+the same `data` folder inside the Respyra installation. Source identity remains in
 `%LOCALAPPDATA%\Respyra\lsl-source.json` for compatibility with prior launches.
 The uninstaller is intended to remove the program and retain user
-recordings/settings. That behavior has not been qualified for v0.3.2.
-Startup diagnostics are in `%LOCALAPPDATA%\Respira\engine.log` (replaced on each
+recordings/settings. That behavior has not been qualified for v0.3.3.
+Startup diagnostics are in `engine.log` beside the installed Respyra program (replaced on each
 launch); keep this local when it contains experiment identifiers.
 
 This first installer is unsigned. Windows may show an unknown-publisher prompt.

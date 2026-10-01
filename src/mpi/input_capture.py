@@ -14,7 +14,7 @@ class InputCapture:
             raise RuntimeError("Optional input recording requires Windows")
         self.keyboard, self.mouse = keyboard, mouse
         # Virtualenv launchers may sit between the native shell and Python.
-        self.processes = {os.getpid(), int(os.environ.get("RESPIRA_CONTROLLER_PID", os.getppid()))}
+        self.processes = {os.getpid(), int(os.environ.get("RESPYRA_CONTROLLER_PID", os.getppid()))}
         self.events = queue.Queue(maxsize=10000)
         self.error = None
         self.ready = threading.Event()

@@ -316,7 +316,10 @@ marker order, calibration, saved participant state and stream footers.
 Standalone installer work additionally follows `PACKAGING.md`. A workspace
 build is not an installed-runtime check. Use `pnpm package:windows`, the staged
 embedded import/resource check and the installed native/LSL/QR check via
-`RESPIRA_INSTALLED_EXE`; retain exact installer hashes and release evidence.
+`RESPYRA_INSTALLED_EXE`; retain exact installer hashes and release evidence.
+For data-path changes, observe the exact installed `data/` folder, the desktop
+folder button, XDF/CSV writes there and retention after uninstall or upgrade in
+an isolated install location.
 Installer dialogs and installed native checks also require isolated execution;
 an unavailable isolated runner leaves those release gates unverified.
 

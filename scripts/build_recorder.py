@@ -62,7 +62,7 @@ static std::string hex_text(const std::string &value) {
                         '''(result.source_id().empty() || !known_source_ids.count(result.source_id()))''')
     text = replace_once(text,
         'std::cout << "Started data collection for stream " << src.name() << "." << std::endl;',
-        '''std::fprintf(stderr, "\\nRESPIRA_RECORDER/1 %s %s\\n",
+        '''std::fprintf(stderr, "\\nRESPYRA_RECORDER/1 %s %s\\n",
             hex_text(src.source_id().empty() ? "uid:" + src.uid() : src.source_id()).c_str(),
             hex_text(src.name().empty() ? "(unnamed)" : src.name()).c_str()); std::fflush(stderr);''')
     sample_count = 'sample_count += timestamps.size();'
@@ -71,14 +71,14 @@ static std::string hex_text(const std::string &value) {
     text = replace_once(text, 'double sample_interval = srate ? 1.0 / srate : 0;',
                         'double sample_interval = srate ? 1.0 / srate : 0;\n\t\tbool finite_reported = false;')
     text = text.replace(sample_count, '''if (sample_count == 0 && !timestamps.empty() && !in->info().source_id().empty()) {
-                std::fprintf(stderr, "\\nRESPIRA_RECORDER_DATA/1 %s\\n",
+                std::fprintf(stderr, "\\nRESPYRA_RECORDER_DATA/1 %s\\n",
                     hex_text(in->info().source_id()).c_str()); std::fflush(stderr);
             }
             if constexpr (std::is_floating_point_v<T>) {
                 if (!finite_reported && !timestamps.empty() &&
                     in->info().source_id().rfind("respyra-breathing-", 0) == 0) {
                     for (const auto value : chunk) if (std::isfinite(value)) {
-                        std::fprintf(stderr, "\\nRESPIRA_RECORDER_FINITE/1 %s\\n",
+                        std::fprintf(stderr, "\\nRESPYRA_RECORDER_FINITE/1 %s\\n",
                             hex_text(in->info().source_id()).c_str()); std::fflush(stderr);
                         finite_reported = true;
                         break;
@@ -89,7 +89,7 @@ static std::string hex_text(const std::string &value) {
     for kind in ("record_from_query_results", "record_from_streaminfo", "record_boundaries", "record_offsets"):
         text = replace_once(text,
             f'std::cout << "Error in the {kind} thread: " << e.what() << std::endl;',
-            'std::fprintf(stderr, "\\nRESPIRA_RECORDER_ERROR %s\\n", e.what()); std::fflush(stderr);')
+            'std::fprintf(stderr, "\\nRESPYRA_RECORDER_ERROR %s\\n", e.what()); std::fflush(stderr);')
     cpp.write_text(text, encoding="utf-8")
     header = patched / "src/recording.h"
     header.write_text(replace_once(header.read_text(), 'const double resolve_interval = 5;', 'const double resolve_interval = 1;'), encoding="utf-8")

@@ -42,10 +42,13 @@ launch them on the user's active desktop; missing isolation leaves those gates
   no elevation; the user can choose any writable folder. Use Tauri's standard
   WebView2 download bootstrapper only if WebView2 is absent, so first installation
   on a clean computer needs Internet. No self-updater, firewall changes or startup task.
-- Installed runtime cwd remains `%LOCALAPPDATA%/Respira` for existing recordings;
-  optional original CSVs go to its `data/`. Retain
+- NSIS precreates `data/` inside the chosen installation folder. The installed
+  runtime uses that folder for XDF and optional original CSV files; the default
+  path is `%LOCALAPPDATA%/Respyra 2.0/data`. Its unlisted `data/` directory
+  survives the Tauri NSIS uninstaller and upgrades. Earlier files under
+  `%LOCALAPPDATA%/Respira/data` remain untouched. Retain
   `%LOCALAPPDATA%/Respyra/lsl-source.json` identity memory.
-  Uninstall must retain user data. Bundle the pinned native recorder under
+  Bundle the pinned native recorder under
   `engine/recorder`, including app-local DLLs, licenses and manifest. Build it
   with the isolated packaging venv's locked runtime support; verify source,
   adapter/script and output hashes before staging. Python requires raw-data
@@ -67,15 +70,18 @@ launch them on the user's active desktop; missing isolation leaves those gates
    launcher lifecycle. Check `engine/manifest.json` path inventory/hashes,
    lock hashes, versions and source revision. A dirty manifest cannot be promoted.
 5. Install the **exact** resulting NSIS artifact to a chosen folder with spaces;
-   verify folder/shortcut/uninstaller/icon, complete engine and file parity.
+   verify the precreated `data/` folder, shortcut/uninstaller/icon, complete engine
+   and file parity. Use an isolated install location so recordings stay private.
    Check `engine/scripts/check_packaged_engine.py` via bundled Python `-I -B -X utf8`.
-6. Set `RESPIRA_INSTALLED_EXE` to the installed main executable and run
+6. Set `RESPYRA_INSTALLED_EXE` to the installed main executable and run
    `tests/check_native_lsl.py` with `RESPYRA_PUBLISHED_PHONE=1`. It runs away from
    the checkout using synthetic private LSL streams and isolated identity memory.
    Observe selection/reconnect, actual PsychoPy instruction flip, CSV option,
    native Stop/Close cleanup and real hosted QR coupling. Check no child remains.
-7. Check CSV writes in the writable user folder with original headers and off
-   creates none. Installed scope is separate from scientific timing, physical
+7. Check XDF and CSV writes in the installed `data/` folder, with original CSV
+   headers and off creating none. Verify the folder button opens that same path.
+   Check upgrade/uninstall retains the test recording before release promotion.
+   Installed scope is separate from scientific timing, physical
    belt/phone, full study calibration/timing, clean VM, other OS, upgrade and uninstall evidence.
 8. After exact installer qualification, run `python scripts/build_release_sources.py`
    to verify pinned Python, Rust and native source archives and write the source

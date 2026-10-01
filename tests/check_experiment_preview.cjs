@@ -164,6 +164,20 @@ const path = require('node:path');
     await page.waitForFunction(() => document.querySelector('.stream-row .stream-name')?.textContent === 'H10 Mini');
     assert.deepEqual(await page.locator('.stream-row .stream-name').allTextContents(), ['H10 Mini', 'heartRate', 'rawECG'], 'shared outlet prefixes appear once in the selection context');
 
+    const ecgValues = Array.from({ length: 1300 }, (_, index) => index % 130 === 10 ? 1000 : index % 7);
+    const ecg = { ...heart, uid: 'ecg-preview', source_id: 'ecg-preview', name: 'Polar rawECG', type: 'ECG',
+      lsl_time: 100 + 1299 / 130, channels: [{ index: 0, label: 'ECG', unit: 'uV', value: ecgValues.at(-1) }],
+      samples: ecgValues.map((value, index) => [100 + index / 130, value]) };
+    discovery = { streams: [ecg], error: null };
+    await page.waitForFunction(() => document.querySelector('.stream-row .stream-name')?.textContent === 'Polar rawECG');
+    await page.getByRole('checkbox', { name: 'Display Polar rawECG' }).check();
+    await page.waitForFunction(() => document.querySelector('#plot-canvas .plot-trace[data-stream="ecg-preview"]'));
+    const ecgTrace = await page.locator('#plot-canvas .plot-trace[data-stream="ecg-preview"]').evaluate(node => ({
+      points: (node.getAttribute('d').match(/[ML]/g) || []).length, min: +node.dataset.min, max: +node.dataset.max,
+    }));
+    assert.deepEqual(ecgTrace, { points: 1300, min: 0, max: 1000 }, 'the ten-second plot retains every 130 Hz sample and ECG peaks');
+    await page.screenshot({ path: path.join(out, 'ecg-preview-130hz.png') });
+
     discovery = { streams: [], error: null };
     await page.waitForFunction(() => document.querySelector('#stream-status')?.textContent === 'No LSL streams found.');
     assert.equal(await page.locator('.stream-row').count(), 0, 'vanished LSL outlets leave no stale example rows');

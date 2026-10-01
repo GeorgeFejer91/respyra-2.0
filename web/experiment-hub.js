@@ -368,6 +368,12 @@ import { EVENT_MARKERS } from './marker-catalog.js';
       if (native) void request('start');
       else { $('stream-status').textContent = 'Preview only'; fit(); }
     });
+    $('recordings-open').disabled = !native;
+    $('recordings-open').addEventListener('click', () => {
+      void native.core.invoke('open_recordings_folder').catch(error => {
+        $('stream-status').textContent = String(error); fit();
+      });
+    });
     $('stop').addEventListener('click', () => { void request('abort'); });
     $('close').addEventListener('click', () => { void native?.core.invoke('close_app', { reason:'close_button' }); });
 
@@ -418,10 +424,19 @@ import { EVENT_MARKERS } from './marker-catalog.js';
           const key = `${id}:${channel.index}`;
           const history = histories.get(key) || { last: null, points: [] };
           history.points = history.points.filter(point => point.t >= now - 10);
-          if (row.signal === 'live' && Number.isFinite(channel.value) && Number.isFinite(row.lsl_time) && row.lsl_time !== history.last) {
+          if (row.signal === 'live' && Array.isArray(row.samples) && Number.isFinite(row.lsl_time)) {
+            if (!Number.isFinite(history.offset)) history.offset = now - row.lsl_time;
+            for (const sample of row.samples) {
+              if (!Number.isFinite(sample[0]) || sample[0] <= (history.last ?? -Infinity)) continue;
+              history.last = sample[0];
+              if (Number.isFinite(sample[channel.index + 1]))
+                history.points.push({ t: sample[0] + history.offset, y: sample[channel.index + 1] });
+            }
+          } else if (!Array.isArray(row.samples) && row.signal === 'live' && Number.isFinite(channel.value) && Number.isFinite(row.lsl_time) && row.lsl_time !== history.last) {
             history.last = row.lsl_time;
             history.points.push({ t: now, y: channel.value });
           }
+          if (history.points.length > 4096) history.points.splice(0, history.points.length - 4096);
           histories.set(key, history);
           return { name: channel.label, plotLabel: `${channel.label}${channel.unit ? ` (${channel.unit})` : ''}`, points: history.points };
         }) : [];

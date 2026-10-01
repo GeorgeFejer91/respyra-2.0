@@ -57,15 +57,15 @@ env['LOCALAPPDATA']=str(root/'.for-ai-local'/('native-settings-'+uuid.uuid4().he
 env['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS']='--remote-debugging-port=9227'
 env['WEBVIEW2_USER_DATA_FOLDER']=str(root/'.for-ai-local'/('native-webview-'+uuid.uuid4().hex))
 env['RESPYRA_UI_TEST_READY_PATH']=str(root/'.for-ai-local'/('instructions-'+uuid.uuid4().hex))
-exe=(Path(os.environ['RESPIRA_INSTALLED_EXE']) if os.environ.get('RESPIRA_INSTALLED_EXE') else
+exe=(Path(os.environ['RESPYRA_INSTALLED_EXE']) if os.environ.get('RESPYRA_INSTALLED_EXE') else
      Path(os.environ['RESPYRA_DEBUG_EXE']) if os.environ.get('RESPYRA_DEBUG_EXE') else
      root/'src-tauri/target/debug/respyra-desktop.exe')
-work=root/'.for-ai-local/packaging/run elsewhere' if os.environ.get('RESPIRA_INSTALLED_EXE') else root
+work=root/'.for-ai-local/packaging/run elsewhere' if os.environ.get('RESPYRA_INSTALLED_EXE') else root
 work.mkdir(parents=True,exist_ok=True)
-if os.environ.get('RESPIRA_INSTALLED_EXE'):
-    env['RESPIRA_TEST_PARTICIPANT']='packaging-test-'+uuid.uuid4().hex[:12]
+if os.environ.get('RESPYRA_INSTALLED_EXE'):
+    env['RESPYRA_TEST_PARTICIPANT']='packaging-test-'+uuid.uuid4().hex[:12]
 else:
-    env['RESPIRA_DATA_DIR']=str(root/'.for-ai-local'/('native-recordings-'+uuid.uuid4().hex))
+    env['RESPYRA_DATA_DIR']=str(root/'.for-ai-local'/('native-recordings-'+uuid.uuid4().hex))
 results=[]
 if modes[0] != 'select':
     # A focused reconnect/remote run owns its own saved-source fixture.
@@ -181,11 +181,11 @@ try:
             if inlet: inlet.close_stream()
             stderr.close()
         time.sleep(2)
-    if os.environ.get('RESPIRA_INSTALLED_EXE') and 'memory' in modes:
-        # Rust uses Windows' known local-data folder, not the isolated Python
-        # identity-memory override. Only inspect/remove this test's unique IDs.
-        output=Path(os.environ['LOCALAPPDATA'])/'Respira/data'
-        files=sorted(output.glob('*'+env['RESPIRA_TEST_PARTICIPANT']+'*.csv'))
+    if os.environ.get('RESPYRA_INSTALLED_EXE') and 'memory' in modes:
+        # The installed program saves data beside its executable.
+        # Only inspect/remove this test's unique IDs.
+        output=exe.parent/'data'
+        files=sorted(output.glob('*'+env['RESPYRA_TEST_PARTICIPANT']+'*.csv'))
         assert len(files)==2,files  # one CSV-on run; the other two create none
         from mpi.validation_study_jenny import CONFIG
         for file in files:

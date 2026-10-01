@@ -11,13 +11,18 @@ class LSLViewer:
     def __init__(self, marker_id):
         self.marker_id = marker_id
         self._snapshot = []
+        self._pending = {}
+        self._lock = threading.Lock()
         self.error = None
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True, name="respyra-lsl-viewer")
         self._thread.start()
 
     def snapshot(self):
-        return self._snapshot
+        with self._lock:
+            rows = [{**row, "samples": self._pending.pop(row["uid"], [])}
+                    for row in self._snapshot]
+        return rows
 
     def close(self):
         self._stop.set()
@@ -28,7 +33,7 @@ class LSLViewer:
         resolver = ContinuousResolver(forget_after=3)
         streams = {}
         try:
-            while not self._stop.wait(.1):
+            while not self._stop.wait(.05):
                 visible = {info.uid(): info for info in resolver.results()
                            if info.source_id() != self.marker_id}
                 for uid in list(streams):
@@ -55,6 +60,7 @@ class LSLViewer:
                     except Exception:
                         inlet.close_stream()  # Retry metadata while the outlet remains discoverable.
                 rows = []
+                received_samples = {}
                 for uid, (inlet, row, received) in list(streams.items()):
                     row = {**row, "channels": [dict(channel) for channel in row["channels"]]}
                     try:
@@ -62,6 +68,11 @@ class LSLViewer:
                         if timestamps:
                             received = time.monotonic()
                             row["lsl_time"] = timestamps[-1]
+                            if row["numeric"]:
+                                received_samples[uid] = [
+                                    [timestamp, *(float(value) if math.isfinite(value) else None
+                                                  for value in sample)]
+                                    for sample, timestamp in zip(samples, timestamps)]
                             for channel, value in zip(row["channels"], samples[-1]):
                                 channel["value"] = (float(value) if row["numeric"] and math.isfinite(value)
                                                     else None if row["numeric"] else str(value))
@@ -71,7 +82,14 @@ class LSLViewer:
                         row["signal"] = "lost"
                     streams[uid] = (inlet, row, received)
                     rows.append(row)
-                self._snapshot = sorted(rows, key=lambda row: (row["name"].casefold(), row["uid"]))
+                with self._lock:
+                    for uid, samples in received_samples.items():
+                        pending = self._pending.setdefault(uid, [])
+                        pending.extend(samples)
+                        del pending[:-512]  # Bound unsent display data; recording has its own inlet.
+                    for uid in self._pending.keys() - streams.keys():
+                        del self._pending[uid]
+                    self._snapshot = sorted(rows, key=lambda row: (row["name"].casefold(), row["uid"]))
         except Exception as exc:
             self.error = f"LSL display unavailable: {exc}"
         finally:

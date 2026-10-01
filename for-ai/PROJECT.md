@@ -78,8 +78,8 @@ data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
   Stop cleans up the study; phone loss revokes control but leaves a run active.
   Debug workspace builds use the checkout's `.venv`. The Respyra 2.0
   Windows installer bundles the locked engine with isolated CPython; release
-  builds never fall back to a checkout. Optional installed CSVs use the writable
-  user folder. Packaging/release gates are in `PACKAGING.md`. App identity is
+  builds never fall back to a checkout. Installed XDF and optional CSV files use
+  `data/` inside the program folder. Packaging/release gates are in `PACKAGING.md`. App identity is
   `dev.georgefejer.respyra2`.
 - `scripts/plot_session.py` remains a reader for historical local CSVs.
   `tests/test_lsl_force.py`, `tests/test_event_markers.py`,
