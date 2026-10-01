@@ -517,3 +517,15 @@ the respective scope needs current evidence; panel styling does not need it.
 - Limits: local desktop plus headless Chrome and synthetic breathing, with
   early Stop. A physical phone or belt and full-duration scientific timing
   were not checked. The release EXE itself was not rebuilt for this site edit.
+
+### Windows 0.3.3 full-rate ECG preview and public installer
+
+- Result/date: `VERIFIED`, 2026-10-01. Clean commit `4513b56` shipped as
+  [v0.3.3](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.3).
+  The exact installed NSIS artifact matched all 18,433 engine files and passed
+  native select/memory/remote, Polar mock ECG preview and XDF, and install-folder
+  recording checks. A reinstall and successful isolated uninstall retained a
+  test XDF byte for byte. The source ZIP and four public asset digests matched;
+  the updated Pages build and ten public assets were verified.
+- Exact hashes, commands, observations and limits:
+  [`WINDOWS-INSTALLER-0.3.3-2026-10-01.md`](./WINDOWS-INSTALLER-0.3.3-2026-10-01.md).
