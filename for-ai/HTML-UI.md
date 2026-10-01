@@ -79,6 +79,8 @@ Respyra does not adopt that project's scrollable-sheet exception.
 The phone companion is a separate surface. Its reflow policy must not
 reintroduce scrolling into the desktop interface.
 It opens the LSL data/marker monitor; experiment setup uses a separate controls
-view. Plot only received finite channel values, retain declared units, show gaps
-and stale/paused status, and label the coalesced trace as a preview. Keep recording
+view. Favor a smooth trace built from the freshest available LSL samples, without
+adding a deliberate visual delay. Plot only received finite channel values,
+retain declared units, show gaps and stale/paused status promptly, and label the
+coalesced trace as a preview. Keep recording
 status and Stop/Close accessible. Use `RECORDING.md` for data/authority boundaries.

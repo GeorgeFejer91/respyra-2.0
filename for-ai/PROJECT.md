@@ -8,8 +8,10 @@ A Python workspace for researchers to run and analyze a PsychoPy breathing targe
 
 Run the configured breathing target-tracking study with its own bundled native
 LSL/XDF recorder, capturing the selected raw input and markers before calibration and through
-cleanup, and discovering later streams. Optimize the remote view for LSL channel
-data and markers. Preserve study protocol and feedback. See `RECORDING.md`.
+cleanup, and discovering later streams. Prioritize low-latency, smooth remote
+visualization of the freshest received LSL channel data and markers, without
+compromising full-rate recording or study timing. Preserve study protocol and
+feedback. See `RECORDING.md`.
 
 ## Non-goals
 

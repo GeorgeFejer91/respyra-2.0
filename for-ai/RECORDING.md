@@ -83,7 +83,15 @@ Source/provenance is in `native/recorder/README.md`.
   run; hooks stop and drain before recorder finalization. Defaults are off.
 - Remote default is the LSL monitor: selected raw-channel value/unit, ten-second
   trace, recent marker names and recording status. Four-Hz coalesced snapshots
-  reuse the existing clock-synchronized study inlet.
+  reuse the existing clock-synchronized study inlet; this is the current delivery
+  rate, not a target for future responsiveness. Prioritize getting the newest
+  received LSL samples onto the remote screen with as little avoidable delay as
+  practical while keeping trace motion smooth. Preserve source timestamps and
+  waveform detail within bounded transport/rendering limits. Visual smoothing
+  must not present invented values as measured data or keep a trace moving after
+  samples stop; show gaps and stale status promptly. Measure sample-to-display
+  freshness and visible continuity when changing this path, rather than treating
+  animation frame rate alone as proof of live data.
   Preview is bounded to 32 channels and 100 local points. The private invitation
   shares this data; native paths, file summaries and assessment payloads stay local.
   Recording remains full-rate and includes supplementary streams beyond the preview.
