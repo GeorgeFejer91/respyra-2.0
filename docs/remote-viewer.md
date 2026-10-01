@@ -1,7 +1,7 @@
 # Respyra experiment control and phone panel
 
 The HTML window is the experimenter controller: participant/session setup,
-LSL discovery and selection, optional CSV saving, marker stream naming,
+LSL discovery and selection, automatic CSV saving, marker stream naming,
 Start/Cancel, live monitoring, Stop experiment,
 and the final Close. PsychoPy still owns participant instructions, calibration,
 stimuli, keyboard responses, assessments and display-flip markers.
@@ -9,7 +9,7 @@ stimuli, keyboard responses, assessments and display-flip markers.
 ## Use it
 
 1. Launch Respyra and select live Force input. Start automatically records XDF
-   with the bundled native recorder before calibration. Optional CSV output is separate.
+   with the bundled native recorder before calibration. Original CSV output is automatic.
 2. Click **Remote Viewer**. Its popup creates a QR code automatically. Scan it
    or open its private link in a phone browser.
 3. Enter a name on the phone and tap **Request access**. The desktop popup shows
@@ -58,7 +58,7 @@ and neither invitations nor participant fields are saved in browser storage.
 
 BRSP/1 negotiates:
 - experiment.observe: bounded latest state and lease renewal.
-- experiment.setup: participant/session key/edit, marker name, CSV option,
+- experiment.setup: participant/session key/edit, marker name,
   scan/select/use, Cancel.
 - experiment.run: Start, Stop, final Close.
 

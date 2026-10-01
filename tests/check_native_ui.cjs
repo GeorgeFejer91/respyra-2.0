@@ -174,20 +174,8 @@ const assert = require('node:assert/strict');
     await ui.locator('#include-keyboard-markers').check();
     await ui.locator('#include-mouse-markers').check();
   }
-  if(process.env.RESPYRA_INSTALLED_EXE && mode==='memory') {
-    await page.locator('#settings-open').click();
-    await page.locator('#save-csv').check();
-    await page.locator('#settings-done').click();
-  }
-  if(mode==='remote') {
-    if(process.env.RESPYRA_TEST_SOURCE_ID) await ui.locator('#save_csv').click();
-    else await ui.locator('#save_csv').check();
-    await page.waitForFunction(()=>document.getElementById('save-csv').checked);
-    if(process.env.RESPYRA_TEST_SOURCE_ID) await ui.locator('#save_csv').click();
-    else await ui.locator('#save_csv').uncheck();
-    try {await page.waitForFunction(()=>!document.getElementById('save-csv').checked,{},{timeout:10000});}
-    catch(error){console.error({native:await page.locator('#save-csv').isChecked(),phone:await ui.locator('#save_csv').isChecked(),command:await ui.locator('#command-status').textContent(),status:await ui.locator('#connection-status').textContent(),diagnostics});throw error;}
-  }
+  assert.equal(await page.locator('#save-csv').count(),0);
+  if(mode==='remote') assert.equal(await ui.locator('#save_csv').count(),0);
   if(mode==='select') {
     await page.locator('#refresh').click();
     await page.locator('#vernier-source option', {hasText:'Synthetic raw Force'}).waitFor({state:'attached',timeout:20000});

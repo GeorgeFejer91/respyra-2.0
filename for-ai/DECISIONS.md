@@ -146,7 +146,7 @@ decision and link both entries.
 ## D-0007 — Public QR controller, own-output feedback and optional original CSVs
 
 - Date: 2026-09-27
-- Status: Accepted
+- Status: Accepted; the optional CSV choice is superseded by D-0017.
 - Context: The user explicitly authorized making respyra-2.0 public, asked for
   simple opening-panel QR coupling, compact status and original CSVs as an
   option, and clarified that recorder readiness belongs in the recorder app.
@@ -298,7 +298,7 @@ decision and link both entries.
 ## D-0015 — Keep recordings inside the Respyra installation
 
 - Date: 2026-10-01
-- Status: Accepted
+- Status: Superseded by D-0017 for the active save path; the installer still creates the default folder.
 - Context: The user requested consistent Respyra naming, a precreated permanent
   data folder beside the installed program, and a folder button in the desktop GUI.
 - Decision: NSIS creates `data/` within the selected per-user installation.
@@ -330,3 +330,23 @@ decision and link both entries.
   deployment before the live phone receives the new selector.
 - Supersedes: The hidden-session UI choice in D-0013 and session-based order in
   the imported study configuration.
+
+## D-0017 — Remember the recording folder and save CSV with BIDS exports
+
+- Date: 2026-10-01
+- Status: Accepted
+- Context: Experimenter feedback requested a selectable persistent recording
+  folder, automatic CSV output, and BIDS-compatible files for analysis.
+- Decision: Keep the installed `data/` folder as the default, but let the local
+  setup window choose and remember another writable folder. Save XDF and the
+  original sample/assessment CSVs together on every run. After verified XDF
+  promotion, write a separate BIDS behavioral dataset under `bids/`, with
+  events and selected raw/calibrated breathing physiology. Retain actual sample
+  times in the BIDS timestamp column and describe the median observed rate.
+- Consequences: Changing folders leaves existing files in place and changes
+  which participant numbers are marked as previously recorded. XDF remains the
+  authoritative archive for exact timestamps and all LSL streams; BIDS exports
+  cover the selected breathing streams and event markers. A BIDS export failure
+  preserves XDF and CSV files and is reported to the experimenter. An installed
+  runtime and isolated desktop still need qualification for this change.
+- Supersedes: D-0015's fixed active folder and D-0007's optional CSV choice.

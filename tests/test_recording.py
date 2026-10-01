@@ -128,6 +128,23 @@ def test_list_failure_keeps_verified_xdf_and_reports_it(tmp_path):
     assert recorder.phase == 'error' and 'Partial recording preserved' not in recorder.error
 
 
+def test_bids_failure_keeps_verified_xdf_and_participant_history(monkeypatch, tmp_path):
+    from mpi import bids_export
+    monkeypatch.setattr(bids_export, 'export_bids', lambda *args: (_ for _ in ()).throw(OSError('disk full')))
+    recorder = NativeRecording(tmp_path, tmp_path)
+    recorder.path = tmp_path / 'P002_test.xdf.partial'
+    recorder.path.write_bytes(fixture_xdf())
+    recorder.required = ('raw-test', 'raw-test', 'raw-test')
+    recorder.participant_record = {'xdf_file':'P002_test.xdf', 'participant_number':'P002',
+                                   'session':'001', 'variables':[]}
+    recorder.process = SimpleNamespace(poll=lambda: 0, wait=lambda **_: 0,
+        stdin=SimpleNamespace(closed=True), stderr=SimpleNamespace(close=lambda: None))
+    with pytest.raises(RecordingError, match='XDF saved, but BIDS export failed'):
+        recorder.stop()
+    assert recorder.path.suffix == '.xdf' and recorder.path.exists()
+    assert recorded_participant_numbers(tmp_path) == [2]
+
+
 def test_missing_native_bundle_reports_failure_without_starting(tmp_path):
     recorder = NativeRecording(tmp_path, tmp_path)
     with pytest.raises(RecordingError, match='Native recorder is missing'):

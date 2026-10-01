@@ -36,16 +36,19 @@ calibration/cleanup, and discovers additional streams during the run. **XDF reco
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
 
-The installer creates a `data` folder inside the chosen Respyra 2.0 program
-folder. With the default per-user installation, recordings are in
+The installer creates a default `data` folder inside the chosen Respyra 2.0 program
+folder. With the default per-user installation, it is
 `%LOCALAPPDATA%\Respyra 2.0\data`. Click the folder icon beside **Start experiment**
-to open the exact folder. XDFs are saved there with unique filenames.
+to open the active recording folder. To change it, open **Settings** and choose
+**Choose folder**. Respyra remembers that folder for later launches and saves
+XDF, CSV, the participant list, and BIDS output there. XDFs have unique filenames.
 Numeric participant entries become `P001`, `P002`, and so on in the filename;
 session and each filled `label-value` pair follow as underscore-separated parts,
 then a unique suffix. After a verified XDF closes, Respyra appends its filename,
 participant number, session and full custom variables to `participant-list.jsonl`
 in the same folder. Setup memory is stored locally in
-`%LOCALAPPDATA%\Respyra\experiment-fields.json`.
+`%LOCALAPPDATA%\Respyra\experiment-fields.json`; the recording folder is remembered
+in `recording-folder.json` beside it. Existing files are not moved when the folder changes.
 Recordings made by earlier versions remain in `%LOCALAPPDATA%\Respira\data`;
 copy them into the new folder if you want them together. The installer does not
 delete that older folder.
@@ -53,9 +56,16 @@ delete that older folder.
 Failures preserve `.xdf.partial` files. The phone opens a live LSL channel/marker
 monitor; select **Experiment controls** to set up the study.
 
-**Save original CSV files locally** stays off by default. When enabled, the
-original sample and assessment CSV schemas/filenames are saved in
-the same `data` folder inside the Respyra installation. Source identity remains in
+The original sample and assessment CSV files are saved automatically alongside
+every XDF, with their original schemas. A `bids` subfolder contains a BIDS
+behavioral dataset: `sub-<number>/ses-001/beh/` holds event TSV/JSON and
+selected raw and calibrated breathing `physio.tsv.gz`/JSON pairs. BIDS physiology
+includes a timestamp column for the actual recorded sample times; its declared
+sampling rate is the median observed rate. The XDF remains the authoritative
+full-rate archive of all recorded LSL streams. The separate CSV files retain
+their existing study format. The BIDS physiology files are standard tabular
+breathing data; a generic breathing recording is not a one-call MNE-BIDS
+`read_raw_bids()` neural Raw import. Source identity remains in
 `%LOCALAPPDATA%\Respyra\lsl-source.json` for compatibility with prior launches.
 The uninstaller is intended to remove the program and retain user
 recordings/settings. That behavior has not been qualified for v0.3.4.

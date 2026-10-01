@@ -316,6 +316,14 @@ class NativeRecording:
                 self.phase = "error"
                 self.error = f"XDF saved, but participant list could not be updated: {exc}"
                 raise RecordingError(self.error) from exc
+            if self.participant_record is not None and len(self.required) >= 3:
+                try:
+                    from mpi.bids_export import export_bids
+                    export_bids(self.path, self.output, self.required,
+                                self.participant_record["participant_number"],
+                                self.participant_record["session"])
+                except Exception as exc:
+                    raise RecordingError(f"XDF saved, but BIDS export failed: {exc}") from exc
             self.phase = "complete"
         except (OSError, ValueError, ET.ParseError, RecordingError, subprocess.TimeoutExpired) as exc:
             if process.poll() is None:

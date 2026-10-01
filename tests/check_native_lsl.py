@@ -189,7 +189,7 @@ try:
         # Only inspect/remove this test's unique IDs.
         output=installed_output
         files=sorted(set(output.glob('sub-99_ses-001_*.csv')) - previous_csv)
-        assert len(files)==2,files  # one CSV-on run; the other two create none
+        assert len(files)==2*sum(mode in modes for mode in ('memory','remote')),files
         from mpi.validation_study_jenny import CONFIG
         for file in files:
             with file.open(newline='',encoding='utf-8') as handle:

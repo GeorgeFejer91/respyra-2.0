@@ -313,6 +313,7 @@ pub fn projection(
             setup.remove("excluded_streams");
             setup.remove("polar_direction_set");
             setup.remove("polar_inverted");
+            setup.remove("output_folder");
         }
         if let Some(source) = setup["source"].as_object_mut() {
             source.remove("contract_id");
@@ -572,13 +573,15 @@ mod tests {
     fn phone_projection_omits_local_only_fields() {
         let snapshot = json!({"phase":"setup","message":"Ready","streams":[],
             "source":{"source_id":"raw","stream_name":"Vernier","contract_id":"vernier-force/1"},
-            "excluded_streams":[],"polar_direction_set":false,"polar_inverted":false});
+            "excluded_streams":[],"polar_direction_set":false,"polar_inverted":false,
+            "output_folder":"C:/private/recordings"});
         let progress = json!({"recording":{"phase":"idle","bytes_written":0,
             "error":null,"finite_sources":[]}});
         let view = projection(&snapshot, &progress, 1, 2, true);
         assert!(view["setup"].get("excluded_streams").is_none());
         assert!(view["setup"].get("polar_direction_set").is_none());
         assert!(view["setup"].get("polar_inverted").is_none());
+        assert!(view["setup"].get("output_folder").is_none());
         assert!(view["setup"]["source"].get("contract_id").is_none());
         assert!(
             view["progress"]["recording"]

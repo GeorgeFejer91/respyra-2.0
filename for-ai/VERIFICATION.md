@@ -182,9 +182,9 @@ identity reconnect; use isolated settings so tests never overwrite lab choices.
 For affected marker/study/logging contracts, check that every emitted event name
 appears in `catalog.json`, every blocking screen has shown/dismissed markers,
 phase start/end and abort paths
-pair sensibly and no-data calibration fails. Run original CSV mode both on/off:
-off creates no files; on preserves sample columns and self-assessment schema,
-writes all phases and closes files even on early/error exit. Inspect trial order
+pair sensibly and no-data calibration fails. Check automatic original CSV output:
+it preserves sample columns and self-assessment schema, writes all phases and
+closes files even on early/error exit. Inspect trial order
 and target/error units in N.
 
 For text layout, use `pnpm check:ui`. For changed frontend logic, add the relevant
@@ -317,9 +317,9 @@ Standalone installer work additionally follows `PACKAGING.md`. A workspace
 build is not an installed-runtime check. Use `pnpm package:windows`, the staged
 embedded import/resource check and the installed native/LSL/QR check via
 `RESPYRA_INSTALLED_EXE`; retain exact installer hashes and release evidence.
-For data-path changes, observe the exact installed `data/` folder, the desktop
-folder button, XDF/CSV writes there and retention after uninstall or upgrade in
-an isolated install location.
+For data-path changes, observe the active selected folder, the desktop folder
+button and chooser, XDF/CSV/BIDS writes there, remembered selection after restart,
+and retention after uninstall or upgrade in an isolated install location.
 Installer dialogs and installed native checks also require isolated execution;
 an unavailable isolated runner leaves those release gates unverified.
 

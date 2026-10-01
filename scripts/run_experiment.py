@@ -47,11 +47,6 @@ def main():
             # Advertise the outlet before importing the study or PsychoPy.
             from mpi.validation_study_jenny import CONFIG as _cfg
 
-            # Keep original CSV schemas and relative filenames in the app's data folder.
-            if os.environ.get("RESPYRA_DATA_DIR"):
-                from dataclasses import replace
-                _cfg = replace(_cfg, output_dir=os.environ["RESPYRA_DATA_DIR"])
-
             run_experiment(_cfg, bridge, markers)
         except DesktopCancelled:
             pass
@@ -260,19 +255,22 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
             if bridge is not None:
                 bridge.input_capture = input_capture
 
-        if exp_info.get("save_csv", False):
-            from pathlib import Path
-            from respyra.core.data_logger import DataLogger, create_session_file
-            # IDs become filename components in the original CSV format.
-            for value in (participant, session):
-                if not value or any(c in value for c in '<>:"/\\|?*') or any(ord(c) < 32 for c in value):
-                    raise ValueError("CSV participant/session IDs cannot contain filename characters")
-            filepath = create_session_file(participant, session, str(Path(cfg.output_dir).resolve()))
-            if Path(filepath).exists() or Path(filepath + "-self-assessment.csv").exists():
-                raise FileExistsError("A CSV already exists for this session timestamp; retry in a second")
-            logger = DataLogger(filepath, columns=cfg.data_columns)
-            self_assessment_logger = DataLogger(filepath + "-self-assessment.csv",
-                columns=["trial_num", "condition", "self_condition", "confidence", "self_accuracy"])
+        if bridge is not None:
+            from dataclasses import replace
+            cfg = replace(cfg, output_dir=str(bridge.recorder.output))
+
+        from pathlib import Path
+        from respyra.core.data_logger import DataLogger, create_session_file
+        # Keep the original CSV schemas alongside every XDF recording.
+        for value in (participant, session):
+            if not value or any(c in value for c in '<>:"/\\|?*') or any(ord(c) < 32 for c in value):
+                raise ValueError("CSV participant/session IDs cannot contain filename characters")
+        filepath = create_session_file(participant, session, str(Path(cfg.output_dir).resolve()))
+        if Path(filepath).exists() or Path(filepath + "-self-assessment.csv").exists():
+            raise FileExistsError("A CSV already exists for this session timestamp; retry in a second")
+        logger = DataLogger(filepath, columns=cfg.data_columns)
+        self_assessment_logger = DataLogger(filepath + "-self-assessment.csv",
+            columns=["trial_num", "condition", "self_condition", "confidence", "self_accuracy"])
 
         if bridge is not None:
             bridge.check_cancel()

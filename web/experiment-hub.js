@@ -18,7 +18,6 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     $('settings-open').addEventListener('click', () => $('settings-dialog').showModal());
     $('settings-done').addEventListener('click', () => $('settings-dialog').close());
     $('marker-name').addEventListener('input', () => { if (native) void request('field_edit', { field:'marker_name', value:$('marker-name').value }); });
-    $('save-csv').addEventListener('change', () => { if (native) void request('option', { field:'save_csv', enabled:$('save-csv').checked }); });
     let saved;
     if (!native) try { saved = JSON.parse(localStorage.getItem('respyra-preview-fields') || 'null'); } catch { saved = null; }
     let variables = native ? [] : Array.isArray(saved?.variables) ? saved.variables : [{ label: 'Age', value: '' }, { label: 'Study group', value: '' }];
@@ -108,7 +107,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         $(id).disabled = !setup || !!nativeState.busy || operation > 0 || !nativeCandidates.some(row => row.compatible && row.stream_type === type);
       $('polar-direction').disabled = !setup || operation > 0 || !nativeState.source?.contract_id?.startsWith('respyra-polar-');
       $('marker-name').disabled = !setup || operation > 0;
-      $('save-csv').disabled = !setup || operation > 0;
+      $('recordings-choose').disabled = !setup || operation > 0;
       for (const input of $('variable-list').querySelectorAll('input, button')) input.disabled = !setup || operation > 0;
       for (const kind of ['keyboard', 'mouse']) $(`include-${kind}-markers`).disabled = !setup || operation > 0;
       for (const input of $('stream-list').querySelectorAll('input[data-record]'))
@@ -372,6 +371,15 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       else { $('stream-status').textContent = 'Preview only'; fit(); }
     });
     $('recordings-open').disabled = !native;
+    $('recordings-choose').disabled = !native;
+    $('recordings-choose').addEventListener('click', async () => {
+      if (!native) return;
+      $('recordings-choose').disabled = true;
+      try {
+        if (await native.core.invoke('choose_recordings_folder')) await request('recording_folder');
+      } catch (error) { $('stream-status').textContent = String(error); fit(); }
+      finally { updateNativeControls(); }
+    });
     $('recordings-open').addEventListener('click', () => {
       void native.core.invoke('open_recordings_folder').catch(error => {
         $('stream-status').textContent = String(error); fit();
@@ -696,7 +704,11 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         $('include-keyboard-markers').checked = !!snapshot.record_keyboard;
         $('include-mouse-markers').checked = !!snapshot.record_mouse;
         if (document.activeElement !== $('marker-name')) $('marker-name').value = snapshot.marker_name || '';
-        $('save-csv').checked = !!snapshot.save_csv;
+        if (snapshot.output_folder) {
+          $('recordings-open').title = snapshot.output_folder;
+          $('recordings-open').setAttribute('aria-label', `Open recordings folder: ${snapshot.output_folder}`);
+          $('recordings-path').value = snapshot.output_folder;
+        }
         if (!shownSent) { shownSent = true; void request('shown'); }
       }
       const candidates = new Map(nativeCandidates.map(row => [row.source_id, row]));

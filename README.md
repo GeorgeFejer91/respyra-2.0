@@ -90,7 +90,7 @@ Optional **Keyboard events** and **Mouse events** record Windows key down/up,
 mouse movement, buttons and wheel as markers during recording, within Respyra's
 controller and participant windows. Both default off. Callback LSL time is
 retained separately from marker publication time; normal study response markers
-remain automatic. CSV, source selection, marker naming and diagnostics are in
+remain automatic. Recording folder, source selection, marker naming and diagnostics are in
 **Settings**.
 
 The accepted source ID is saved in `%LOCALAPPDATA%/Respyra/lsl-source.json`
@@ -118,10 +118,12 @@ LSL read path. Qt is not used by this study or controller; Qt modules are
 omitted from the Windows installer while PsychoPy's study and timing modules
 remain bundled.
 
-**Save original CSV files locally** is off by default. Enabling it restores the
-original sample columns and the companion `-self-assessment.csv` file in ignored
-`data/`, using the existing respyra logger. CSV writes flush each row and may add
-disk latency. XDF recording is always enabled and independent of this CSV option. The one-channel
+Every run saves the original sample CSV columns and companion
+`-self-assessment.csv` file alongside the XDF in the remembered recording
+folder, using the existing respyra logger. Choose the folder in desktop Settings;
+the folder icon beside Start opens it. A `bids/` subfolder contains behavioral
+events and selected breathing physiology in BIDS TSV/JSON form. CSV writes flush
+each row and may add disk latency. The one-channel
 `Respyra-Events` stream sends named JSON markers documented in
 [`src/mpi/event_markers/catalog.json`](src/mpi/event_markers/catalog.json).
 Marker output is independent of recorder connection. Setup events sent before

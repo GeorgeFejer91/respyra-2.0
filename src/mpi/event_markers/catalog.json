@@ -48,7 +48,7 @@
     "escaped": "Boolean: tracking stopped through Escape; null if tracking raised an exception.",
     "feedback_enabled": "Boolean: whether this condition displays error-dependent dot feedback.",
     "feedback_gain": "Gain applied to the selected breathing signal about the calibrated center for this condition.",
-    "field": "Setup field: participant, session, marker_name, save_csv, record_keyboard or record_mouse.",
+    "field": "Setup field: participant, session, marker_name, record_keyboard or record_mouse.",
     "force_channel_index": "Zero-based channel index selected in the raw Vernier outlet; null for Polar input.",
     "input_contract": "Selected input contract: vernier-force/1, respyra-polar-pca/1, or respyra-polar-phan-signed/1.",
     "input_polarity": "Signed multiplier applied to a Polar waveform after the experimenter chooses inhale direction (+1 or -1); null for Vernier Force.",

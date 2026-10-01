@@ -50,10 +50,17 @@ Source/provenance is in `native/recorder/README.md`.
   Completion checks XDF bounds, headers, sample-chunk counts and matching footers
   for all streams, plus nonempty exact required streams. Promote `.xdf.partial`
   only on success. Preserve failures; never report an outlet/subscriber as disk evidence.
-- Installed XDF/optional original CSV files use `data/` inside the selected
-  Respyra installation folder, survive uninstall, and never enter Git/Pages.
-  CSV remains opt-in and unchanged. Earlier recordings in
-  `%LOCALAPPDATA%/Respira/data` remain untouched.
+- XDF and original-schema CSV files use the remembered recording folder, defaulting
+  to `data/` inside the selected Respyra installation folder; they never enter
+  Git/Pages. Settings stores the folder under `%LOCALAPPDATA%/Respyra/`.
+  The local folder icon opens it; Settings chooses a new writable folder only
+  during setup. Choosing a folder does not move earlier files. After XDF
+  verification and promotion, `mpi.bids_export` writes `bids/` with BIDS 1.11.2
+  behavioral events and raw/calibrated breathing physio pairs. Its timestamps
+  preserve recorded LSL sample times and its sampling rate is the median observed
+  rate. XDF remains the full-stream timing authority. BIDS export failure reports
+  an error while preserving the verified XDF and participant record. Earlier
+  recordings in `%LOCALAPPDATA%/Respira/data` remain untouched.
 - Participant number (0–100) and up to six custom label/value pairs are saved
   atomically on setup edits in local user settings and restored on launch.
   Odd/even participant parity chooses the study block order; the legacy session

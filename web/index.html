@@ -89,7 +89,8 @@
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <h2 id="settings-title" data-measure>Experiment settings</h2>
     <label><span data-measure>Event marker stream name</span><input id="marker-name" type="text" maxlength="128" spellcheck="false"></label>
-    <label class="settings-check"><input id="save-csv" type="checkbox"><span data-measure>Save original CSV files locally</span></label>
+    <label><span data-measure>Recording folder</span><input id="recordings-path" type="text" readonly></label>
+    <button id="recordings-choose" type="button" data-measure>Choose folder…</button>
     <div class="remote-preview-actions"><button id="settings-done" type="button" data-measure>Done</button></div>
   </dialog>
 

@@ -23,7 +23,7 @@ const path = require('node:path');
     let listener;
     const rawId = 'polar-stream-vernier-raw-ui';
     const polarId = 'polar-h10-StudyPolar_adrPcaWaveform';
-    const state = { phase:'setup', ui_seq:0, values:{ participant:'', session:'001' }, recorded_participants:[24,100], variables:[], marker_name:'Respyra-Events', save_csv:false,
+    const state = { phase:'setup', ui_seq:0, values:{ participant:'', session:'001' }, recorded_participants:[24,100], variables:[], marker_name:'Respyra-Events', save_csv:true, output_folder:'C:\\Recordings',
       message:'Choose a raw Force stream', can_start:false, busy:false, record_keyboard:false, record_mouse:false,
       excluded_streams:[],
       streams:[{ source_id:rawId, stream_name:'Vernier Stream Mini', stream_type:'VernierRaw', compatible:true,
@@ -55,6 +55,7 @@ const path = require('node:path');
         if (command === 'launch_backend') return structuredClone(state);
         if (command === 'close_app' || command === 'viewer_action') return null;
         if (command === 'open_recordings_folder') { window.testCommands.push(command); return null; }
+        if (command === 'choose_recordings_folder') { window.testCommands.push(command); return true; }
         const action = args.action;
         window.testActions.push(action);
         state.ui_seq = action.ui_seq;
@@ -64,6 +65,7 @@ const path = require('node:path');
           else state.values[action.field] = action.value;
         }
         if (action.action === 'option') state[action.field] = action.enabled;
+        if (action.action === 'recording_folder') state.output_folder = 'C:\\Chosen';
         if (action.action === 'record_stream') state.excluded_streams = action.enabled ?
           state.excluded_streams.filter(uid => uid !== action.uid) : [...new Set([...state.excluded_streams, action.uid])];
         if (action.action === 'select') state.selected_row = action.row;
@@ -100,6 +102,13 @@ const path = require('node:path');
     assert(await page.locator('#viewer-open').isVisible());
     await page.locator('#recordings-open').click();
     assert.deepEqual(await page.evaluate(() => window.testCommands), ['open_recordings_folder']);
+    await page.locator('#settings-open').click();
+    await page.locator('#recordings-choose').click();
+    await page.waitForFunction(() => window.testSnapshot().output_folder === 'C:\\Chosen');
+    assert.match(await page.locator('#recordings-open').getAttribute('aria-label'), /C:\\Chosen/);
+    assert.equal(await page.locator('#recordings-path').inputValue(), 'C:\\Chosen');
+    await page.screenshot({ path:path.resolve(__dirname, '../.for-ai-local/recording-settings.png') });
+    await page.locator('#settings-done').click();
     const catalog = JSON.parse(await fs.readFile(path.resolve(__dirname, '../src/mpi/event_markers/catalog.json'), 'utf8'));
     const planned = Object.entries(catalog.events).filter(([, event]) => event.active !== false).map(([name]) => name);
     await page.locator('#marker-inventory-open').click();
@@ -138,7 +147,6 @@ const path = require('node:path');
     assert(await auxRow.getByRole('checkbox', { name:/Display/ }).isEnabled());
     await page.locator('#settings-open').click();
     await page.locator('#marker-name').fill('Study Events');
-    await page.locator('#save-csv').check();
     await page.keyboard.press('Escape');
     assert(await page.locator('#settings-dialog').isHidden());
     assert(await page.locator('#start').isEnabled());
@@ -149,7 +157,12 @@ const path = require('node:path');
     for (const [width, height] of [[1200,760], [820,760], [390,844], [800,600]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(100);
-      assert(await page.locator('#shell').isVisible(), `Hub hidden at ${width}×${height}`);
+      assert(await page.locator('#shell').isVisible(), `Hub hidden at ${width}×${height}: ` + JSON.stringify(await page.evaluate(() => ({
+        typeFit:document.querySelector('#shell').dataset.typeFit,
+        regions:['shell','.content','hub','streams','hub-body','stream-body','stream-selection','.stream-section','stream-list','plot-section'].map(id => {
+          const element = document.getElementById(id) || document.querySelector(id);
+          return [id,element.scrollWidth,element.clientWidth,element.scrollHeight,element.clientHeight];
+        }) }))));
       const fit = await page.evaluate(() => ({ width:document.documentElement.scrollWidth, height:document.documentElement.scrollHeight,
         clipped:[...document.querySelectorAll('[data-measure]')].filter(element => element.getClientRects().length &&
           (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)).map(element => element.textContent) }));

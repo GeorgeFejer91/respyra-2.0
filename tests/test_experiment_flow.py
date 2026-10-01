@@ -95,8 +95,7 @@ def test_participant_parity_counterbalances_block_order():
 @pytest.mark.parametrize("scenario", [
     "complete", "polar_complete", "ready_escape", "tracking_error", "no_force",
 ])
-@pytest.mark.parametrize("save_csv", [False, True])
-def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tmp_path):
+def test_short_study_emits_complete_timeline(monkeypatch, scenario, tmp_path):
     from psychopy import core, event
     from respyra.core import display, runner
     script_path = Path(__file__).resolve().parents[1] / "scripts" / "run_experiment.py"
@@ -151,7 +150,7 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
 
     monkeypatch.setattr(study, "MarkerOutlet", lambda: marker)
     monkeypatch.setattr(study, "run_source_setup", lambda _cfg, _markers: ({
-        "participant": "2", "session": "001", "save_csv": save_csv,
+        "participant": "2", "session": "001",
     }, force))
     monkeypatch.setattr(runner, "setup_display", lambda _cfg: (win, stimuli))
     monkeypatch.setattr(display, "show_text_and_wait", show)
@@ -227,21 +226,18 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, save_csv, tm
         assert calibrated["input_polarity"] == 1
         assert calibrated["amplitude_value"] > 0
     files = list(tmp_path.glob("*.csv"))
-    if not save_csv:
-        assert not files
-    else:
-        import csv
-        assert len(files) == 2
-        samples = next(f for f in files if not f.name.endswith("-self-assessment.csv"))
-        ratings = next(f for f in files if f.name.endswith("-self-assessment.csv"))
-        with samples.open(newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
-        expected_columns = ([{"force_n": "signal_g", "target_force": "target_signal_g",
-                              "error": "error_g", "compensated_error": "compensated_error_g"}.get(name, name)
-                             for name in cfg.data_columns] if scenario == "polar_complete" else list(cfg.data_columns))
-        assert list(rows[0]) == expected_columns if rows else samples.read_text().splitlines()[0].split(',') == expected_columns
-        if scenario in {"complete", "polar_complete"}:
-            assert {row["phase"] for row in rows} >= {"range_cal", "baseline", "countdown", "tracking"}
-            with ratings.open(newline="", encoding="utf-8") as f:
-                answers = list(csv.DictReader(f))
-            assert answers == [{"trial_num":"1","condition":"normal","self_condition":"n","confidence":"1","self_accuracy":"1"}]
+    import csv
+    assert len(files) == 2
+    samples = next(f for f in files if not f.name.endswith("-self-assessment.csv"))
+    ratings = next(f for f in files if f.name.endswith("-self-assessment.csv"))
+    with samples.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    expected_columns = ([{"force_n": "signal_g", "target_force": "target_signal_g",
+                          "error": "error_g", "compensated_error": "compensated_error_g"}.get(name, name)
+                         for name in cfg.data_columns] if scenario == "polar_complete" else list(cfg.data_columns))
+    assert list(rows[0]) == expected_columns if rows else samples.read_text().splitlines()[0].split(',') == expected_columns
+    if scenario in {"complete", "polar_complete"}:
+        assert {row["phase"] for row in rows} >= {"range_cal", "baseline", "countdown", "tracking"}
+        with ratings.open(newline="", encoding="utf-8") as f:
+            answers = list(csv.DictReader(f))
+        assert answers == [{"trial_num":"1","condition":"normal","self_condition":"n","confidence":"1","self_accuracy":"1"}]

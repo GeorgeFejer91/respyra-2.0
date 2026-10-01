@@ -88,6 +88,28 @@ def test_participant_choice_uses_verified_recording_history(setup, tmp_path):
     assert setup.values["participant"] == "0"
 
 
+def test_recording_folder_is_local_writable_and_remembered(setup, tmp_path):
+    folder = tmp_path / "chosen recordings"
+    folder.mkdir()
+    setup.recorder = SimpleNamespace(output=tmp_path, process=None)
+    send(setup, "shown")
+    assert setup.snapshot()["save_csv"] is True
+    with pytest.raises(lsl_setup.SetupRejected, match="local setup"):
+        send(setup, "recording_folder", path=str(folder))
+    setup.command({"action": "recording_folder", "ui_seq": setup.sequence + 1,
+                   "ui_time_ms": 2.0, "ui_origin": "local", "ui_client_seq": 2,
+                   "path": str(folder)})
+    assert setup.snapshot()["output_folder"] == str(folder)
+    assert lsl_setup.load_recording_folder() == folder
+    restored = lsl_setup.SourceSetup(SimpleNamespace(name="Test Study"), Collector(),
+                                     SimpleNamespace(output=tmp_path, process=None))
+    try:
+        restored.restore()
+        assert restored.recorder.output == folder
+    finally:
+        restored.close()
+
+
 def test_record_stream_choice_is_reflected_in_setup_snapshot(setup):
     send(setup, "shown")
     send(setup, "record_stream", uid="polar-heart-rate-uid", enabled=False)

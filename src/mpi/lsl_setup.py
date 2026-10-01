@@ -25,6 +25,39 @@ def fields_path():
     return Path(os.environ.get("LOCALAPPDATA", Path.home() / ".config")) / "Respyra" / "experiment-fields.json"
 
 
+def recording_folder_path():
+    return fields_path().with_name("recording-folder.json")
+
+
+def load_recording_folder():
+    path = recording_folder_path()
+    if not path.exists():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        folder = value["folder"]
+        if value["version"] != 1 or not isinstance(folder, str) or not Path(folder).is_absolute():
+            raise ValueError("Invalid recording folder")
+        return Path(folder)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise SetupRejected("Saved recording folder is invalid; choose a folder again") from exc
+
+
+def save_recording_folder(folder):
+    path = recording_folder_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
+                                         prefix="recording-folder-", suffix=".tmp", delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump({"version": 1, "folder": str(folder)}, handle, ensure_ascii=False)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def valid_variables(variables):
     return (isinstance(variables, list) and len(variables) <= 6
             and all(isinstance(row, dict) and row.keys() == {"label", "value"}
@@ -71,7 +104,7 @@ class SourceSetup:
         self.values = {"participant": "", "session": "001"}
         self.recorded_participants = []
         self.variables = []
-        self.save_csv = False
+        self.save_csv = True
         self.record_keyboard = self.record_mouse = False
         self.polar_inverted = self.polar_direction_set = False
         self.excluded_streams = set()
@@ -90,8 +123,11 @@ class SourceSetup:
         self.automatic = True
         if self.recorder is not None and hasattr(self.recorder, "output"):
             try:
+                saved_folder = load_recording_folder()
+                if saved_folder is not None:
+                    self.recorder.output = saved_folder
                 self.recorded_participants = recorded_participant_numbers(self.recorder.output)
-            except RecordingError as exc:
+            except (RecordingError, SetupRejected) as exc:
                 self.recorded_participants = None
                 self.message = str(exc)
         try:
@@ -133,12 +169,13 @@ class SourceSetup:
                 "recorded_participants": self.recorded_participants,
                 "variables": [row.copy() for row in self.variables],
                 "marker_name": self.markers.name, "save_csv": self.save_csv,
+                "output_folder": str(getattr(self.recorder, "output", "")),
                 "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
                 "polar_inverted": self.polar_inverted,
                 "polar_direction_set": self.polar_direction_set,
                 "excluded_streams": sorted(self.excluded_streams),
                 "message": self.message, "busy": self.pending is not None,
-                "can_start": bool(self.source and not self.pending and
+                "can_start": bool(self.source and self.recorded_participants is not None and not self.pending and
                                   (not getattr(self.source, "contract_id", None) or self.polar_direction_set) and
                                   participant_number(self.values["participant"]) is not None and
                                   all(row["label"].strip() and row["value"].strip() for row in self.variables) and
@@ -197,6 +234,8 @@ class SourceSetup:
                     self.values = values
             emit("participant.field.edited", field=action["field"], value=action["value"], **ui)
         elif kind == "option":
+            if action["field"] == "save_csv":
+                raise SetupRejected("CSV is saved automatically with every recording")
             if action["field"] == "polar_inverted":
                 if self.source is None or not getattr(self.source, "contract_id", None):
                     raise SetupRejected("Choose a Polar breathing input before setting inhale direction")
@@ -205,6 +244,22 @@ class SourceSetup:
             setattr(self, action["field"], action["enabled"])
             emit("source.polarity.set" if action["field"] == "polar_inverted" else "recording.option.changed",
                  field=action["field"], enabled=action["enabled"], **ui)
+        elif kind == "recording_folder":
+            if self.recorder is None or self.recorder.process is not None or action.get("ui_origin") != "local":
+                raise SetupRejected("Recording folder can only be changed from the local setup window")
+            folder = Path(action["path"])
+            if not folder.is_absolute() or not folder.is_dir():
+                raise SetupRejected("Choose an existing recording folder")
+            try:
+                with tempfile.NamedTemporaryFile(dir=folder, prefix="respyra-write-check-", delete=True):
+                    pass
+                participants = recorded_participant_numbers(folder)
+                save_recording_folder(folder)
+            except (OSError, RecordingError) as exc:
+                raise SetupRejected("Recording folder is unavailable or not writable") from exc
+            self.recorder.output = folder
+            self.recorded_participants = participants
+            self.message = "Recording folder updated."
         elif kind == "record_stream":
             if action["enabled"]:
                 self.excluded_streams.discard(action["uid"])

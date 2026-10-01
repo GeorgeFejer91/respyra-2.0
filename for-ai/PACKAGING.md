@@ -43,8 +43,9 @@ launch them on the user's active desktop; missing isolation leaves those gates
   WebView2 download bootstrapper only if WebView2 is absent, so first installation
   on a clean computer needs Internet. No self-updater, firewall changes or startup task.
 - NSIS precreates `data/` inside the chosen installation folder. The installed
-  runtime uses that folder for XDF and optional original CSV files; the default
-  path is `%LOCALAPPDATA%/Respyra 2.0/data`. Its unlisted `data/` directory
+  runtime uses that folder for XDF and automatic original CSV files unless the
+  user selects another writable folder. The default path is
+  `%LOCALAPPDATA%/Respyra 2.0/data`. The unlisted `data/` directory
   survives the Tauri NSIS uninstaller and upgrades. Earlier files under
   `%LOCALAPPDATA%/Respira/data` remain untouched. Retain
   `%LOCALAPPDATA%/Respyra/lsl-source.json` identity memory.
@@ -76,10 +77,11 @@ launch them on the user's active desktop; missing isolation leaves those gates
 6. Set `RESPYRA_INSTALLED_EXE` to the installed main executable and run
    `tests/check_native_lsl.py` with `RESPYRA_PUBLISHED_PHONE=1`. It runs away from
    the checkout using synthetic private LSL streams and isolated identity memory.
-   Observe selection/reconnect, actual PsychoPy instruction flip, CSV option,
+   Observe selection/reconnect, actual PsychoPy instruction flip, automatic CSV,
    native Stop/Close cleanup and real hosted QR coupling. Check no child remains.
-7. Check XDF and CSV writes in the installed `data/` folder, with original CSV
-   headers and off creating none. Verify the folder button opens that same path.
+7. Check XDF, CSV, participant-list and BIDS writes in the active folder, with
+   original CSV headers. Verify the folder button opens that path, the chooser
+   persists a new path after restart, and the old folder's recordings stay put.
    Check upgrade/uninstall retains the test recording before release promotion.
    Installed scope is separate from scientific timing, physical
    belt/phone, full study calibration/timing, clean VM, other OS, upgrade and uninstall evidence.

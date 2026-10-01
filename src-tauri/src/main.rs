@@ -112,6 +112,10 @@ enum Action {
         field: RecordingOption,
         enabled: bool,
     },
+    RecordingFolder {
+        ui_seq: u64,
+        ui_time_ms: f64,
+    },
     RecordStream {
         ui_seq: u64,
         ui_time_ms: f64,
@@ -190,6 +194,7 @@ struct Engine {
     sequence: u64,
     local_sequence: u64,
     pending: HashMap<u64, mpsc::Sender<Value>>,
+    chosen_folder: Option<PathBuf>,
     viewer: Option<viewer::ViewerSession>,
 }
 
@@ -212,6 +217,7 @@ impl Default for Desktop {
                 sequence: 0,
                 local_sequence: 0,
                 pending: HashMap::new(),
+                chosen_folder: None,
                 viewer: None,
             })),
             closing: Arc::new(AtomicBool::new(false)),
@@ -410,6 +416,16 @@ fn queue_action(
         return Ok(Err(
             json!({"ok":false,"revision":state.control_revision,"message":"Control is unavailable in this phase"}),
         ));
+    }
+    if value["action"] == "recording_folder" {
+        if origin != "local" {
+            return Err("Recording folder is local only".into());
+        }
+        let folder = state
+            .chosen_folder
+            .take()
+            .ok_or("Choose a recording folder first")?;
+        value["path"] = json!(folder.to_string_lossy());
     }
     if state.pending.len() >= 128 {
         return Err("Engine action queue is full".into());
@@ -717,7 +733,21 @@ fn open_recordings_folder(app: tauri::AppHandle) -> Result<(), String> {
         .ok_or("Missing workspace root")?;
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
     let (_, entry) = engine_paths(&resources, workspace, cfg!(debug_assertions))?;
-    let directory = data_directory(workspace, entry.starts_with(resources.join("engine")))?;
+    let selected = app
+        .state::<Desktop>()
+        .engine
+        .lock()
+        .map_err(|_| "Desktop state lock failed")?
+        .snapshot["output_folder"]
+        .as_str()
+        .map(PathBuf::from);
+    let directory = match selected {
+        Some(path) => path,
+        None => data_directory(workspace, entry.starts_with(resources.join("engine")))?,
+    };
+    if !directory.is_dir() {
+        return Err("The recording folder is unavailable. Choose a new folder.".into());
+    }
     #[cfg(windows)]
     {
         Command::new("explorer.exe")
@@ -733,6 +763,43 @@ fn open_recordings_folder(app: tauri::AppHandle) -> Result<(), String> {
     }
 }
 
+#[tauri::command]
+async fn choose_recordings_folder(desktop: tauri::State<'_, Desktop>) -> Result<bool, String> {
+    let engine = Arc::clone(&desktop.engine);
+    let current = {
+        let state = engine.lock().map_err(|_| "Desktop state lock failed")?;
+        if state.snapshot["phase"] != "setup" {
+            return Err("Recording folder can only be changed during setup".into());
+        }
+        state.snapshot["output_folder"].as_str().map(PathBuf::from)
+    };
+    let selected = tauri::async_runtime::spawn_blocking(move || {
+        let dialog = rfd::FileDialog::new().set_title("Choose Respyra recording folder");
+        match current {
+            Some(path) => dialog.set_directory(path),
+            None => dialog,
+        }
+        .pick_folder()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    let Some(folder) = selected else {
+        return Ok(false);
+    };
+    let folder = folder
+        .canonicalize()
+        .map_err(|_| "Selected recording folder is unavailable")?;
+    if folder.as_os_str().len() > 4096 {
+        return Err("Recording folder path is too long".into());
+    }
+    let mut state = engine.lock().map_err(|_| "Desktop state lock failed")?;
+    if state.snapshot["phase"] != "setup" {
+        return Err("Recording folder can only be changed during setup".into());
+    }
+    state.chosen_folder = Some(folder);
+    Ok(true)
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(Desktop::default())
@@ -741,6 +808,7 @@ fn main() {
             setup_action,
             close_app,
             open_recordings_folder,
+            choose_recordings_folder,
             viewer_action
         ])
         .on_window_event(|window, event| {
@@ -825,6 +893,7 @@ mod tests {
         for invalid in [
             r#"{"action":"shutdown"}"#,
             r#"{"action":"shown","ui_seq":1,"ui_time_ms":1,"path":"x"}"#,
+            r#"{"action":"recording_folder","ui_seq":1,"ui_time_ms":1,"path":"C:/untrusted"}"#,
             r#"{"action":"field_edit","ui_seq":1,"ui_time_ms":1,"field":"other","value":"x"}"#,
         ] {
             assert!(serde_json::from_str::<Action>(invalid).is_err());

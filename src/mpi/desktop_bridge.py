@@ -22,6 +22,7 @@ ACTION_FIELDS = {
     "use": set(), "start": set(), "cancel": set(), "abort": set(),
     "option": {"field", "enabled"},
     "record_stream": {"uid", "enabled"},
+    "recording_folder": {"path"},
 }
 
 
@@ -74,6 +75,8 @@ def validate_action(action):
         limit = 2048 if key == "value" and action.get("field") == "variables" else 128
         if key in action and (not isinstance(action[key], str) or len(action[key]) > limit):
             raise ValueError("Invalid participant input")
+    if "path" in action and (not isinstance(action["path"], str) or not 1 <= len(action["path"]) <= 4096):
+        raise ValueError("Invalid recording folder")
     if "row" in action and (type(action["row"]) is not int or action["row"] < 0):
         raise ValueError("Invalid stream row")
     return action

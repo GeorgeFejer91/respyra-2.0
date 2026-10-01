@@ -21,8 +21,7 @@ feedback. See `RECORDING.md`.
 - No capability claim without matching evidence.
 - No direct Vernier Bluetooth/USB connection or reimplementation of the streamer's
   breathing algorithm. Export the study's accepted calibration in one place.
-- No session CSV output unless the experimenter enables the original CSV mode.
-- Do not publish raw session recordings or self-assessments from `data/`.
+- Do not publish raw session recordings, CSVs, or self-assessments from any selected folder.
 
 ## Product/control-plane boundary
 
@@ -30,7 +29,8 @@ feedback. See `RECORDING.md`.
   bundled third-party components retain their own licenses. The root `LICENSE`
   and `docs/THIRD-PARTY.md` are the distribution notices.
 - Product source: `src/mpi/`, `native/`, `web/`, `src-tauri/`, `scripts/`, `notebooks/`, and `tests/`.
-- Local session output: `data/` (ignored by Git).
+- Local session output: the remembered user-selected folder, defaulting to `data/`
+  (ignored by Git). External selected folders remain local.
 - Agent orchestration and durable project memory: `for-ai/`.
 - Local generated diagnostics and scratch evidence: `.for-ai-local/` (ignored).
 
@@ -55,8 +55,9 @@ feedback. See `RECORDING.md`.
   `src/mpi/event_markers/` owns the LSL marker publisher
   and exhaustive `catalog.json`. `scripts/run_experiment.py` runs the PsychoPy
   task using that source and `respyra`'s existing study phases; it passes a
-  no-op sample logger by default. Optional CSV mode reuses respyra's DataLogger,
-  original configured sample columns and self-assessment schema in ignored data/.
+  respyra's DataLogger for automatic original-schema sample and assessment CSVs.
+  After verified XDF promotion, `mpi.bids_export` creates a behavioral BIDS
+  dataset with events and selected raw/calibrated breathing physiology.
 - `web/` is plain HTML/CSS/JS with locally bundled Pretext/fonts. `src-tauri/`
   supervises one Python child through closed commands (`launch_backend`,
   `setup_action`, `close_app`, `viewer_action`) and private bounded JSON pipes. Python is the
@@ -80,13 +81,13 @@ feedback. See `RECORDING.md`.
   Stop cleans up the study; phone loss revokes control but leaves a run active.
   Debug workspace builds use the checkout's `.venv`. The Respyra 2.0
   Windows installer bundles the locked engine with isolated CPython; release
-  builds never fall back to a checkout. Installed XDF and optional CSV files use
-  `data/` inside the program folder. Packaging/release gates are in `PACKAGING.md`. App identity is
+  builds never fall back to a checkout. Installed XDF and CSV files use the remembered
+  recording folder; the default is `data/` inside the program folder. Packaging/release gates are in `PACKAGING.md`. App identity is
   `dev.georgefejer.respyra2`.
 - `scripts/plot_session.py` remains a reader for historical local CSVs.
   `scripts/xdf_to_csv.py` is a separate, user-invoked offline export of an
-  existing XDF to one timestamped CSV per stream; it does not enable or alter
-  the study's opt-in CSV logger. `notebooks/xdf_to_csv_tutorial.ipynb` explains
+  existing XDF to one timestamped CSV per stream; it is separate from the
+  study's automatic original-schema CSV logger. `notebooks/xdf_to_csv_tutorial.ipynb` explains
   the export. Synthetic and participant XDF files stay out of Git.
   `tests/test_lsl_force.py`, `tests/test_event_markers.py`,
   `tests/test_experiment_flow.py`, `tests/test_desktop_bridge.py`,

@@ -32,13 +32,12 @@ export const CONTROL_HTML = `
           </div>
         </details>
       </section>
-      <label class="check-option"><input id="save_csv" type="checkbox"><span data-measure>Save original CSV files locally</span></label>
       <div class="input-options">
         <label class="check-option"><input id="record_keyboard" type="checkbox"><span data-measure>Keyboard events</span></label>
         <label class="check-option"><input id="record_mouse" type="checkbox"><span data-measure>Mouse events</span></label>
         <span class="input-scope" data-measure>In Respyra windows</span>
       </div>
-      <p class="recording-note" data-measure>Start automatically records all LSL streams to XDF before calibration, including streams that appear later.</p>
+      <p class="recording-note" data-measure>Start saves XDF and original CSV automatically. XDF includes streams that appear later.</p>
       <div class="actions final-actions">
         <button id="start" type="submit" disabled data-measure>Start Experiment</button>
         <button id="cancel" type="button" data-measure>Cancel</button>
@@ -111,7 +110,6 @@ export function mountController(root, send, onReady) {
     byId('controls').disabled = !enabled || !setup || operation > 0;
     byId('scan').disabled = !enabled || !setup || !!state.busy || operation > 0;
     byId('use').disabled = !enabled || !setup || !state.can_use || operation > 0;
-    byId('save_csv').disabled = !enabled || !setup || operation > 0;
     byId('start').hidden = !setup;
     byId('start').disabled = !enabled || !setup || operation > 0 || !state.can_start;
     byId('cancel').hidden = !setup;
@@ -184,7 +182,6 @@ export function mountController(root, send, onReady) {
         variables = (snapshot.variables || []).map(row => ({...row}));
         renderVariables();
       }
-      byId('save_csv').checked = !!snapshot.save_csv;
       byId('record_keyboard').checked = !!snapshot.record_keyboard;
       byId('record_mouse').checked = !!snapshot.record_mouse;
       if (document.activeElement !== byId('marker_name')) byId('marker_name').value = snapshot.marker_name || 'Respyra-Events';
@@ -239,7 +236,7 @@ export function mountController(root, send, onReady) {
   byId('use').addEventListener('click', () => {
     if (!document.body.classList.contains('desktop')) byId('input-details').open = false;
   });
-  for (const field of ['save_csv', 'record_keyboard', 'record_mouse']) byId(field).addEventListener('change', () => { void request('option', {field,enabled:byId(field).checked}); });
+  for (const field of ['record_keyboard', 'record_mouse']) byId(field).addEventListener('change', () => { void request('option', {field,enabled:byId(field).checked}); });
   byId('rename').addEventListener('click', () => { void request('field_edit', {field:'marker_name',value:byId('marker_name').value}); });
   byId('setup').addEventListener('submit', event => {
     event.preventDefault();

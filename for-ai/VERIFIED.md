@@ -558,3 +558,27 @@ the respective scope needs current evidence; panel styling does not need it.
 - Limits: synthetic LSL streams only, with no participant recording or GUI
   qualification. The notebook install cell was not rerun because packages
   were already available in the kernel.
+### Selectable recording folder, automatic CSV, and BIDS export
+
+- Result/date: `VERIFIED` for source-level and headless synthetic checks,
+  `NOT RUN` for the native folder picker and installed runtime, 2026-10-01.
+  This entry supersedes earlier CSV-on/off evidence for the changed source.
+- Checks: 51 focused Python tests passed across BIDS export, setup, recording,
+  experiment flow and desktop bridge. `tests/check_recording.py` produced a
+  verified native XDF with required raw/derived/marker streams and a BIDS export.
+  A fresh export of that synthetic XDF passed `bids-validator@1.15.0 --json`
+  with zero errors; it reported only missing optional Authors metadata.
+  `pnpm check:ui` passed eight headless layouts and 15 actions; the changed
+  Settings dialog was visually inspected. `pnpm test:web` passed six tests.
+  Configured `pnpm check:remote` passed 12 layouts and 11 mocked mutations.
+  MSVC-activated Cargo check, 10 Rust tests, fmt and clippy passed.
+- Covered: local folder selection contract and persistence, XDF/CSV path owner,
+  automatic CSV schemas, BIDS event/physiology files and Rust phone path redaction.
+  BIDS physiology retains exact sample times in a timestamp column and describes
+  the median observed rate; XDF remains the full-stream timing source. A failed
+  export leaves no partial run files during ordinary error handling.
+- Limits: Headless Chromium and native recorder CLI used synthetic LSL. The
+  actual Windows folder dialog, installed app, restart, uninstall and release
+  artifact were not exercised in an isolated desktop for this change. No physical belt,
+  full-duration run or MNE-BIDS import was tested. The validator version is the
+  deprecated npm CLI, not the newer Deno validator.

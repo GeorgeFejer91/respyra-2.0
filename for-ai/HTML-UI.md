@@ -29,7 +29,8 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
   channels. All discovered streams are recorded by default, including later
   streams unless their current LSL UID was unchecked before Start. The remote button opens a
   QR popup with desktop Approve/Reject on an authenticated request. Settings
-  contains the pre-recording marker name and optional original CSV export.
+  contains the pre-recording marker name and recording-folder chooser. The folder
+  icon beside Start opens the active folder. Original CSV saving is automatic.
   Marker inventory opens a searchable dialog populated by `prepare-web.mjs` from
   active entries in the Python event catalog. Its own content can scroll; the
   main panel still cannot. It lists possible event types, not a claim that each
