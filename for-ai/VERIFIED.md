@@ -54,6 +54,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Optional Windows hooks and shutdown: `src/mpi/input_capture.py` | `tests/test_input_capture.py` | unrecorded | Hook registration, filtering, queues, drain/cleanup or marker handoff changes. |
 | Recorder readiness, missing/failed/hung child, participant list, partial files and XDF completeness: `src/mpi/recording.py` | `tests/test_recording.py` | verified for current inputs; see hub/recorder receipt | `NativeRecording`, `inspect_xdf`, child/readiness protocol or XDF validation changes. |
 | Native XDF persistence, calibration/cleanup markers, late/source-less streams and Unicode paths: `native/recorder/`, recording owner | `tests/check_recording.py` | verified for current inputs; see hub/recorder receipt | Recorder source/binary/DLLs, supervision or serialized data/marker contract changes. |
+| Offline XDF-to-CSV export and tutorial: `scripts/xdf_to_csv.py`, `notebooks/xdf_to_csv_tutorial.ipynb` | `tests/test_xdf_to_csv.py`, headless notebook execution | verified for current inputs; see offline export receipt | Converter/notebook logic, CSV columns or PyXDF version changes. |
 | All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | verified for current inputs; see hub/recorder receipt | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
 | Complete 48-trial Vernier Mini mock study: study/calibration/recording owners | `tests/run_private_mock.py full` and `remote-full`, then `scripts/audit_mock_xdf.py` | verified for current mock inputs; see Mini pipeline receipt | Study, inlet buffering, calibration, marker or recorder inputs change. |
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
@@ -529,3 +530,22 @@ the respective scope needs current evidence; panel styling does not need it.
   the updated Pages build and ten public assets were verified.
 - Exact hashes, commands, observations and limits:
   [`WINDOWS-INSTALLER-0.3.3-2026-10-01.md`](./WINDOWS-INSTALLER-0.3.3-2026-10-01.md).
+
+### Offline XDF-to-CSV teaching export
+
+- Result/date: `VERIFIED`, 2026-10-01, for source commit `e12db61` and PyXDF
+  1.17.5. Captured CLI checks used no visible windows.
+- Checks: `.venv/Scripts/python.exe -m pytest tests/test_xdf_to_csv.py -q`
+  (1 passed); `.venv/Scripts/python.exe .for-ai-local/smoke_intern_notebook.py`
+  executed the notebook without its already-satisfied install cell and
+  independently ran the standalone script. Both produced four per-stream CSVs:
+  148 Force, 6 heart-rate, 3 marker and 0 empty-status rows. Notebook JSON
+  validation and `for-ai/scripts/check-context.ps1` passed.
+- Inputs: sanitized local mock XDF SHA-256
+  `d5faba93e052422a756dcaf6981ebed8041d0609b0357be5f9a734923d2c4a88`;
+  ignored smoke harness SHA-256
+  `1d1a6440b340f69d629e7fad911df27ebb0da58c43aae72f68e175bbf5cd6c5c`;
+  nbclient 0.11.0. The XDF is excluded from Git.
+- Limits: synthetic LSL streams only, with no participant recording or GUI
+  qualification. The notebook install cell was not rerun because packages
+  were already available in the kernel.
