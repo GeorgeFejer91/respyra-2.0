@@ -38,3 +38,8 @@ finite source samples; missing-value gaps remain missing. Keep
 `original_times` and the BIDS table for precise timing analyses. MNE Raw itself
 requires a regular sample grid. Generic BIDS physiology is not a direct
 `mne_bids.read_raw_bids()` neural recording input.
+
+MNE-BIDS can parse the BIDS `beh`/`physio` paths with
+`mne_bids.get_bids_path_from_fname`; use the reader above to obtain an MNE Raw
+object. For large integer counters, use the BIDS table or XDF for exact values:
+MNE Raw stores floating-point data and may round integers above 2^53.

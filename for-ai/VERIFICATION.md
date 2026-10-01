@@ -69,7 +69,7 @@ requested by the user. Keep the skills' implementation and design requirements.
 | Python signal, discovery, setup, markers or study logic | Corresponding `pytest` files from Gate 2 | A changed cross-process, LSL, study or recording contract needs its consuming integration check. Unchanged sibling modules keep their prior evidence. |
 | Rust IPC, supervision, permissions or remote ownership | Rust fmt/test/clippy for the affected crate | Changed lifecycle/IPC needs the real process/native check; changed remote grants or dispatch needs remote qualification. |
 | Recorder, calibration output, input capture or XDF contracts | Corresponding focused tests and affected recording/control-center proof | Run `--full-study` only for changes affecting trial progression, calibration use, study timing/markers, all-phase logging or finalization across the complete study, or a regression in those paths. |
-| XDF-to-BIDS or MNE import | Focused exporter tests, an independently decoded multi-stream XDF export, BIDS validator, and MNE readback of regular and explicitly resampled irregular signals | Check every nonempty recorded outlet, channel values/order/units, source timestamps, events, sparse/empty stream handling and failure atomicity. Do not infer regular sampling from a median observed rate or claim generic physiology is a direct `mne_bids.read_raw_bids` neural import. |
+| XDF-to-BIDS or MNE import | Focused exporter tests and the recorded-XDF compatibility gate below | Check every nonempty recorded outlet, values/order/units, source timestamps, events, sparse/empty stream handling and failure atomicity. Do not infer regular sampling from a median observed rate or claim generic physiology is a direct `mne_bids.read_raw_bids` neural import. |
 | Locks, toolchain, runtime resources, installer or release candidate | Checks for consumers of the changed input; packaging gates for a new installer | A shared input change invalidates only its consuming evidence. Qualify each new promoted installer by exact artifact bytes as `PACKAGING.md` requires. |
 
 Trace affected callers, imports, consumers and shared assets before declaring
@@ -311,6 +311,39 @@ retained XDF independently with the same script and record its path and counts.
 The auditor reads XDF stream chunks without clock synchronization/dejitter and
 checks raw ACC, both candidate/companion streams, derived samples, trial and
 marker order, calibration, saved participant state and stream footers.
+
+### Recorded XDF to BIDS and MNE compatibility
+
+For a changed Mini LSL contract or BIDS exporter, capture a short Polar and
+Vernier mock run with the current Mini build and Respyra recorder. Use the
+isolated private desktop runner above for native app claims; a retained XDF may
+be reused only when its producer/recorder contracts did not change. Preserve
+each XDF, matching `bids/` dataset, executable/source revision, and XDF hash
+under ignored `.for-ai-local/`. Verify that the BIDS files were saved for the
+same run, rather than pairing an unrelated XDF and dataset. Physical sensors
+and installed Respyra are separate gates.
+
+Run the focused exporter and reader tests. For each captured run, execute the
+gate from the Respyra root with paths to that run's XDF and BIDS events file:
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/test_bids_export.py tests/test_recording.py -q
+$xdf = 'C:\recordings\run.xdf'
+$events = 'C:\recordings\bids\sub-002\ses-001\beh\sub-002_ses-001_task-respyra_run-01_events.tsv'
+python -m uv run --no-project --python 3.12 --with mne==1.13.2 --with mne-bids==0.20.0 --with pyxdf==1.17.5 python tests/check_bids_compatibility.py --xdf $xdf --events $events --resample-hz 100
+```
+
+Replace the example paths and grid rate with that run's actual files and a
+declared analysis rate; `pnpm` is required for the pinned validator command.
+The gate independently reads XDF, checks every nonempty stream against its
+BIDS table and sidecar (timestamps, all channel values, labels, units, source
+identity and format), checks Respyra event timing, runs `bids-validator@1.15.0`
+with zero errors, parses every BIDS signal path with MNE-BIDS 0.20.0, and opens
+each eligible numeric table as MNE Raw. It requires an explicit grid for
+irregular streams; empty streams remain in XDF. Exact large integers and
+double-precision values must survive the BIDS table even though MNE Raw stores
+floating-point arrays. Report the validator's optional warnings and any outlet
+that cannot be represented as MNE Raw, rather than calling that a pass.
 
 ## Gate 4: publication
 

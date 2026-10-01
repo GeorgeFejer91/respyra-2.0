@@ -38,3 +38,13 @@ def test_mne_reader_keeps_regular_values_and_requires_explicit_irregular_rate(tm
     np.testing.assert_allclose(waveform.get_data()[0, :3], [1, 1.5, 2])
     assert np.isnan(waveform.get_data()[0, 3:6]).all()
     assert waveform.get_data()[0, 6] == 4
+
+    single = tmp_path / "sub-001_task-respyra_acq-counter_beh.tsv"
+    single.write_text("timestamp\tchannel1\n0.30\t7\n", encoding="utf-8")
+    single.with_suffix(".json").write_text(json.dumps({
+        "channel1": {"LongName": "Counter"},
+        "LSLSource": {"Name": "Counter", "ChannelFormat": "int64", "SourceID": "count"},
+    }), encoding="utf-8")
+    one, one_stamp = read_bids_signal(single, sfreq=20)
+    assert one.n_times == 1 and one.get_data()[0, 0] == 7
+    np.testing.assert_array_equal(one_stamp, [0.3])

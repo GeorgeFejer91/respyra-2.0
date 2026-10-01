@@ -53,7 +53,8 @@ def _write_signal(stream, destination, origin, label):
     if any(len(row) != count for row in series):
         raise ValueError("XDF stream channel count changed during recording")
     columns = ["timestamp", *[f"channel{index + 1}" for index in range(count)]]
-    numeric = _field(stream["info"], "channel_format") != "string"
+    channel_format = _field(stream["info"], "channel_format")
+    numeric = channel_format != "string"
     frequency = _regular_frequency(stream) if numeric else None
     info = stream["info"]
     metadata = {
@@ -92,8 +93,12 @@ def _write_signal(stream, destination, origin, label):
             values = []
             for value in row:
                 if numeric:
-                    number = float(value)
-                    values.append(format(number, ".9g") if math.isfinite(number) else "n/a")
+                    if channel_format.startswith("int"):
+                        values.append(str(int(value)))
+                    else:
+                        number = float(value)
+                        precision = ".17g" if channel_format in ("double64", "float64") else ".9g"
+                        values.append(format(number, precision) if math.isfinite(number) else "n/a")
                 else:
                     values.append(str(value))
             writer.writerow([format(float(stamp) - origin, ".9f"), *values])

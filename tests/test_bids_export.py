@@ -28,8 +28,12 @@ def test_bids_export_writes_events_and_timed_breathing(monkeypatch, tmp_path):
     ecg["info"].update({"name": ["Polar ECG"], "desc": [{"processing": ["raw"]}]})
     status = stream("mini-status", [10.12], [["ready"]])
     status["info"]["channel_format"] = ["string"]
+    counter = stream("mini-counter", [10.12], [[2**53 + 1]])
+    counter["info"]["channel_format"] = ["int64"]
+    double = stream("vernier-double", [10.13], [[1.2345678901234567]])
+    double["info"]["channel_format"] = ["double64"]
     empty = stream("mini-empty", [], [])
-    monkeypatch.setattr("pyxdf.load_xdf", lambda *args, **kwargs: ([raw, markers, calibrated, mini, ecg, status, empty], {}))
+    monkeypatch.setattr("pyxdf.load_xdf", lambda *args, **kwargs: ([raw, markers, calibrated, mini, ecg, status, counter, double, empty], {}))
 
     for run in (1, 2):
         directory = export_bids(tmp_path / "recording.xdf", tmp_path, ("raw", "markers", "calibrated"), "P002", "001")
@@ -56,7 +60,11 @@ def test_bids_export_writes_events_and_timed_breathing(monkeypatch, tmp_path):
         assert "SamplingFrequency" not in mini_sidecar
         assert (directory / f"{stem}_recording-lsl02_physio.tsv.gz").exists()
         assert (directory / f"sub-002_ses-001_task-respyra_acq-lsl03_run-{run:02d}_beh.tsv").exists()
-        assert not list(directory.glob(f"*lsl04*run-{run:02d}*"))
+        counter_path = directory / f"sub-002_ses-001_task-respyra_acq-lsl04_run-{run:02d}_beh.tsv"
+        assert counter_path.read_text(encoding="utf-8").splitlines()[1].endswith(str(2**53 + 1))
+        double_path = directory / f"sub-002_ses-001_task-respyra_acq-lsl05_run-{run:02d}_beh.tsv"
+        assert float(double_path.read_text(encoding="utf-8").splitlines()[1].split("\t")[1]) == 1.2345678901234567
+        assert not list(directory.glob(f"*lsl06*run-{run:02d}*"))
     assert json.loads((tmp_path / "bids/dataset_description.json").read_text())["BIDSVersion"] == "1.11.2"
     markers["time_series"][0] = ["invalid json"]
     with pytest.raises(json.JSONDecodeError):

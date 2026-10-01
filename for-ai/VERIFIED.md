@@ -601,11 +601,23 @@ the respective scope needs current evidence; panel styling does not need it.
   100 Hz; returned original timestamp counts matched 384 and 295 samples.
   MNE also read Vernier's 11-channel raw outlet and one-channel derived waveform
   at an explicitly requested 50 Hz, returning 661 original timestamps for each.
+- Repeatable gate, 2026-10-01: `tests/check_bids_compatibility.py` ran on the
+  same retained Polar and Vernier XDFs plus a native recorder proof XDF containing
+  an anonymous int64 outlet. It checked 10/3/4 streams and 2,663/1,971/393
+  sample rows against XDF, parsed every signal path with MNE-BIDS 0.20.0, and
+  opened 10/3/4 numeric signals as MNE Raw with MNE 1.13.2 on Python 3.12.
+  All three datasets had zero `bids-validator@1.15.0` errors and the optional
+  `NO_AUTHORS` warning. The int64 BIDS table retained `9007199254740993`
+  exactly. Focused exporter/recording tests passed 16 tests and the isolated
+  MNE reader test passed one test against the final gate inputs.
 - Inputs: ignored Polar mock XDF SHA-256
   `3d1762ca8215da2e12bb1715c171ca3762a2a90a3e86154520192f086ca1d254`;
   ignored Vernier mock XDF SHA-256
-  `fcd2f4e804df53b606951b251fc95f2be68421049ffbcf06195c327e652dabcb`.
+  `fcd2f4e804df53b606951b251fc95f2be68421049ffbcf06195c327e652dabcb`;
+  ignored native int64 proof XDF SHA-256
+  `aa71278f3b06adb16ec163d566395ed02cd0135f3d656ac629e55e1a8089ae1a`.
 - Limits: synthetic Mini outlets, offline conversion, deprecated npm validator;
   no physical sensor, installed Respyra run, or direct
   `mne_bids.read_raw_bids()` qualification. Irregular signals require explicit
-  resampling for MNE Raw. XDF preserves the original values and timestamps.
+  resampling for MNE Raw. MNE-BIDS parsed BIDS paths; it was not used as a
+  generic physiology Raw reader. XDF preserves the original values and timestamps.

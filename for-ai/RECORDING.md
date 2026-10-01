@@ -63,6 +63,9 @@ Source/provenance is in `native/recorder/README.md`.
   behavioral tables. Each table preserves the original sample timestamps relative
   to the selected raw input and sidecar metadata preserves LSL identity, labels,
   units, channel order and processing provenance. Do not invent dropped samples.
+  BIDS tables preserve integer channel values exactly and retain double-precision
+  values to round-trip precision; MNE Raw may lose precision for integers above
+  2^53, so the BIDS table and XDF remain the data authority for those channels.
   `mpi.bids_mne.read_bids_signal` opens fixed-rate physiology as MNE Raw and
   requires an explicit rate for irregular resampling; all channels remain MNE
   `misc` until their physical units and type are mapped deliberately. XDF remains

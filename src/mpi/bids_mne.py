@@ -16,7 +16,8 @@ def read_bids_signal(path: str | Path, *, sfreq: float | None = None):
 
     Fixed-rate physiology needs no rate argument. An irregular ``_beh.tsv``
     requires ``sfreq``; its finite adjacent samples are linearly interpolated
-    onto that grid. Missing values remain gaps. All channels are MNE ``misc``
+    onto that grid; a lone sample is kept as one sample. Missing values remain
+    gaps. All channels are MNE ``misc``
     because LSL physical units can differ from MNE's ECG/RESP voltage units.
     Exact recorded times and channel units remain in the BIDS table and sidecar.
     """
@@ -53,9 +54,7 @@ def read_bids_signal(path: str | Path, *, sfreq: float | None = None):
         raise ValueError("BIDS signal timestamps must be finite and increasing")
     data = np.array([[float("nan") if cell == "n/a" else float(cell) for cell in row[1:]]
                      for row in rows], dtype=float).T
-    if path.name.endswith("_beh.tsv"):
-        if len(stamps) < 2:
-            raise ValueError("At least two source samples are needed for resampling")
+    if path.name.endswith("_beh.tsv") and len(stamps) > 1:
         grid = stamps[0] + np.arange(math.floor((stamps[-1] - stamps[0]) * rate) + 1) / rate
         sampled = np.full((data.shape[0], len(grid)), np.nan)
         for index, channel in enumerate(data):
