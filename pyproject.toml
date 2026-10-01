@@ -11,6 +11,7 @@ dependencies = [
     "pylsl>=1.18.5",
     "numpy>=2.2.6",
     "matplotlib>=3.10.9",
+    "pyxdf==1.17.5",
 ]
 
 [build-system]
@@ -23,7 +24,6 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
-    "pyxdf==1.17.5",
 ]
 notebooks = [
     "jupyter==1.1.*",

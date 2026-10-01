@@ -1251,13 +1251,13 @@ dependencies = [
     { name = "numpy" },
     { name = "psychopy" },
     { name = "pylsl" },
+    { name = "pyxdf" },
     { name = "respyra" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
-    { name = "pyxdf" },
 ]
 notebooks = [
     { name = "ipympl" },
@@ -1270,14 +1270,12 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "psychopy", specifier = ">=2026.2.1" },
     { name = "pylsl", specifier = ">=1.18.5" },
+    { name = "pyxdf", specifier = "==1.17.5" },
     { name = "respyra", specifier = ">=0.4.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "pyxdf", specifier = "==1.17.5" },
-]
+dev = [{ name = "pytest", specifier = ">=9.1.1" }]
 notebooks = [
     { name = "ipympl", specifier = ">=0.10.0" },
     { name = "jupyter", specifier = "==1.1.*" },

@@ -582,3 +582,28 @@ the respective scope needs current evidence; panel styling does not need it.
   artifact were not exercised in an isolated desktop for this change. No physical belt,
   full-duration run or MNE-BIDS import was tested. The validator version is the
   deprecated npm CLI, not the newer Deno validator.
+
+### All-stream BIDS export and MNE analysis reader
+
+- Result/date: `VERIFIED` for source-level and offline mock XDF checks,
+  2026-10-01. This supersedes the previous entry's selected-only BIDS coverage
+  and median-rate physiology description; installed runtime remains `NOT RUN`.
+- Checks: focused `pytest tests/test_bids_export.py tests/test_recording.py -q`
+  passed 16 tests. Isolated MNE 1.10.2 `pytest tests/test_bids_mne.py -q`
+  passed one test. `uv tree --no-dev` includes PyXDF 1.17.5 in the runtime
+  dependency set. A retained Polar mock XDF exported 10 nonempty streams;
+  2,663 rows were independently compared to the XDF for timestamps, values,
+  channel count and stream identity. An empty status outlet stayed only in XDF.
+  A separate Vernier mock XDF exported raw and derived outlets. Each BIDS
+  dataset passed `bids-validator@1.15.0 --json` with zero errors and one optional
+  `NO_AUTHORS` warning. MNE 1.10.2 read the Polar raw ECG physiology at 130 Hz
+  and the irregular selected breathing waveform at an explicitly requested
+  100 Hz; returned original timestamp counts matched 384 and 295 samples.
+- Inputs: ignored Polar mock XDF SHA-256
+  `3d1762ca8215da2e12bb1715c171ca3762a2a90a3e86154520192f086ca1d254`;
+  ignored Vernier mock XDF SHA-256
+  `fcd2f4e804df53b606951b251fc95f2be68421049ffbcf06195c327e652dabcb`.
+- Limits: synthetic Mini outlets, offline conversion, deprecated npm validator;
+  no physical sensor, installed Respyra run, or direct
+  `mne_bids.read_raw_bids()` qualification. Irregular signals require explicit
+  resampling for MNE Raw. XDF preserves the original values and timestamps.

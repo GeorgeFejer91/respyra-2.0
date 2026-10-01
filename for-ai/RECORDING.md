@@ -56,9 +56,17 @@ Source/provenance is in `native/recorder/README.md`.
   The local folder icon opens it; Settings chooses a new writable folder only
   during setup. Choosing a folder does not move earlier files. After XDF
   verification and promotion, `mpi.bids_export` writes `bids/` with BIDS 1.11.2
-  behavioral events and raw/calibrated breathing physio pairs. Its timestamps
-  preserve recorded LSL sample times and its sampling rate is the median observed
-  rate. XDF remains the full-stream timing authority. BIDS export failure reports
+  behavioral events and every nonempty recorded outlet, including Polar and Vernier
+  Mini streams. A numeric outlet is BIDS physiology only when its positive nominal
+  rate agrees with every recorded interval within 2%; otherwise use a timed
+  `_beh.tsv` table without asserting a regular rate. String outlets also use timed
+  behavioral tables. Each table preserves the original sample timestamps relative
+  to the selected raw input and sidecar metadata preserves LSL identity, labels,
+  units, channel order and processing provenance. Do not invent dropped samples.
+  `mpi.bids_mne.read_bids_signal` opens fixed-rate physiology as MNE Raw and
+  requires an explicit rate for irregular resampling; all channels remain MNE
+  `misc` until their physical units and type are mapped deliberately. XDF remains
+  the full-stream timing authority, including empty streams. BIDS export failure reports
   an error while preserving the verified XDF and participant record. Earlier
   recordings in `%LOCALAPPDATA%/Respira/data` remain untouched.
 - Participant number (0–100) and up to six custom label/value pairs are saved

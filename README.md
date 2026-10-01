@@ -122,7 +122,9 @@ Every run saves the original sample CSV columns and companion
 `-self-assessment.csv` file alongside the XDF in the remembered recording
 folder, using the existing respyra logger. Choose the folder in desktop Settings;
 the folder icon beside Start opens it. A `bids/` subfolder contains behavioral
-events and selected breathing physiology in BIDS TSV/JSON form. CSV writes flush
+events and every nonempty recorded LSL stream in BIDS TSV/JSON form, with
+fixed-rate signals as physiology and irregular signals as timed tables. The
+[BIDS and MNE guide](docs/bids-mne.md) shows how to open these signals. CSV writes flush
 each row and may add disk latency. The one-channel
 `Respyra-Events` stream sends named JSON markers documented in
 [`src/mpi/event_markers/catalog.json`](src/mpi/event_markers/catalog.json).

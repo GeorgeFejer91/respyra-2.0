@@ -57,7 +57,11 @@ feedback. See `RECORDING.md`.
   task using that source and `respyra`'s existing study phases; it passes a
   respyra's DataLogger for automatic original-schema sample and assessment CSVs.
   After verified XDF promotion, `mpi.bids_export` creates a behavioral BIDS
-  dataset with events and selected raw/calibrated breathing physiology.
+  dataset for every nonempty recorded LSL outlet. Fixed-rate numeric outlets
+  become physiology; irregular, sparse, and string outlets become timed
+  behavioral tables. Respyra markers become BIDS events. `mpi.bids_mne` reads
+  numeric tables into MNE Raw, requiring an explicit resampling rate for
+  irregular data. The XDF retains exact source data and empty outlets.
 - `web/` is plain HTML/CSS/JS with locally bundled Pretext/fonts. `src-tauri/`
   supervises one Python child through closed commands (`launch_backend`,
   `setup_action`, `close_app`, `viewer_action`) and private bounded JSON pipes. Python is the

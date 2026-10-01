@@ -58,14 +58,15 @@ monitor; select **Experiment controls** to set up the study.
 
 The original sample and assessment CSV files are saved automatically alongside
 every XDF, with their original schemas. A `bids` subfolder contains a BIDS
-behavioral dataset: `sub-<number>/ses-001/beh/` holds event TSV/JSON and
-selected raw and calibrated breathing `physio.tsv.gz`/JSON pairs. BIDS physiology
-includes a timestamp column for the actual recorded sample times; its declared
-sampling rate is the median observed rate. The XDF remains the authoritative
-full-rate archive of all recorded LSL streams. The separate CSV files retain
-their existing study format. The BIDS physiology files are standard tabular
-breathing data; a generic breathing recording is not a one-call MNE-BIDS
-`read_raw_bids()` neural Raw import. Source identity remains in
+behavioral dataset: `sub-<number>/ses-001/beh/` holds event TSV/JSON and every
+nonempty recorded LSL outlet. Fixed-rate numeric outlets use `physio.tsv.gz`/JSON;
+irregular or sparse outlets use timestamped `beh.tsv`/JSON. All signal tables
+retain their actual recorded sample times and sidecars describe the original
+channels, units and LSL provenance. The XDF remains the authoritative archive,
+including outlets with no samples. The separate CSV files retain their existing
+study format. See [BIDS and MNE analysis](bids-mne.md) for opening a signal in
+MNE and the explicit resampling step for irregular data. Generic physiology is
+not a one-call MNE-BIDS `read_raw_bids()` neural Raw import. Source identity remains in
 `%LOCALAPPDATA%\Respyra\lsl-source.json` for compatibility with prior launches.
 The uninstaller is intended to remove the program and retain user
 recordings/settings. That behavior has not been qualified for v0.3.4.
