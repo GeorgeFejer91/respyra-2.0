@@ -111,7 +111,9 @@ static std::string hex_text(const std::string &value) {
     sdk = STAGE / "sdk/liblsl-1.18.0-Win_amd64"
     generator = os.environ.get("CMAKE_GENERATOR") or ("NMake Makefiles" if os.environ.get("CXX") else None)
     single_config = generator is not None and not generator.startswith("Visual Studio")
-    build_dir = STAGE / ("build-single" if single_config else "build")
+    # CMake caches its generator; keep Ninja and NMake outputs separate.
+    build_name = "build-ninja" if generator == "Ninja" else "build-single" if single_config else "build"
+    build_dir = STAGE / build_name
     configure = ["cmake", "-S", str(SOURCE), "-B", str(build_dir)]
     configure += ["-G", generator] if generator else []
     configure += ["-DCMAKE_BUILD_TYPE=Release"] if single_config else ["-A", "x64"]
