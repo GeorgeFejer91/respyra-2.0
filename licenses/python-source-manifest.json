@@ -540,6 +540,15 @@
     "notice_files": 1
   },
   {
+    "name": "pyxdf",
+    "version": "1.17.5",
+    "filename": "pyxdf-1.17.5.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/f6/e9/0e34f94f443fa88d70ddce91d4f3fbce319165dee09309e6ba6029cb1eda/pyxdf-1.17.5.tar.gz",
+    "sha256": "97ab76e066855ed2233ebd8a2b046ea01306c5846a9471194c6dbc7e3a6a7bf4",
+    "size": 35635,
+    "notice_files": 1
+  },
+  {
     "name": "PyYAML",
     "version": "6.0.3",
     "filename": "pyyaml-6.0.3.tar.gz",
