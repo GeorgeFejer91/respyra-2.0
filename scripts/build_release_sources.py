@@ -45,6 +45,26 @@ def main() -> None:
     installer = DIST / f"Respyra 2.0_{version}_x64-setup.exe"
     check(installer.is_file(), "Matching NSIS installer is missing")
     installer_sha256 = digest(installer)
+    suite_path = DIST / "suite-manifest.json"
+    suite = json.loads(suite_path.read_text(encoding="utf-8")) if suite_path.is_file() else None
+    mini_tar = None
+    if suite:
+        mini_root = ROOT / "mini-streams"
+        mini_revision = subprocess.check_output(["git", "-C", str(mini_root), "rev-parse", "HEAD"], text=True).strip()
+        pinned_revision = subprocess.check_output(["git", "rev-parse", "HEAD:mini-streams"], cwd=ROOT, text=True).strip()
+        check(mini_revision == pinned_revision == suite["mini_revision"], "Suite Mini source revision mismatch")
+        check(suite["respyra_revision"] == revision and suite["respyra_installer_sha256"] == installer_sha256,
+              "Suite manifest differs from Respyra source or installer")
+        for name, expected in [(suite["suite_installer"], suite["suite_installer_sha256"]),
+                               *[(item["installer"], item["installer_sha256"]) for item in suite["mini_apps"]]]:
+            check(digest(DIST / name) == expected, f"Suite asset mismatch: {name}")
+        for item in suite["mini_apps"]:
+            check(digest(ROOT / ".for-ai-local/suite" / Path(item["executable"]).relative_to("suite")) ==
+                  item["executable_sha256"], f"Suite executable mismatch: {item['product']}")
+            for name, expected in item["resources"].items():
+                check(digest(ROOT / ".for-ai-local/suite" / Path(item["executable"]).relative_to("suite").parent / name)
+                      == expected, f"Suite resource mismatch: {item['product']}/{name}")
+        mini_tar = subprocess.check_output(["git", "archive", "--format=tar", "HEAD"], cwd=mini_root)
 
     python_manifest_path = staged / "notices/python-source-manifest.json"
     python_packages_path = staged / "notices/python-packages.json"
@@ -136,6 +156,7 @@ asset. Build prerequisites and the ordinary build command are in
 `docs/windows-install.md` and `scripts/package-windows.ps1`. The build recipe
 fetches official CPython, WebView2 when absent, and locked binary wheels;
 the source archives here provide their corresponding inspectable source.
+{"The pinned Mini app source is in `mini-streams/` at revision `" + suite["mini_revision"] + "`." if suite else ""}
 
 This bundle is supplied for the exact public installer, including licenses and
 the ability to inspect and modify covered code. Different platforms, optional
@@ -148,6 +169,10 @@ notebook dependencies, and unrelated development caches are outside its scope.
         "python_archives": len(python_sources), "cargo_registry_crates": len(vendored),
         "bidi_registry_crates": len(bidi_vendored), "native_archives": len(native["archives"]),
     }
+    if suite:
+        source_manifest.update(suite_installer=suite["suite_installer"],
+                               suite_installer_sha256=suite["suite_installer_sha256"],
+                               mini_revision=suite["mini_revision"])
     git_tar = subprocess.check_output(["git", "archive", "--format=tar", "HEAD"], cwd=ROOT)
     with zipfile.ZipFile(source_path, "w", allowZip64=True, strict_timestamps=False) as output:
         with tarfile.open(fileobj=io.BytesIO(git_tar), mode="r:") as tracked:
@@ -155,6 +180,12 @@ notebook dependencies, and unrelated development caches are outside its scope.
                 if member.isfile():
                     data = tracked.extractfile(member).read()
                     output.writestr("source/" + member.name, data, compress_type=zipfile.ZIP_DEFLATED)
+        if mini_tar:
+            with tarfile.open(fileobj=io.BytesIO(mini_tar), mode="r:") as tracked:
+                for member in tracked:
+                    if member.isfile():
+                        output.writestr("source/mini-streams/" + member.name,
+                                        tracked.extractfile(member).read(), compress_type=zipfile.ZIP_DEFLATED)
         output.writestr("source/RELEASE-SOURCES.md", readme, compress_type=zipfile.ZIP_DEFLATED)
         output.writestr("source/RELEASE-SOURCES.json", json.dumps(source_manifest, indent=2) + "\n",
                         compress_type=zipfile.ZIP_DEFLATED)
@@ -181,8 +212,11 @@ notebook dependencies, and unrelated development caches are outside its scope.
                     output.write(path, "source/bidi-cargo-vendor/" + path.relative_to(BIDI_VENDOR).as_posix(),
                                  compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
     sums = DIST / "SHA256SUMS.txt"
-    sums.write_text(f"{installer_sha256}  {installer.name}\n{digest(source_path)}  {source_name}\n"
-                    f"{digest(runtime_path)}  {runtime_path.name}\n", encoding="ascii")
+    assets = [installer, source_path, runtime_path]
+    if suite:
+        assets += [DIST / suite["suite_installer"], suite_path]
+        assets += [DIST / item["installer"] for item in suite["mini_apps"]]
+    sums.write_text("".join(f"{digest(path)}  {path.name}\n" for path in assets), encoding="ascii")
     print(f"Source bundle ready: {source_path.name} ({source_path.stat().st_size:,} bytes)")
 
 

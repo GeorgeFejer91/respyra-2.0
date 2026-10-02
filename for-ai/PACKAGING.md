@@ -12,6 +12,20 @@ launch them on the user's active desktop; missing isolation leaves those gates
 
 ## Contract and ownership
 
+- `pnpm package:windows` remains the independent Respyra installer. `pnpm
+  package:suite` builds it plus the two Mini installers from the pinned,
+  clean `mini-streams` submodule, extracts each finalized Mini executable and
+  resources, and adds them through `src-tauri/suite.conf.json`. The suite keeps
+  Respyra's app identity and install folder. Its NSIS hook creates Polar,
+  Vernier, and full-suite shortcuts beside the normal Respyra shortcut; the
+  launcher starts both Minis before Respyra. Do not bundle loose pre-installer
+  Mini executables or silently replace saved Mini preferences.
+- The suite and standalone Mini installers are separate release assets. Record
+  each exact installer, extracted Mini executable, resource hash, submodule
+  revision, and suite installer in `dist/suite-manifest.json` and the release
+  checksums. A source companion for the suite must include the pinned Mini
+  source alongside Respyra's normal source bundle.
+
 - Product display name: **Respyra 2.0**. Retain app ID `dev.georgefejer.respyra2`,
   Python names `mpi`/`respyra`, raw Force units and existing study semantics.
 - Windows 10/11 x64 only for this installer. Raspberry Pi/macOS are separate
@@ -85,6 +99,13 @@ launch them on the user's active desktop; missing isolation leaves those gates
    Check upgrade/uninstall retains the test recording before release promotion.
    Installed scope is separate from scientific timing, physical
    belt/phone, full study calibration/timing, clean VM, other OS, upgrade and uninstall evidence.
+   For a suite candidate, additionally inspect the extracted installer for
+   both complete Mini payloads and four shortcuts, then install it in an
+   isolated Windows session and launch each shortcut. Confirm that both Mini
+   apps publish their selected outlets, reconnect only the last saved device
+   when enabled, and Respyra reconnects its accepted LSL identity. Check the
+   unified shortcut starts all three once, and suite uninstall retains
+   recordings and app settings. Headless HTML checks do not replace this.
 8. After exact installer qualification, run `python scripts/build_release_sources.py`
    to verify pinned Python, Rust and native source archives and write the source
    companion ZIP beside the installer. Keep the source ZIP and

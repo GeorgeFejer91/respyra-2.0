@@ -1,7 +1,11 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra-2.0_0.3.4_x64-setup.exe` on Windows 10/11 x64. The installer lets you
-choose a destination folder, creates a Respyra 2.0 Start menu shortcut and provides
+Run `Respyra 2.0_0.3.5_x64-setup.exe` on Windows 10/11 x64 for Respyra alone,
+or `Respyra-Suite_0.3.5_x64-setup.exe` for Respyra plus Polar Stream Mini and
+Vernier Stream Mini. The suite adds four Start menu shortcuts: one for each
+program and **Launch full suite**. The latter starts the two sensor publishers
+and Respyra together. The installer lets you choose a destination folder, creates
+a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
 folder on the destination page if desired.
@@ -16,10 +20,14 @@ its bootstrapper and runtime from Microsoft; that first installation requires
 Internet access. Later launches do not need it for the local study.
 The Windows Universal C Runtime supplied by Windows 10/11 is required.
 QR phone pairing uses the public GitHub Pages controller and VDO.Ninja and
-also needs Internet access. Hardware acquisition uses a separate
-[Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Vernier-Stream-Mini_0.6.3_x64-setup.exe)
-or [Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Polar-Stream-Mini_0.6.3_x64-setup.exe)
-program. Respyra 2.0 owns recording; a separate LSL recorder is unnecessary.
+also needs Internet access. Hardware acquisition uses the included Mini apps
+when installed as a suite. The same release also offers separate Polar and
+Vernier installers. Each Mini remembers the last successfully connected device
+and, with Automatic reconnect enabled, retries that device on the next launch.
+Fresh Polar settings publish the available raw ECG, ACC, heart rate and RR
+outputs plus the breathing and breathing-dynamics metrics and an All-in-one
+outlet. Saved metric choices take precedence over the defaults. Respyra 2.0
+owns recording; a separate LSL recorder is unnecessary.
 
 Open Respyra 2.0 to use **Experiment control**. Select a participant number from
 0 to 100 and enter any custom variable labels and values. These fields save
@@ -69,7 +77,7 @@ MNE and the explicit resampling step for irregular data. Generic physiology is
 not a one-call MNE-BIDS `read_raw_bids()` neural Raw import. Source identity remains in
 `%LOCALAPPDATA%\Respyra\lsl-source.json` for compatibility with prior launches.
 The uninstaller is intended to remove the program and retain user
-recordings/settings. That behavior has not been qualified for v0.3.4.
+recordings/settings. That behavior must be qualified for each installer version.
 Startup diagnostics are in `engine.log` beside the installed Respyra program (replaced on each
 launch); keep this local when it contains experiment identifiers.
 
@@ -83,10 +91,13 @@ hashes are in `engine/manifest.json`.
 Physical belt behavior, physical phone pairing and scientific display timing
 need validation on the study computer; synthetic-source checks do not prove them.
 
-Build from source on Windows using the tools in the root README:
+Build from source on Windows using the tools in the root README. Initialize
+the `mini-streams` submodule and install 7-Zip before the suite build; it
+extracts the Mini executables from their finalized installers.
 
 ```powershell
 pnpm package:windows
+pnpm package:suite
 # Regenerate icon formats from the vector logo only when needed:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-windows.ps1 -GenerateIcons
 ```

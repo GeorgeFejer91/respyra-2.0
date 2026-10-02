@@ -1,0 +1,4 @@
+[submodule "mini-streams"]
+	path = mini-streams
+	url = https://github.com/GeorgeFejer91/Polar-Mini-Stream.git
+	branch = codex/polar-mock-respyra

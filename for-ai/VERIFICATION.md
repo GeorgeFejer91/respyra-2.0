@@ -365,6 +365,9 @@ button and chooser, XDF/CSV/BIDS writes there, remembered selection after restar
 and retention after uninstall or upgrade in an isolated install location.
 Installer dialogs and installed native checks also require isolated execution;
 an unavailable isolated runner leaves those release gates unverified.
+For suite work, also use `pnpm package:suite`, inspect the finalized suite
+payload and `suite-manifest.json`, and apply the suite-specific installed
+shortcuts, reconnection, launch and uninstall checks in `PACKAGING.md`.
 
 1. Review status and diff; preserve unrelated changes.
 2. Confirm only intended paths are staged.

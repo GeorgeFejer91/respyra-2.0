@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-**[Project website](https://georgefejer91.github.io/respyra-2.0/)** · **[Download the Windows installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.3)** · [Installation guide](docs/windows-install.md)
+**[Project website](https://georgefejer91.github.io/respyra-2.0/)** · **[Windows releases](https://github.com/GeorgeFejer91/respyra-2.0/releases)** · [Installation guide](docs/windows-install.md)
 
 Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -11,7 +11,7 @@ and records LSL to XDF automatically.
 
 The study builds on [the original respyra toolbox by Micah Allen and the Embodied Computation Group](https://github.com/embodied-computation-group/respyra). Cite its preprint when using that work: Allen, M. (2026). *respyra: A General-Purpose Respiratory Tracking Toolbox for Interoception Research*. [PsyArXiv](https://osf.io/preprints/psyarxiv/wjuce_v1).
 
-The separate [Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Vernier-Stream-Mini_0.6.3_x64-setup.exe) and [Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Polar-Stream-Mini_0.6.3_x64-setup.exe) Windows installers provide compatible LSL streams; see their [project and releases](https://github.com/GeorgeFejer91/Polar-Mini-Stream).
+The pinned `mini-streams` submodule provides [Vernier Stream Mini and Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream). `pnpm package:suite` builds both individual Mini installers, the separate Respyra installer, and a suite installer with all three applications and a common launcher. Clone with `git clone --recurse-submodules` to build the suite.
 
 The importable Python package keeps its original name, `mpi`.
 

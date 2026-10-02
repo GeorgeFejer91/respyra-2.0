@@ -107,7 +107,11 @@ feedback. See `RECORDING.md`.
 ## Signal boundary
 
 - Stream ecosystem: [Polar Stream Mini and Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream)
-  are the LSL applets this toolbox is currently optimized to receive. Its
+  are pinned in the `mini-streams` submodule for the Windows suite build. Each
+  keeps its own app identity and independent installer. The suite variant of
+  Respyra's installer carries both finalized Mini payloads and adds three
+  application shortcuts plus one launcher. These are the LSL applets this
+  toolbox is currently optimized to receive. Its
   bundled LSL recorder is designed to capture streams published by both. The
   breathing study can use Vernier raw Force (N) or either exact Polar candidate.
 - Study input: Vernier Stream Mini raw Force or the exact Polar PCA/signed Phan
