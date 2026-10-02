@@ -85,7 +85,7 @@ worker = threading.Thread(target=push)
 worker.start()
 recorder = NativeRecording(bundle, proof.name)
 try:
-    recorder.start({"participant": "package-proof", "session": "001"},
+    recorder.start({"participant": "P001", "session": "001"},
                    SimpleNamespace(source_id=identity, calibrated_id=derived_id,
                                    get_all=lambda: []), markers)
     markers.emit("recording.finalizing")
