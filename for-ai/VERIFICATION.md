@@ -331,7 +331,7 @@ gate from the Respyra root with paths to that run's XDF and BIDS events file:
 .venv/Scripts/python.exe -m pytest tests/test_bids_export.py tests/test_recording.py -q
 $xdf = 'C:\recordings\run.xdf'
 $events = 'C:\recordings\bids\sub-002\ses-001\beh\sub-002_ses-001_task-respyra_run-01_events.tsv'
-python -m uv run --no-project --python 3.12 --with mnelab==1.5.6 --with pyxdf==1.17.5 python tests/check_xdf_mne_compatibility.py --xdf $xdf --resample-hz 100 --require-metadata --require-run-metadata --mnelab
+python -m uv run --no-project --python 3.12 --with mne==1.13.2 --with mnelab==1.5.6 --with pyxdf==1.17.5 python tests/check_xdf_mne_compatibility.py --xdf $xdf --resample-hz 100 --require-metadata --require-run-metadata --mnelab
 python -m uv run --no-project --python 3.12 --with mne==1.13.2 --with mne-bids==0.20.0 --with pyxdf==1.17.5 python tests/check_bids_compatibility.py --xdf $xdf --events $events --resample-hz 100
 ```
 

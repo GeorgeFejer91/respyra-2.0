@@ -621,3 +621,28 @@ the respective scope needs current evidence; panel styling does not need it.
   `mne_bids.read_raw_bids()` qualification. Irregular signals require explicit
   resampling for MNE Raw. MNE-BIDS parsed BIDS paths; it was not used as a
   generic physiology Raw reader. XDF preserves the original values and timestamps.
+
+### Direct recorded-XDF MNE import
+
+- Result/date: `VERIFIED` for headless synthetic XDF import, 2026-10-02;
+  tested source commit `a4292c9`. This is separate from BIDS export evidence.
+- Checks: `.venv/Scripts/python.exe -m pytest tests/test_event_markers.py
+  tests/test_recording.py -q` passed 24 tests; `.venv/Scripts/python.exe
+  tests/check_recording.py` wrote a fresh five-stream XDF and independently
+  confirmed `recording.started` subject `002`, session `001`, task `respyra`,
+  and custom Age field. `tests/check_xdf_mne_compatibility.py` with pinned
+  PyXDF 1.17.5, MNE 1.13.2, MNELAB 1.5.6 / mnextend 0.3.0 and `--mnelab`
+  passed on retained Polar and Vernier mock XDFs plus that fresh native XDF.
+  Polar: 10 numeric streams opened as MNE Raw, 16 events, MNELAB selected raw
+  and events opened. Vernier: 3 numeric streams, 1,468 events, same MNELAB
+  import. Fresh native: 4 numeric streams, 7 events, same MNELAB import and
+  `--require-run-metadata` pass. Irregular streams used explicit 100/50 Hz
+  analysis grids with gaps represented as NaN; XDF retains original stamps.
+- XDF SHA-256: Polar `3d1762ca8215da2e12bb1715c171ca3762a2a90a3e86154520192f086ca1d254`;
+  Vernier `fcd2f4e804df53b606951b251fc95f2be68421049ffbcf06195c327e652dabcb`;
+  fresh native `4fc70450ff497d063313fef43634f919af4e2829bfbea3d928b741e764612a9`.
+- Limits: Retained Mini XDFs predate the new run marker fields; the fresh
+  native XDF proves those fields but uses synthetic non-Mini producers. PyXDF
+  reported clock-segment warnings for the retained Polar recording. No new
+  installed app, physical sensor, or full study was qualified. XDF is not a
+  BIDS-valid raw format.
