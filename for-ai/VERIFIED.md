@@ -646,3 +646,23 @@ the respective scope needs current evidence; panel styling does not need it.
   reported clock-segment warnings for the retained Polar recording. No new
   installed app, physical sensor, or full study was qualified. XDF is not a
   BIDS-valid raw format.
+
+### Respyra 0.3.5 three-program suite candidate
+
+- Result/date: `PARTIAL`, 2026-10-02. Respyra source `ad334674b82d1c1e86f2400960cd82c94469cb04`
+  and pinned Mini source `6746ecf49f174fcf467b445c1b50b9b8dbaa5fc3`; both clean at build.
+  The exact suite installer SHA-256 is `41310f536e9e54c44a5bd3f99d2c200aede0366af85b38465c5dcae3daee4989`.
+- Checks: `pnpm package:suite` built the suite and three standalone installers.
+  `python scripts/build_release_sources.py` verified the pinned sources and
+  produced the 704 MB companion ZIP; all seven `dist/SHA256SUMS.txt` hashes
+  matched. The exact suite installer was installed silently on a private Win32
+  desktop into `.for-ai-local/Installed Respyra Suite ad33467/`. All 18,448
+  engine files, both Mini executables and their 25 resources matched manifests.
+  Four Start menu shortcuts resolved to the installed targets, `data/` existed,
+  and the installed isolated Python/recorder check passed a native three-stream
+  XDF round trip. `tests/check_suite_launcher.ps1` passed.
+- Limits: the current private desktop could not create a Mini WebView window;
+  the same failure occurred with an older debug Mini, so installed GUI launch,
+  unified shortcut execution, real BLE reconnect, upgrade/uninstall retention,
+  and physical sensor behavior remain `NOT RUN` for this artifact. The release
+  gate in `PACKAGING.md` is unmet; no 0.3.5 GitHub Release was published.
