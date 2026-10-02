@@ -653,6 +653,9 @@ the respective scope needs current evidence; panel styling does not need it.
   and pinned Mini source `6746ecf49f174fcf467b445c1b50b9b8dbaa5fc3`; both clean at build.
   The exact suite installer SHA-256 is `41310f536e9e54c44a5bd3f99d2c200aede0366af85b38465c5dcae3daee4989`.
 - Checks: `pnpm package:suite` built the suite and three standalone installers.
+  The pinned Mini workspace passed `cargo fmt --all -- --check`,
+  `cargo test --workspace --locked`, `cargo clippy --workspace --all-targets
+  --locked -- -D warnings`, and `npm run validate:minis`.
   `python scripts/build_release_sources.py` verified the pinned sources and
   produced the 704 MB companion ZIP; all seven `dist/SHA256SUMS.txt` hashes
   matched. The exact suite installer was installed silently on a private Win32
