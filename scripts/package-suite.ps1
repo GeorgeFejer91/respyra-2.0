@@ -130,7 +130,8 @@ $manifest = [ordered]@{
     mini_apps = $miniArtifacts
 }
 $manifestPath = Join-Path $dist 'suite-manifest.json'
-$manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+[IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 8) + [Environment]::NewLine,
+    [Text.UTF8Encoding]::new($false))
 $checksums = @($standaloneName, $suiteName, 'suite-manifest.json', 'runtime-manifest.json') + @($miniArtifacts | ForEach-Object { $_.installer })
 $checksums | ForEach-Object { "$(Sha256 (Join-Path $dist $_))  $_" } |
     Set-Content -LiteralPath (Join-Path $dist 'SHA256SUMS.txt') -Encoding ascii
