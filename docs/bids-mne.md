@@ -1,5 +1,42 @@
 # BIDS and MNE analysis
 
+## Open the XDF itself
+
+The `.xdf` is the primary recording. It contains the recorded LSL signal and
+marker streams, their timestamps, and the producers' channel labels, units,
+sample formats, and provenance. Respyra's `recording.started` marker also carries
+the BIDS-style `subject`, `session`, and `task` labels and the original custom
+participant fields. Open this file directly with [PyXDF](https://github.com/xdf-modules/pyxdf)
+and [MNE-Python's documented XDF workflow](https://mne.tools/stable/auto_examples/io/read_xdf.html):
+
+```python
+import mne
+import pyxdf
+
+streams, _ = pyxdf.load_xdf("recording.xdf", dejitter_timestamps=False)
+signal = next(s for s in streams if s["info"]["type"][0] == "ECG")
+labels = [c["label"][0] for c in signal["info"]["desc"][0]["channels"][0]["channel"]]
+rate = float(signal["info"]["nominal_srate"][0])
+raw = mne.io.RawArray(signal["time_series"].T,
+                      mne.create_info(labels, rate, ch_types="misc"))
+```
+
+Select the intended stream by its `source_id` or name when several share a type.
+Map physical units deliberately before assigning MNE channel types such as ECG.
+For irregular streams (`nominal_srate == 0`), choose and document an analysis
+grid before constructing MNE `Raw`; the original XDF timestamps remain the
+timing authority. Respyra's JSON marker samples can be converted to MNE
+`Annotations` using each payload's `event` and its XDF timestamp. The
+`tests/check_xdf_mne_compatibility.py` gate exercises every nonempty numeric
+stream and the Respyra markers directly from a recorded XDF. With `--mnelab`,
+it also opens the selected raw stream and events using [MNELAB's XDF importer](https://github.com/cbrnr/mnelab).
+
+An XDF can carry BIDS-style identifiers and useful LSL metadata, but XDF is
+not a BIDS raw signal format and `mne_bids.read_raw_bids()` does not read it.
+The separate BIDS export below provides actual BIDS dataset files when needed.
+
+## Separate BIDS export
+
 Respyra writes a BIDS 1.11.2 behavioral dataset in the selected recording
 folder's `bids/` directory after a verified XDF closes. `beh/` contains Respyra
 events and one pair of files for each nonempty recorded LSL outlet, including

@@ -49,6 +49,9 @@ feedback. See `RECORDING.md`.
   reconnects saved input, and gates Start on a live accepted source plus native
   recording readiness. `src/mpi/recording.py` supervises the pinned LabRecorder
   adapter under `native/recorder/` and verifies XDF completion.
+  That XDF is the primary analysis artifact: LSL headers and the recorded
+  start marker provide channel/source and subject/session/task context for
+  direct PyXDF/MNE or MNELAB import. XDF is not itself a BIDS raw format.
   The selected source exports the accepted study calibration; `lsl_viewer.py`
   owns display-only all-stream subscriptions. `input_capture.py` owns optional
   Windows input hooks; the study owner publishes their queued marker events.

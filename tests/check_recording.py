@@ -99,6 +99,9 @@ def main():
         assert any(math.isfinite(value) for value in derived_values)
         events = [json.loads(row[0]) for row in by_id[markers.health_snapshot()["source_id"]]["time_series"]]
         names = [e["event"] for e in events]
+        recording_start = next(event for event in events if event["event"] == "recording.started")
+        assert (recording_start["subject"], recording_start["session"], recording_start["task"]) == ("002", "001", "respyra")
+        assert recording_start["variables"] == [{"label": "Age", "value": "28"}]
         for name in ["recording.started", "run.started", "calibration.attempt.started", "calibration.completed", "run.aborted", "display.closed", "recording.finalizing"]:
             assert name in names, (name, names)
         assert names.index("recording.started") < names.index("calibration.completed") < names.index("display.closed")

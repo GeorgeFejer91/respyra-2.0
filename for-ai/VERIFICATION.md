@@ -70,6 +70,7 @@ requested by the user. Keep the skills' implementation and design requirements.
 | Rust IPC, supervision, permissions or remote ownership | Rust fmt/test/clippy for the affected crate | Changed lifecycle/IPC needs the real process/native check; changed remote grants or dispatch needs remote qualification. |
 | Recorder, calibration output, input capture or XDF contracts | Corresponding focused tests and affected recording/control-center proof | Run `--full-study` only for changes affecting trial progression, calibration use, study timing/markers, all-phase logging or finalization across the complete study, or a regression in those paths. |
 | XDF-to-BIDS or MNE import | Focused exporter tests and the recorded-XDF compatibility gate below | Check every nonempty recorded outlet, values/order/units, source timestamps, events, sparse/empty stream handling and failure atomicity. Do not infer regular sampling from a median observed rate or claim generic physiology is a direct `mne_bids.read_raw_bids` neural import. |
+| Direct XDF import into MNE | Recorded-XDF PyXDF/MNE gate below, independent of BIDS export | Recheck the producer/recorder contract after LSL or marker changes; inspect numeric Raw data, irregular resampling, channel metadata and marker annotations. |
 | Locks, toolchain, runtime resources, installer or release candidate | Checks for consumers of the changed input; packaging gates for a new installer | A shared input change invalidates only its consuming evidence. Qualify each new promoted installer by exact artifact bytes as `PACKAGING.md` requires. |
 
 Trace affected callers, imports, consumers and shared assets before declaring
@@ -312,7 +313,7 @@ The auditor reads XDF stream chunks without clock synchronization/dejitter and
 checks raw ACC, both candidate/companion streams, derived samples, trial and
 marker order, calibration, saved participant state and stream footers.
 
-### Recorded XDF to BIDS and MNE compatibility
+### Recorded XDF direct MNE import and separate BIDS compatibility
 
 For a changed Mini LSL contract or BIDS exporter, capture a short Polar and
 Vernier mock run with the current Mini build and Respyra recorder. Use the
@@ -330,12 +331,20 @@ gate from the Respyra root with paths to that run's XDF and BIDS events file:
 .venv/Scripts/python.exe -m pytest tests/test_bids_export.py tests/test_recording.py -q
 $xdf = 'C:\recordings\run.xdf'
 $events = 'C:\recordings\bids\sub-002\ses-001\beh\sub-002_ses-001_task-respyra_run-01_events.tsv'
+python -m uv run --no-project --python 3.12 --with mnelab==1.5.6 --with pyxdf==1.17.5 python tests/check_xdf_mne_compatibility.py --xdf $xdf --resample-hz 100 --require-metadata --require-run-metadata --mnelab
 python -m uv run --no-project --python 3.12 --with mne==1.13.2 --with mne-bids==0.20.0 --with pyxdf==1.17.5 python tests/check_bids_compatibility.py --xdf $xdf --events $events --resample-hz 100
 ```
 
 Replace the example paths and grid rate with that run's actual files and a
 declared analysis rate; `pnpm` is required for the pinned validator command.
-The gate independently reads XDF, checks every nonempty stream against its
+The first gate opens the saved XDF itself with PyXDF and MNE, without using
+any BIDS export. It checks every nonempty numeric stream as MNE Raw, labels,
+units, timestamps, explicit resampling for irregular streams, and Respyra
+events as MNE annotations. The optional MNELAB importer path must also open
+the selected raw stream and its event annotations. New runs must include subject/session/task/custom
+variables in `recording.started`. Preserve exact timestamps and large integer
+values in XDF; MNE Raw is a regular floating-point analysis view.
+The BIDS gate independently reads XDF, checks every nonempty stream against its
 BIDS table and sidecar (timestamps, all channel values, labels, units, source
 identity and format), checks Respyra event timing, runs `bids-validator@1.15.0`
 with zero errors, parses every BIDS signal path with MNE-BIDS 0.20.0, and opens

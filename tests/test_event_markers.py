@@ -83,6 +83,7 @@ def test_recording_start_carries_setup_markers_in_order(marker):
     marker.emit("source.polarity.set", field="polar_inverted", enabled=False,
                 ui_seq=1, ui_time_ms=2)
     marker.emit("recording.started", source_ids=["input", "markers", "derived"],
+                subject="001", session="001", task="respyra", variables=[],
                 policy="visible_and_late_except_excluded", excluded_uids=[])
     start = marker._outlet.samples[-1][0]
     assert [event["seq"] for event in start["pre_recording_events"]] == [1, 2]

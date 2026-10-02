@@ -238,7 +238,11 @@ class NativeRecording:
                 if ready:
                     self.phase = "recording"
                     markers.name_locked = True
+                    subject_number = participant_number(values["participant"])
                     markers.emit("recording.started", source_ids=list(self.required),
+                                 subject=f"{subject_number:03d}" if subject_number is not None else None,
+                                 session=values["session"], task="respyra",
+                                 variables=[row.copy() for row in values.get("variables", [])],
                                  policy="visible_and_late_except_excluded", excluded_uids=sorted(excluded))
                     self.wait_for_data(self.required[1], cancel_check=cancel_check)
                     return

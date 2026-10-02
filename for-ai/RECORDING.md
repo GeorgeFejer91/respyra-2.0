@@ -72,6 +72,13 @@ Source/provenance is in `native/recorder/README.md`.
   the full-stream timing authority, including empty streams. BIDS export failure reports
   an error while preserving the verified XDF and participant record. Earlier
   recordings in `%LOCALAPPDATA%/Respira/data` remain untouched.
+- XDF is the primary cross-tool artifact. Its LSL headers retain source
+  identity, channel order, labels, units, format, rate and processing
+  provenance. The `recording.started` JSON marker stores BIDS-style subject,
+  session and task labels plus custom participant fields in the XDF itself.
+  Direct PyXDF/MNE and MNELAB import is a separate acceptance gate from BIDS TSV/JSON
+  export. XDF is not a BIDS-valid raw format; never describe its embedded
+  metadata as a BIDS validator pass or a direct `mne_bids.read_raw_bids` input.
 - Participant number (0–100) and up to six custom label/value pairs are saved
   atomically on setup edits in local user settings and restored on launch.
   Odd/even participant parity chooses the study block order; the legacy session

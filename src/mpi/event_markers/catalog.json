@@ -69,6 +69,9 @@
     "sample_count": "Number of selected input samples contributing tracking errors; null if tracking raised before returning.",
     "segments": "Ordered target sine segments, each with freq_hz and n_cycles.",
     "session": "Session identifier submitted in the HTML form.",
+    "subject": "Three-digit BIDS-style subject label for a numeric participant, otherwise null.",
+    "task": "BIDS-style task label; respyra for this study.",
+    "variables": "Original custom participant label/value pairs captured when XDF recording starts.",
     "ui_seq": "Optional, strictly increasing HTML action sequence captured before IPC; an action can cause multiple marker events.",
     "ui_time_ms": "Optional performance.now() milliseconds captured at the local or phone HTML event callback. Each browser has a separate clock, not an LSL timestamp; do not directly align it with breathing samples.",
     "ui_origin": "Optional local or remote experiment controller origin.",
@@ -99,7 +102,7 @@
   "events": {
     "input.mouse_event": {"when": "Optional mouse events during XDF recording, within Respyra windows.", "fields": ["input_action", "event_lsl_time", "scope", "x", "y", "mouse_data", "flags"]},
     "input.keyboard_event": {"when": "Optional keyboard events during XDF recording, within Respyra windows.", "fields": ["input_action", "event_lsl_time", "scope", "vk_code", "scan_code", "flags"]},
-    "recording.started": {"when": "The native recorder has subscribed to the selected input, markers and the derived breathing stream and received samples from each, before setup acceptance and PsychoPy display creation. pre_recording_events preserves earlier setup marker payloads.", "fields": ["source_ids", "policy", "excluded_uids", "pre_recording_events"]},
+    "recording.started": {"when": "The native recorder has subscribed to the selected input, markers and the derived breathing stream and received samples from each, before setup acceptance and PsychoPy display creation. pre_recording_events preserves earlier setup marker payloads; subject, session, task, and variables identify this XDF run.", "fields": ["source_ids", "subject", "session", "task", "variables", "policy", "excluded_uids", "pre_recording_events"]},
     "recording.finalizing": {"when": "Study cleanup has finished; the recorder will drain pending samples, close and verify the XDF. This event is inside the recording; the final HTML result/Close markers are outside it.", "fields": []},
     "recording.option.changed": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "Python observes a recording-option checkbox change."},
     "source.polarity.set": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "The experimenter confirms whether inhale lowers the selected Polar waveform before Start."},

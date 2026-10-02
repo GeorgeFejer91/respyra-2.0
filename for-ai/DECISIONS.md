@@ -350,3 +350,19 @@ decision and link both entries.
   preserves XDF and CSV files and is reported to the experimenter. An installed
   runtime and isolated desktop still need qualification for this change.
 - Supersedes: D-0015's fixed active folder and D-0007's optional CSV choice.
+
+## D-0018 — Make the recorded XDF directly usable in MNE
+
+- Date: 2026-10-02
+- Status: Accepted
+- Context: The experimenter clarified that the main compatibility target is
+  the saved XDF itself, not only a separate BIDS export.
+- Decision: Keep XDF as the primary recording. Retain self-describing LSL
+  stream metadata, add subject/session/task/custom fields to the recorded start
+  marker, and gate direct PyXDF-to-MNE import on real recorded XDFs. Keep the
+  existing separate BIDS TSV/JSON export for tools requiring a BIDS dataset.
+- Consequences: An XDF can be MNE-readable through PyXDF without being a
+  BIDS-valid raw format. Do not claim `mne_bids.read_raw_bids` opens XDF.
+  Irregular streams need an explicitly chosen analysis grid for MNE Raw.
+- Supersedes: D-0017's implication that the separate export alone satisfied
+  the experimenter's requested XDF interoperability.
