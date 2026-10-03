@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Respyra suite launcher</title>
+  <desc id="desc">Three blue, red, and teal circles orbit a shared vortex.</desc>
+  <defs>
+    <radialGradient id="disc" cx="50%" cy="42%" r="65%">
+      <stop stop-color="#29455b"/>
+      <stop offset="1" stop-color="#0d1c2b"/>
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="229" fill="url(#disc)" stroke="#abc4cf" stroke-width="8"/>
+  <g fill="none" stroke-linecap="round" stroke-width="26">
+    <path d="M256 113 C346 117 375 181 352 238 C336 279 300 301 263 296" stroke="#84bfe0"/>
+    <path d="M256 113 C346 117 375 181 352 238 C336 279 300 301 263 296" stroke="#e65b68" transform="rotate(120 256 256)"/>
+    <path d="M256 113 C346 117 375 181 352 238 C336 279 300 301 263 296" stroke="#28b5aa" transform="rotate(240 256 256)"/>
+  </g>
+  <circle cx="256" cy="113" r="37" fill="#84bfe0"/>
+  <circle cx="256" cy="113" r="37" fill="#e65b68" transform="rotate(120 256 256)"/>
+  <circle cx="256" cy="113" r="37" fill="#28b5aa" transform="rotate(240 256 256)"/>
+  <circle cx="256" cy="256" r="25" fill="#eaf2f1"/>
+  <circle cx="256" cy="256" r="11" fill="#173043"/>
+</svg>
