@@ -669,3 +669,9 @@ the respective scope needs current evidence; panel styling does not need it.
   unified shortcut execution, real BLE reconnect, upgrade/uninstall retention,
   and physical sensor behavior remain `NOT RUN` for this artifact. The release
   gate in `PACKAGING.md` is unmet; no 0.3.5 GitHub Release was published.
+
+### Suite launcher icon candidate
+
+- Result/date: `VERIFIED` for icon generation and exact installer payload, `PARTIAL` for installed shortcut behavior, 2026-10-03. Source commit `805e0f9`; suite installer SHA-256 `18b96f1d6f29c36556cf6f8f9a1990e7f628928bca2266e8212d2cf1f0949c20`.
+- Checks: `pnpm tauri icon assets/suite-icon.svg --output .for-ai-local/suite-icon-generated`; visual review at 512, 64 and 32 px; Pillow checked transparent PNG and ICO sizes; PowerShell parsed `scripts/package-suite.ps1`; `git diff --check` passed. `pnpm package:suite` passed using the existing hidden MSVC build environment, including embedded Python/native XDF probe and all four NSIS bundles. `7z` extracted `suite/suite.ico` from the exact installer; its SHA-256 matches `assets/suite-icon.ico`, staging and `dist/suite-manifest.json` (`96c468620c6050983ce2fa42eb9e406553e8f564ca8c36f08d81ca3fd3c18994`). The NSIS hook points the separate `Launch full suite.lnk` to this installed resource.
+- Limits: an installed shortcut readback and GUI launch were `NOT RUN`; the private desktop's Mini WebView limitation above still applies. This icon candidate is local and does not qualify the suite for public release.
