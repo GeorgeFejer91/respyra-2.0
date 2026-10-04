@@ -501,6 +501,7 @@ the respective scope needs current evidence; panel styling does not need it.
 
 ### Project website, live phone route and release links
 
+- Suite download update, 2026-10-04: source `55694548cf738ed63fa0e10e6562c8ef58c26f66` was pushed to `main`, and Pages commit `3e458760707d95cec56bbda88f4093d84eac5ede` was reported `built`. The six changed public assets matched that commit's Git blobs over HTTPS, including the new first-position suite download and same-release Mini links. `pnpm check:ui` passed 8 layouts and 15 actions; `node tests/check_project_site.cjs` passed link assertions, 320–1440 px fit, enlarged-text reflow, and invitation redirect. Headless 320 and 960 px site screenshots were inspected. This changed download copy and links only; native/Mini behavior and physical sensors were not retested.
 - Result/date: `VERIFIED`, 2026-09-30. Source commit
   `7d0c2b5cf7dbaa96ecbc30f00966ff9986b0dcc5` was pushed to `main`;
   Pages commit `3bc62fc56d8c40862dfc87278323aab346296afe` was reported
