@@ -67,13 +67,13 @@ export function validateControllerState(value) {
     || !text(value.message) || new TextEncoder().encode(JSON.stringify(value)).length > 8192) return false;
   if (value.setup !== null) {
     const s = value.setup;
-    if (value.phase !== 'setup' || !exact(s,['phase','ui_seq','study_name','values','recorded_participants','variables','message','busy','can_start','can_use','selected_row','streams','source','omitted_streams','marker_name','save_csv'])
+    if (value.phase !== 'setup' || !exact(s,['phase','ui_seq','study_name','values','recorded_participants','variables','message','busy','can_start','can_use','selected_row','streams','source','omitted_streams','marker_name','save_csv','compare_inputs'])
       || s.phase !== 'setup' || !integer(s.ui_seq) || !text(s.study_name) || !text(s.message)
       || !exact(s.values,['participant','session']) || !text(s.values.participant,128) || !text(s.values.session,128)
       || (s.recorded_participants !== null && (!Array.isArray(s.recorded_participants) || s.recorded_participants.length > 101 || s.recorded_participants.some(n => !integer(n) || n > 100)))
       || !Array.isArray(s.variables) || s.variables.length > 6 || s.variables.some(row =>
         !exact(row,['label','value']) || !text(row.label,128) || !text(row.value,128))
-      || !text(s.marker_name,128) || ['busy','can_start','can_use','save_csv'].some(key=>typeof s[key] !== 'boolean')
+      || !text(s.marker_name,128) || ['busy','can_start','can_use','save_csv','compare_inputs'].some(key=>typeof s[key] !== 'boolean')
       || (s.selected_row !== null && !integer(s.selected_row)) || !integer(s.omitted_streams)
       || !Array.isArray(s.streams)) return false;
     if (s.source !== null && (!exact(s.source,['source_id','stream_name']) || !text(s.source.source_id) || !text(s.source.stream_name))) return false;

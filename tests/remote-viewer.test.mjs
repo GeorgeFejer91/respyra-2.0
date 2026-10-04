@@ -20,6 +20,12 @@ test('invitation, state and commands have closed bounded contracts', () => {
   assert.equal(validateControllerState({ ...snapshot,participant:'private' }),false);
   assert.equal(validateControllerState({ ...snapshot,progress:{ ...snapshot.progress,lsl_time:NaN } }),false);
   assert.equal(validateControllerState({ ...snapshot,message:'x'.repeat(8192) }),false);
+  const setup = {phase:'setup',ui_seq:1,study_name:'Study',values:{participant:'',session:'001'},
+    recorded_participants:[],variables:[],message:'Ready',busy:false,can_start:false,can_use:false,
+    selected_row:null,streams:[],source:null,omitted_streams:0,marker_name:'Events',save_csv:true,
+    compare_inputs:true};
+  assert(validateControllerState({...snapshot,phase:'setup',setup,progress:null}));
+  assert(!validateControllerState({...snapshot,phase:'setup',setup:{...setup,compare_inputs:'true'},progress:null}));
   const monitoring = {...snapshot,progress:{...snapshot.progress,
     recording:{phase:'recording',error:null,bytes_written:1024},
     health:{signal:'live',sample_age_ms:25,battery_percent:null,

@@ -29,7 +29,7 @@ const assert = require('node:assert/strict');
       console.error('source status',await page.locator('#hub-input-status').textContent());
       console.error('backend',await page.evaluate(async()=>{const state=await window.__TAURI__.core.invoke('launch_backend');
         return JSON.stringify({source:state.source,streams:state.progress?.streams,viewer_error:state.progress?.viewer_error});}));
-      console.error('options',await page.locator('#vernier-source option').allTextContents());
+      console.error('options',await page.locator('#feedback-source option').allTextContents());
       throw error;
     }
     if (process.env.RESPYRA_TEST_POLAR_METRIC) {

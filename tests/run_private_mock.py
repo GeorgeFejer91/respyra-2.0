@@ -175,7 +175,8 @@ try:
         first = {key: samples[key][0] for key in ("pca", "phan")}
         assert abs(first["pca"][0] - first["phan"][0]) < .002
         for key, metric in (("pca", "adr_pca_waveform"), ("phan", "adr_axis_mean_difference")):
-            assert abs(first[key][1] - reference[metric]) < 2e-6
+            assert abs(first[key][1] - reference[metric]) < 2e-6, {
+                "metric": metric, "observed": first[key][1], "reference": reference[metric]}
         created = float(resolve_byprop("name", names["pca"], timeout=1)[0].created_at())
         assert 11 <= first["pca"][0] - created <= 14
         print("startup_probe", json.dumps({"first_waveform_age_s": first["pca"][0] - created,

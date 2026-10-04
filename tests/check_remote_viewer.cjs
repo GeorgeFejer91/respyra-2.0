@@ -21,7 +21,7 @@ const path = require('node:path');
   const setup = { phase:'setup',ui_seq:0,study_name:'Respyra breathing validation',
     values:{participant:'',session:'001'},recorded_participants:[2],variables:[],message:'Choose a Force stream',busy:false,
     can_start:false,can_use:false,selected_row:null,streams:[],source:null,omitted_streams:0,
-    marker_name:'Respyra-Events',save_csv:false };
+    marker_name:'Respyra-Events',save_csv:false,compare_inputs:true };
   let mutations = 0, ownerClaimed = false, approvalPending = false;
   const started = new Set(), calls = [], errors = [];
   let lanesReady = false;
