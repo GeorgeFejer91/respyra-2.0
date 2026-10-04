@@ -31,10 +31,13 @@ def _round_rust(values):
 
 def _mock_acc(count):
     index = np.arange(count, dtype=np.float64)
-    phase = index * (2 * math.pi * .22 / 200)
-    return np.column_stack((_round_rust(26 * np.sin(phase)),
-                            _round_rust(18 * np.sin(phase + .8)),
-                            _round_rust(1000 + 42 * np.sin(phase))))
+    phase = (index % 3200) / 800
+    breath = np.where(phase < 1, 2 * phase - 1,
+                      np.where(phase < 2, 1,
+                               np.where(phase < 3, 5 - 2 * phase, -1)))
+    return np.column_stack((_round_rust(26 * breath),
+                            _round_rust(18 * breath),
+                            _round_rust(1000 + 42 * breath)))
 
 
 def _reference(path):

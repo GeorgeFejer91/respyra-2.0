@@ -178,16 +178,24 @@ const assert = require('node:assert/strict');
   if(mode==='remote') assert.equal(await ui.locator('#save_csv').count(),0);
   if(mode==='select') {
     await page.locator('#refresh').click();
-    await page.locator('#vernier-source option', {hasText:'Synthetic raw Force'}).waitFor({state:'attached',timeout:20000});
+    await page.locator('#feedback-source option', {hasText:'Synthetic raw Force'}).waitFor({state:'attached',timeout:20000});
     assert(await page.locator('.stream-row').filter({hasText:'Synthetic normalized'}).count());
-    await page.locator('#vernier-source').selectOption({label:'Synthetic raw Force'});
+    await page.locator('#feedback-source').selectOption({label:'Synthetic raw Force'});
   }
   if(process.env.RESPYRA_TEST_POLAR_METRIC) {
     await page.locator('#polar-direction-field').waitFor({state:'visible',timeout:25000});
     await page.locator('#polar-direction').selectOption(process.env.RESPYRA_TEST_POLAR_INVERT ?
       'decreasing' : 'increasing');
   }
-  await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000});
+  try { await ui.waitForFunction(()=>!document.getElementById('start').disabled,{},{timeout:20000}); }
+  catch(error) {
+    console.error('setup readiness', JSON.stringify(await page.evaluate(async()=>{
+      const state=await window.__TAURI__.core.invoke('launch_backend');
+      return {phase:state.phase,setup:state.setup,progress:state.progress,source:state.source};
+    })));
+    console.error('phone readiness', await ui.locator('#setup').innerText());
+    throw error;
+  }
   if(mode!=='remote') assert((await page.locator('#hub-input-status').textContent()).includes(
     process.env.RESPYRA_TEST_SOURCE_ID ? 'Mock' : 'Synthetic raw Force'));
   if(mode==='remote') {
