@@ -8,7 +8,8 @@ stimuli, keyboard responses, assessments and display-flip markers.
 
 ## Use it
 
-1. Launch Respyra and select live Force input. Start automatically records XDF
+1. Launch Respyra and select one compatible live Vernier or Polar breathing
+   input for feedback. Start automatically records XDF
    with the bundled native recorder before calibration. Original CSV output is automatic.
 2. Click **Remote Viewer**. Its popup creates a QR code automatically. Scan it
    or open its private link in a phone browser.

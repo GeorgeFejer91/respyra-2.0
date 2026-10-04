@@ -786,18 +786,36 @@ async fn choose_recordings_folder(desktop: tauri::State<'_, Desktop>) -> Result<
     let Some(folder) = selected else {
         return Ok(false);
     };
+    stage_recording_folder(&engine, validate_recording_folder(&folder)?)?;
+    Ok(true)
+}
+
+fn validate_recording_folder(folder: &Path) -> Result<PathBuf, String> {
+    if !folder.is_absolute() || !folder.is_dir() {
+        return Err("Choose an existing absolute recording folder".into());
+    }
     let folder = folder
         .canonicalize()
         .map_err(|_| "Selected recording folder is unavailable")?;
     if folder.as_os_str().len() > 4096 {
         return Err("Recording folder path is too long".into());
     }
+    Ok(folder)
+}
+
+fn stage_recording_folder(engine: &Arc<Mutex<Engine>>, folder: PathBuf) -> Result<(), String> {
     let mut state = engine.lock().map_err(|_| "Desktop state lock failed")?;
     if state.snapshot["phase"] != "setup" {
         return Err("Recording folder can only be changed during setup".into());
     }
     state.chosen_folder = Some(folder);
-    Ok(true)
+    Ok(())
+}
+
+#[tauri::command]
+fn set_recordings_folder(desktop: tauri::State<'_, Desktop>, path: String) -> Result<(), String> {
+    let path = path.trim().trim_matches('"');
+    stage_recording_folder(&desktop.engine, validate_recording_folder(Path::new(path))?)
 }
 
 fn main() {
@@ -809,6 +827,7 @@ fn main() {
             close_app,
             open_recordings_folder,
             choose_recordings_folder,
+            set_recordings_folder,
             viewer_action
         ])
         .on_window_event(|window, event| {
@@ -929,6 +948,16 @@ mod tests {
                 enabled: false,
             })
             .is_err()
+        );
+    }
+
+    #[test]
+    fn pasted_recording_folder_must_exist_and_be_absolute() {
+        assert!(validate_recording_folder(Path::new("missing-relative-folder")).is_err());
+        let current = std::env::current_dir().unwrap();
+        assert_eq!(
+            validate_recording_folder(&current).unwrap(),
+            current.canonicalize().unwrap()
         );
     }
     #[test]

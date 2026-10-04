@@ -108,6 +108,8 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       $('marker-name').disabled = !setup || operation > 0;
       $('compare-inputs').disabled = !setup || operation > 0;
       $('recordings-choose').disabled = !setup || operation > 0;
+      $('recordings-apply').disabled = !setup || operation > 0;
+      $('recordings-path').disabled = !setup || operation > 0;
       for (const input of $('variable-list').querySelectorAll('input, button')) input.disabled = !setup || operation > 0;
       for (const kind of ['keyboard', 'mouse']) $(`include-${kind}-markers`).disabled = !setup || operation > 0;
       for (const input of $('stream-list').querySelectorAll('input[data-record]'))
@@ -130,7 +132,8 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       }
       if (body.clientHeight > 0) {
         const height = body.clientHeight;
-        const maxSelectionHeight = Math.max(150, height - 148);
+        const minPlotHeight = parseFloat(getComputedStyle($('plot-section')).minHeight) || 140;
+        const maxSelectionHeight = Math.max(150, height - minPlotHeight - 8);
         const selectionHeight = clamp(selectionShare * height, 150, maxSelectionHeight);
         if (commit) selectionShare = selectionHeight / height;
         body.style.setProperty('--selection-size', `${selectionHeight}px`);
@@ -372,6 +375,8 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     });
     $('recordings-open').disabled = !native;
     $('recordings-choose').disabled = !native;
+    $('recordings-apply').disabled = !native;
+    $('recordings-path').readOnly = !native;
     $('recordings-choose').addEventListener('click', async () => {
       if (!native) return;
       $('recordings-choose').disabled = true;
@@ -384,6 +389,22 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       void native.core.invoke('open_recordings_folder').catch(error => {
         $('stream-status').textContent = String(error); fit();
       });
+    });
+    const applyRecordingPath = async () => {
+      if (!native) return;
+      const path = $('recordings-path').value.trim();
+      if (!path) { $('stream-status').textContent = 'Enter an existing data folder path.'; fit(); return; }
+      $('recordings-apply').disabled = true;
+      try {
+        await native.core.invoke('set_recordings_folder', { path });
+        const result = await request('recording_folder');
+        if (result?.ok !== false) $('recordings-path').blur();
+      } catch (error) { $('stream-status').textContent = String(error); fit(); }
+      finally { updateNativeControls(); }
+    };
+    $('recordings-apply').addEventListener('click', () => { void applyRecordingPath(); });
+    $('recordings-path').addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); void applyRecordingPath(); }
     });
     $('stop').addEventListener('click', () => { void request('abort'); });
     $('close').addEventListener('click', () => { void native?.core.invoke('close_app', { reason:'close_button' }); });
@@ -460,13 +481,21 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         histories.set(markerKey, markerHistory);
         return { id, name: row.name, shortName, detail: `${row.type} · ${row.signal} · ${row.reason} · ${row.channels.length} channels`,
           compatible: row.compatible, signal: row.signal,
-          record: required || (native ? !nativeExcluded.has(id) : !!choice.record),
+          record: required || (native ? !nativeExcluded.has(id) : choice.record !== false),
           display: choice.display ?? required, required, channels, numeric: row.numeric,
           markers: markerHistory.points, color: colorFor(id, processed) };
       });
       if (selectedSource && !actualProcessed) streams.push({ id: 'pending-calibrated', name: 'Respyra-Calibrated-Breathing', shortName: 'Respyra breathing',
         detail: 'Prepared at Start; calibrated values begin after calibration', record: true, display: false, required: true,
         pending: true, channels: [], markers: [], color: '#4ed482' });
+      if (selectedSource && (!native || nativeState.phase === 'setup') && (native ? nativeState.compare_inputs !== false : $('compare-inputs').checked)) {
+        for (const candidate of eligible.filter(row => row.uid !== selectedSource &&
+          (native ? !nativeExcluded.has(row.uid) : choices.get(row.uid)?.record !== false))) {
+          streams.push({ id: `pending-comparison:${candidate.uid}`, name: `Comparison waveform for ${candidate.name}`,
+            shortName: `Comparison · ${candidate.name}`, detail: 'Prepared at Start from this raw input; calibrated independently',
+            record: true, display: false, required: true, pending: true, channels: [], markers: [], color: '#4ed482' });
+        }
+      }
       streams.sort((a, b) => Number(b.id === selectedSource) - Number(a.id === selectedSource) ||
         Number(b.id === 'pending-calibrated' || b.name === 'Respyra-Calibrated-Breathing') - Number(a.id === 'pending-calibrated' || a.name === 'Respyra-Calibrated-Breathing'));
 
@@ -486,10 +515,11 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       const placeholder = document.createElement('option'); placeholder.value = '';
       placeholder.textContent = eligible.length ? 'Choose one breathing input' : 'No compatible input found';
       select.append(placeholder);
-      for (const [type, label] of [['VernierRaw', 'Vernier'], ['Respiration', 'Polar']]) {
+      for (const [type, label] of [['VernierRaw', 'Vernier Mini'], ['Respiration', 'Polar Mini']]) {
         const group = document.createElement('optgroup'); group.label = label;
         for (const row of eligible.filter(candidate => candidate.type === type)) {
-          const option = document.createElement('option'); option.value = row.uid; option.textContent = row.name;
+          const option = document.createElement('option'); option.value = row.uid; option.textContent = `${label} · ${row.name}`;
+          option.title = row.name;
           group.append(option);
         }
         if (group.children.length) select.append(group);
@@ -711,7 +741,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         if (snapshot.output_folder) {
           $('recordings-open').title = snapshot.output_folder;
           $('recordings-open').setAttribute('aria-label', `Open recordings folder: ${snapshot.output_folder}`);
-          $('recordings-path').value = snapshot.output_folder;
+          if (document.activeElement !== $('recordings-path')) $('recordings-path').value = snapshot.output_folder;
         }
         if (!shownSent) { shownSent = true; void request('shown'); }
       }
@@ -791,7 +821,8 @@ import { participantOptions, selectParticipant } from './participant-options.js'
           const shortage = Math.max(0, $('stream-list').scrollHeight - $('stream-list').clientHeight,
             document.querySelector('.stream-section').scrollHeight - document.querySelector('.stream-section').clientHeight);
           const current = parseFloat(body.style.getPropertyValue('--selection-size')) || 0;
-          const next = Math.min(body.clientHeight - 148, current + shortage + 2);
+          const minPlotHeight = parseFloat(getComputedStyle($('plot-section')).minHeight) || 140;
+          const next = Math.min(body.clientHeight - minPlotHeight - 8, current + shortage + 2);
           if (shortage > 1 && next > current + 1) {
             selectionShare = next / body.clientHeight;
             applyLayout();

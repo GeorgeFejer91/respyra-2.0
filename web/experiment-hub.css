@@ -127,8 +127,12 @@
     #hub .text-input { min-height: 36px; padding-block: 5px; }
     .hub-foot { display: flex; align-items: stretch; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid #2a414e; }
     .hub-foot p { margin: 0; }
-    .start-row { display: flex; gap: 6px; min-width: 0; }
-    #recordings-open { flex: none; width: 42px; min-height: 42px; display: grid; place-items: center; padding: 0; }
+    .output-section { min-width: 0; }
+    .output-section .section-head { margin-bottom: 5px; }
+    .output-section .text-input { width: 100%; min-width: 0; font-size: .84em; }
+    #recordings-open { min-height: 30px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; }
+    .folder-actions { display: flex; justify-content: flex-end; gap: 5px; margin-top: 5px; }
+    .folder-actions button { min-height: 28px; padding: 2px 8px; font-size: .85em; }
 
     .start { flex: 1; min-width: 0; min-height: 42px; border-color: #e95e60; background: #e95e60; color: #111a20; font-weight: 600; }
     .start:hover { background: #f07878; }
@@ -174,17 +178,16 @@
     .stream-section .pager { margin-top: 2px; }
     .stream-section .pager button { min-height: 26px; padding: 2px 8px; }
     .plot-section { min-width: 0; min-height: 140px; display: grid; grid-template-rows: auto auto minmax(0, 1fr); }
-    .plot-section.paged { grid-template-rows: auto auto auto minmax(0, 1fr); }
     .plot-section .section-head { margin-bottom: 5px; }
     .plot-count { color: #a7b8c0; font-size: .85em; }
     .plot-legend { min-width: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; margin-bottom: 6px; font-size: .77em; line-height: 1.35; }
-    .plot-section .pager { margin: 0 0 4px; }
-    .plot-section .pager button { min-height: 26px; padding: 2px 8px; }
+    .plot-section .section-head .pager { margin: 0; gap: 4px; }
+    .plot-section .pager button { min-height: 26px; padding: 2px 5px; }
+    .plot-section .pager span { min-width: 32px; }
     .plot-key { min-width: 0; display: inline-flex; align-items: baseline; gap: 5px; }
     .plot-index { color: var(--trace-color); font-weight: 600; }
     .plot-key .range { color: #a7b8c0; }
     .plot-canvas { grid-row: 3; min-width: 0; min-height: 0; width: 100%; height: 100%; align-self: stretch; display: block; background: #101e26; border: 1px solid #2a414e; }
-    .plot-section.paged .plot-canvas { grid-row: 4; }
     .plot-canvas text { fill: #a7b8c0; font-family: "Noto Sans", sans-serif; }
     .plot-gridline { stroke: #29414d; stroke-width: 1; }
     .plot-axis { stroke: #455d6c; stroke-width: 1; }
@@ -237,11 +240,12 @@
       #polar-direction-field { grid-column: 1; grid-row: auto; }
       #polar-direction-field:not([hidden]) { display: flex; align-items: center; gap: 6px; }
       #polar-direction-field .field-label { flex: none; margin: 0; }
-      #hub-body { align-content: start; }
+      #hub-body { align-content: start; gap: 4px; }
       #hub-divider { display: none; }
       #streams { padding: 10px 0 0; border-top: 1px solid #2a414e; }
 
       .section { padding-top: 10px; }
+      .stream-section.section { padding-top: 4px; }
 
       .variable-head { display: none; }
 
@@ -256,9 +260,17 @@
       .stream-footer { align-items: stretch; flex-direction: column; padding-top: 0; }
       .stream-footer .muted { display: none; }
       .plot-section { min-height: 112px; }
-      #hub { gap: 6px; }
+      #hub { gap: 3px; }
       #hub .section { padding-top: 6px; }
       #hub .text-input { min-height: 34px; }
+      .output-section { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 6px; }
+      .output-section .section-head { grid-column: 1 / -1; margin: 0; }
+      .output-section .text-input { grid-column: 1; }
+      .folder-actions { grid-column: 2; margin: 0; align-self: stretch; }
+      .folder-actions button { min-height: 34px; padding-inline: 5px; font-size: .75em; }
+      .plot-section { min-height: 124px; }
+      .plot-section .section-head { gap: 4px; }
+      .plot-section .plot-count { display: none; }
       .variable-row { margin-bottom: 2px; }
       .hub-foot { padding-top: 5px; }
       .start { min-height: 36px; }

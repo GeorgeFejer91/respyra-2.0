@@ -67,8 +67,9 @@ Source/provenance is in `native/recorder/README.md`.
 - XDF and original-schema CSV files use the remembered recording folder, defaulting
   to `data/` inside the selected Respyra installation folder; they never enter
   Git/Pages. Settings stores the folder under `%LOCALAPPDATA%/Respyra/`.
-  The local folder icon opens it; Settings chooses a new writable folder only
-  during setup. Choosing a folder does not move earlier files. After XDF
+  The Experiment hub's Data folder segment shows the current path, opens it,
+  and accepts either a browsed or pasted existing writable absolute path during
+  setup. Choosing a folder does not move earlier files. After XDF
   verification and promotion, `mpi.bids_export` writes `bids/` with BIDS 1.11.2
   behavioral events and every nonempty recorded outlet, including Polar and Vernier
   Mini streams. A numeric outlet is BIDS physiology only when its positive nominal

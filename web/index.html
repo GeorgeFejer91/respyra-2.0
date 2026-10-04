@@ -29,6 +29,13 @@
 
         <label class="participant"><span class="field-label" data-measure>Participant number</span><select id="participant" aria-label="Participant number"></select></label>
 
+        <section class="section output-section" aria-labelledby="output-title">
+          <div class="section-head"><h2 id="output-title" data-measure>Data folder</h2><button id="recordings-open" type="button" aria-label="Open recordings folder" title="Open recordings folder"><svg aria-hidden="true" viewBox="0 0 20 20" width="18" height="18"><path d="M2.5 5.5h5l2 2h8v8.5H2.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span data-measure>Open</span></button></div>
+          <label for="recordings-path" class="sr-only">Recording folder path</label><input id="recordings-path" class="text-input" type="text" autocomplete="off" spellcheck="false" placeholder="Paste an existing folder path" aria-describedby="output-help">
+          <div class="folder-actions"><button id="recordings-choose" type="button" data-measure>Browse…</button><button id="recordings-apply" type="button" data-measure>Use path</button></div>
+          <p id="output-help" class="sr-only">Recordings are saved here. Paste an existing folder path and choose Use path, or choose Browse.</p>
+        </section>
+
         <section class="section" aria-labelledby="variable-title">
 
           <div class="section-head"><h2 id="variable-title" data-measure>Custom variables</h2><button class="plus" id="add-field" type="button" aria-label="Add custom variable" title="Add custom variable">+</button></div>
@@ -42,7 +49,7 @@
 
         </div>
 
-        <div class="hub-foot"><p id="hub-input-status" class="sr-only" aria-live="polite">No breathing input selected</p><div class="start-row"><button class="start" id="start" type="button" data-measure>Start experiment</button><button id="recordings-open" type="button" aria-label="Open recordings folder" title="Open recordings folder"><svg aria-hidden="true" viewBox="0 0 20 20" width="20" height="20"><path d="M2.5 5.5h5l2 2h8v8.5H2.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button></div><button id="stop" type="button" hidden data-measure>Stop experiment</button><button id="close" type="button" hidden data-measure>Close</button></div>
+        <div class="hub-foot"><p id="hub-input-status" class="sr-only" aria-live="polite">No breathing input selected</p><button class="start" id="start" type="button" data-measure>Start experiment</button><button id="stop" type="button" hidden data-measure>Stop experiment</button><button id="close" type="button" hidden data-measure>Close</button></div>
       </section>
 
       <button class="splitter" id="hub-divider" type="button" role="separator" aria-label="Resize experiment hub" aria-orientation="vertical" aria-controls="hub streams" aria-valuemin="0" aria-valuemax="100" aria-valuenow="28" title="Drag to resize the experiment hub; use arrow keys to adjust"></button>
@@ -63,13 +70,13 @@
 
         </section>
 
-        <section class="section stream-section function-panel record-panel" aria-labelledby="record-title"><div class="section-head"><div><h2 id="record-title" data-measure>Available streams</h2><p class="panel-purpose" data-measure>Checked streams are saved to XDF.</p></div><button id="marker-inventory-open" type="button" data-measure>Marker inventory</button><div class="marker-options" role="group" aria-label="Input markers"><label class="keyboard"><input id="include-keyboard-markers" type="checkbox" aria-label="Include keyboard markers"><span data-measure>Keyboard markers</span></label><label class="mouse"><input id="include-mouse-markers" type="checkbox" aria-label="Include mouse markers"><span data-measure>Mouse markers</span></label></div></div>
+        <section class="section stream-section function-panel record-panel" aria-labelledby="record-title"><div class="section-head"><div><h2 id="record-title" data-measure>Available streams</h2><p class="panel-purpose" data-measure>Checked streams are saved to XDF.</p></div><button id="marker-inventory-open" type="button" data-measure>Marker inventory</button></div>
           <div id="stream-list"></div>
           <div class="pager" id="stream-pager"><button id="stream-prev" type="button" data-measure>Previous</button><span id="stream-page-count" data-measure></span><button id="stream-next" type="button" data-measure>Next</button></div>
         </section>
         </div>
         <button class="splitter" id="selection-divider" type="button" role="separator" aria-label="Resize stream selection and data viewer" aria-orientation="horizontal" aria-controls="stream-selection plot-section" aria-valuemin="0" aria-valuemax="100" aria-valuenow="42" title="Drag to resize stream selection and data viewer; use arrow keys to adjust"></button>
-        <section class="section plot-section" id="plot-section" aria-labelledby="plot-title"><div class="section-head"><h2 id="plot-title" data-measure>Data viewer</h2><span id="plot-count" class="plot-count" data-measure></span></div><div id="plot-legend" class="plot-legend" aria-label="Displayed channel ranges"></div><div class="pager" id="channel-pager" hidden><button id="channel-prev" type="button" data-measure>Previous</button><span id="channel-page-count" data-measure></span><button id="channel-next" type="button" data-measure>Next</button></div><svg id="plot-canvas" class="plot-canvas" role="img" aria-label="Live signals over ten seconds, each scaled to its own range"></svg></section>
+        <section class="section plot-section" id="plot-section" aria-labelledby="plot-title"><div class="section-head"><h2 id="plot-title" data-measure>Data viewer</h2><div class="pager" id="channel-pager" hidden><button id="channel-prev" type="button" data-measure>Previous</button><span id="channel-page-count" data-measure></span><button id="channel-next" type="button" data-measure>Next</button></div><span id="plot-count" class="plot-count" data-measure></span></div><div id="plot-legend" class="plot-legend" aria-label="Displayed channel ranges"></div><svg id="plot-canvas" class="plot-canvas" role="img" aria-label="Live signals over ten seconds, each scaled to its own range"></svg></section>
         </div>
 
         <div class="stream-footer"><span class="status" id="stream-status" role="status" aria-live="polite" data-measure></span></div>
@@ -91,9 +98,8 @@
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <h2 id="settings-title" data-measure>Experiment settings</h2>
     <label class="settings-check"><input id="compare-inputs" type="checkbox" checked><span data-measure>Record calibrated copies of other compatible inputs</span></label>
+    <div class="marker-options" role="group" aria-label="Input markers"><label class="keyboard"><input id="include-keyboard-markers" type="checkbox" aria-label="Include keyboard markers"><span data-measure>Keyboard markers</span></label><label class="mouse"><input id="include-mouse-markers" type="checkbox" aria-label="Include mouse markers"><span data-measure>Mouse markers</span></label></div>
     <label><span data-measure>Event marker stream name</span><input id="marker-name" type="text" maxlength="128" spellcheck="false"></label>
-    <label><span data-measure>Recording folder</span><input id="recordings-path" type="text" readonly></label>
-    <button id="recordings-choose" type="button" data-measure>Choose folder…</button>
     <div class="remote-preview-actions"><button id="settings-done" type="button" data-measure>Done</button></div>
   </dialog>
 

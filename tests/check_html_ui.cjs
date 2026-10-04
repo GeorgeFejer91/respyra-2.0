@@ -55,7 +55,8 @@ const path = require('node:path');
         if (command === 'launch_backend') return structuredClone(state);
         if (command === 'close_app' || command === 'viewer_action') return null;
         if (command === 'open_recordings_folder') { window.testCommands.push(command); return null; }
-        if (command === 'choose_recordings_folder') { window.testCommands.push(command); return true; }
+        if (command === 'choose_recordings_folder') { window.testCommands.push(command); window.pendingFolder = 'C:\\Chosen'; return true; }
+        if (command === 'set_recordings_folder') { window.testCommands.push(command); window.pendingFolder = args.path; return null; }
         const action = args.action;
         window.testActions.push(action);
         state.ui_seq = action.ui_seq;
@@ -65,7 +66,7 @@ const path = require('node:path');
           else state.values[action.field] = action.value;
         }
         if (action.action === 'option') state[action.field] = action.enabled;
-        if (action.action === 'recording_folder') state.output_folder = 'C:\\Chosen';
+        if (action.action === 'recording_folder') state.output_folder = window.pendingFolder;
         if (action.action === 'record_stream') state.excluded_streams = action.enabled ?
           state.excluded_streams.filter(uid => uid !== action.uid) : [...new Set([...state.excluded_streams, action.uid])];
         if (action.action === 'select') state.selected_row = action.row;
@@ -96,18 +97,23 @@ const path = require('node:path');
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
     await page.locator('#feedback-source option').nth(2).waitFor({ state:'attached' });
     assert.deepEqual(await page.locator('#feedback-source option').allTextContents(),
-      ['Choose one breathing input', 'Vernier Stream Mini', 'StudyPolar_adrPcaWaveform']);
+      ['Choose one breathing input', 'Vernier Mini · Vernier Stream Mini', 'Polar Mini · StudyPolar_adrPcaWaveform']);
+    assert.deepEqual(await page.locator('#feedback-source optgroup').evaluateAll(groups => groups.map(group => group.label)),
+      ['Vernier Mini', 'Polar Mini']);
     assert.equal(await page.title(), 'Respyra 2.0 — Experiment control');
     assert(await page.locator('#viewer-open').isVisible());
     await page.locator('#recordings-open').click();
     assert.deepEqual(await page.evaluate(() => window.testCommands), ['open_recordings_folder']);
-    await page.locator('#settings-open').click();
     await page.locator('#recordings-choose').click();
     await page.waitForFunction(() => window.testSnapshot().output_folder === 'C:\\Chosen');
     assert.match(await page.locator('#recordings-open').getAttribute('aria-label'), /C:\\Chosen/);
     assert.equal(await page.locator('#recordings-path').inputValue(), 'C:\\Chosen');
+    await page.locator('#recordings-path').fill('C:\\Pasted');
+    await page.locator('#recordings-apply').click();
+    await page.waitForFunction(() => window.testSnapshot().output_folder === 'C:\\Pasted');
+    assert.equal(await page.locator('#recordings-path').inputValue(), 'C:\\Pasted');
+    assert((await page.evaluate(() => window.testCommands)).includes('set_recordings_folder'));
     await page.screenshot({ path:path.resolve(__dirname, '../.for-ai-local/recording-settings.png') });
-    await page.locator('#settings-done').click();
     const catalog = JSON.parse(await fs.readFile(path.resolve(__dirname, '../src/mpi/event_markers/catalog.json'), 'utf8'));
     const planned = Object.entries(catalog.events).filter(([, event]) => event.active !== false).map(([name]) => name);
     await page.locator('#marker-inventory-open').click();
@@ -139,6 +145,9 @@ const path = require('node:path');
     const rawRow = page.locator('.stream-row').filter({ hasText:'Vernier Stream Mini' });
     assert(await rawRow.getByRole('checkbox', { name:/Record/ }).isChecked());
     assert(await rawRow.getByRole('checkbox', { name:/Record/ }).isDisabled());
+    assert(await page.getByRole('checkbox', { name:'Record StudyPolar_adrPcaWaveform' }).isChecked());
+    assert(await page.getByRole('checkbox', { name:'Record Comparison waveform for StudyPolar_adrPcaWaveform' }).isChecked());
+    assert(await page.getByRole('checkbox', { name:'Record Polar H10 heart rate' }).isChecked());
     const auxRow = page.locator('.stream-row').filter({ hasText:'Polar H10 heart rate' });
     await auxRow.getByRole('checkbox', { name:/Record/ }).uncheck();
     await page.waitForFunction(() => window.testSnapshot().excluded_streams.includes('aux-ui'));
@@ -161,12 +170,18 @@ const path = require('node:path');
     for (const [width, height] of [[1200,760], [820,760], [390,844], [800,600]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(100);
-      assert(await page.locator('#shell').isVisible(), `Hub hidden at ${width}×${height}: ` + JSON.stringify(await page.evaluate(() => ({
+      assert(await page.locator('#shell').isVisible(), `Hub hidden at ${width}×${height}: ` + JSON.stringify(await page.evaluate(() => {
+        document.querySelector('#shell').hidden = false;
+        return ({
         typeFit:document.querySelector('#shell').dataset.typeFit,
+        canvas:document.querySelector('#plot-canvas').clientHeight,
+        displayed:document.querySelectorAll('.stream-row input[aria-label^="Display "]:checked').length,
+        plotText:document.querySelector('#plot-legend').textContent,
         regions:['shell','.content','hub','streams','hub-body','stream-body','stream-selection','.stream-section','stream-list','plot-section'].map(id => {
           const element = document.getElementById(id) || document.querySelector(id);
           return [id,element.scrollWidth,element.clientWidth,element.scrollHeight,element.clientHeight];
-        }) }))));
+        }) });
+      })));
       const fit = await page.evaluate(() => ({ width:document.documentElement.scrollWidth, height:document.documentElement.scrollHeight,
         clipped:[...document.querySelectorAll('[data-measure]')].filter(element => element.getClientRects().length &&
           (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)).map(element => element.textContent) }));

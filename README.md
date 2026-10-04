@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/00-Respyra-Suite_0.3.7_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.7) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
+**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/00-Respyra-Suite_0.3.8_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.8) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
 
 Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -13,7 +13,7 @@ The study builds on [the original respyra toolbox by Micah Allen and the Embodie
 
 The pinned `mini-streams` submodule provides [Vernier Stream Mini and Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream). `pnpm package:suite` builds both individual Mini installers, the separate Respyra installer, and a suite installer with all three applications and a common launcher. Clone with `git clone --recurse-submodules` to build the suite.
 
-The **v0.3.7 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.7) are on this repository's GitHub Release. Respyra has one main feedback-input selector; XDF records every visible LSL stream by default and adds a separately calibrated comparison outlet for each other live compatible input. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
+The **v0.3.8 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.8) are on this repository's GitHub Release. Fresh Mini preferences select all direct sensor and breathing outputs; Respyra has one main feedback-input selector and records every visible LSL stream by default, with a separately calibrated comparison outlet for each other live compatible input. The Data folder path is visible and editable. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
 
 The importable Python package keeps its original name, `mpi`.
 
@@ -122,8 +122,8 @@ remain bundled.
 
 Every run saves the original sample CSV columns and companion
 `-self-assessment.csv` file alongside the XDF in the remembered recording
-folder, using the existing respyra logger. Choose the folder in desktop Settings;
-the folder icon beside Start opens it. A `bids/` subfolder contains behavioral
+folder, using the existing respyra logger. The Experiment hub shows the path;
+you can open, browse, or paste an existing folder there. A `bids/` subfolder contains behavioral
 events and every nonempty recorded LSL stream in BIDS TSV/JSON form, with
 fixed-rate signals as physiology and irregular signals as timed tables. The
 [BIDS and MNE guide](docs/bids-mne.md) shows how to open these signals. CSV writes flush

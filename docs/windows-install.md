@@ -1,15 +1,15 @@
 # Respyra 2.0 for Windows
 
-**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/00-Respyra-Suite_0.3.7_x64-setup.exe) for Windows 10/11 x64. Its filename is
-`00-Respyra-Suite_0.3.7_x64-setup.exe`; the `00-` prefix places it first in the
-[v0.3.7 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.7).
+**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/00-Respyra-Suite_0.3.8_x64-setup.exe) for Windows 10/11 x64. Its filename is
+`00-Respyra-Suite_0.3.8_x64-setup.exe`; the `00-` prefix places it first in the
+[v0.3.8 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.8).
 It installs Respyra 2.0, Polar Stream Mini, and Vernier Stream Mini, and adds four
 Start menu and desktop shortcuts: one for each program and **Launch Respyra Suite**.
 The latter starts the two sensor publishers and Respyra together.
 
-Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/Respyra-2.0_0.3.7_x64-setup.exe),
-[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/Polar-Stream-Mini_0.6.5_x64-setup.exe),
-and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/Vernier-Stream-Mini_0.6.5_x64-setup.exe).
+Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/Respyra-2.0_0.3.8_x64-setup.exe),
+[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/Polar-Stream-Mini_0.6.6_x64-setup.exe),
+and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/Vernier-Stream-Mini_0.6.6_x64-setup.exe).
 The [project wiki](https://github.com/GeorgeFejer91/respyra-2.0/wiki) diagrams
 the three-app data flow and explains each Mini's streams.
 The installer lets you choose a destination folder, creates
@@ -34,7 +34,9 @@ Vernier installers. Each Mini remembers the last successfully connected device
 and, with Automatic reconnect enabled, retries that device on the next launch.
 Fresh Polar settings publish the available raw ECG, ACC, heart rate and RR
 outputs plus the breathing and breathing-dynamics metrics and an All-in-one
-outlet. Saved metric choices take precedence over the defaults. Respyra 2.0
+outlet. Fresh Vernier settings publish its raw device row, raw Force, breath
+wave, signal events, steps, step rate, respiration rate and All-in-one.
+Every Mini outlet can be unchecked; saved choices take precedence over the defaults. Respyra 2.0
 owns recording; a separate LSL recorder is unnecessary.
 
 Open Respyra 2.0 to use **Experiment control**. Select a participant number from
@@ -70,9 +72,10 @@ events and is not silently replaced.
 
 The installer creates a default `data` folder inside the chosen Respyra 2.0 program
 folder. With the default per-user installation, it is
-`%LOCALAPPDATA%\Respyra 2.0\data`. Click the folder icon beside **Start experiment**
-to open the active recording folder. To change it, open **Settings** and choose
-**Choose folder**. Respyra remembers that folder for later launches and saves
+`%LOCALAPPDATA%\Respyra 2.0\data`. The **Data folder** segment in the Experiment
+hub shows the active path. Click **Open** to view it, **Browse** to choose
+another existing folder, or paste an absolute folder path and click **Use path**.
+Respyra remembers that folder for later launches and saves
 XDF, CSV, the participant list, and BIDS output there. XDFs have unique filenames.
 Numeric participant entries become `P001`, `P002`, and so on in the filename;
 session and each filled `label-value` pair follow as underscore-separated parts,
