@@ -29,9 +29,16 @@ const screenshots = path.resolve('.for-ai-local');
     assert(await page.getByRole('img', { name:/Respyra logo/u }).evaluate(image => image.complete && image.naturalWidth > 0));
     await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
     assert.notEqual(await page.locator('html').getAttribute('data-pretext-fit'), 'unavailable');
-    assert.equal(await page.getByRole('link', { name:'Download for Windows' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.3/Respyra-2.0_0.3.3_x64-setup.exe');
-    for (const name of ['Download Vernier Stream Mini for Windows', 'Download Polar Stream Mini for Windows', 'Read the original preprint']) {
+    assert.equal(await page.getByRole('link', { name:'Download Respyra Suite for Windows' }).getAttribute('href'),
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/00-Respyra-Suite_0.3.6_x64-setup.exe');
+    for (const [name, file] of [
+      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.5_x64-setup.exe'],
+      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.5_x64-setup.exe'],
+    ]) {
+      assert.equal(await page.getByRole('link', { name }).getAttribute('href'),
+        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/' + file);
+    }
+    for (const name of ['Download Vernier Stream Mini separately', 'Download Polar Stream Mini separately', 'Stream and data-flow wiki', 'Read the original preprint']) {
       assert(await page.getByRole('link', { name }).isVisible(), name);
     }
     for (const [width,height] of [[320,720],[390,844],[960,900],[1440,900]]) {
