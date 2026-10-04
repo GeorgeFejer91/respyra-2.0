@@ -30,8 +30,8 @@
           <h1 data-measure>Breathing target-tracking studies on Windows</h1>
           <p data-measure>Respyra 2.0 gives researchers an experimenter control window, a PsychoPy participant task, and a native LSL/XDF recorder in one installable app. Participants follow a breathing target while the study varies the visual feedback they receive.</p>
           <div class="primary-links">
-            <a class="download-link" href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.3/Respyra-2.0_0.3.3_x64-setup.exe" data-measure>Download for Windows</a>
-            <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.3" data-measure>Release notes and checksums</a>
+            <a class="download-link" href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/00-Respyra-Suite_0.3.6_x64-setup.exe" data-measure>Download Respyra Suite for Windows</a>
+            <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6" data-measure>Release notes and checksums</a>
           </div>
         </div>
       </section>
@@ -41,37 +41,38 @@
         <ul>
           <li data-measure>Runs calibration, baseline, countdown, target tracking, and participant assessments in PsychoPy.</li>
           <li data-measure>Receives a compatible raw Force stream from Vernier Stream Mini or a signed breathing waveform from Polar Stream Mini over LSL.</li>
-          <li data-measure>Records raw input, calibrated breathing, and named event markers to a local XDF file. Original CSV export is optional.</li>
+          <li data-measure>Records raw input, calibrated breathing, and named event markers to a local XDF file. Original CSV and BIDS exports are automatic.</li>
           <li data-measure>Offers an optional, approval-based phone controller for monitoring and study controls.</li>
         </ul>
       </section>
 
       <section id="streamers" aria-labelledby="streamers-title">
         <h2 id="streamers-title" data-measure>Get a breathing stream</h2>
-        <p data-measure>Respyra receives live data over LSL. Sensor acquisition comes from a separate Mini app; choose the one that matches your device.</p>
+        <p data-measure>The suite installs both Mini apps. Connect the one that matches your sensor; each publishes live data to Respyra over LSL.</p>
         <div class="streamer">
           <h3 data-measure>Vernier Stream Mini</h3>
           <p data-measure>For a Vernier Go Direct Respiration Belt. Publishes the raw Force signal that Respyra uses for this study.</p>
-          <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Vernier-Stream-Mini_0.6.3_x64-setup.exe" data-measure>Download Vernier Stream Mini for Windows</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Vernier-Stream-Mini_0.6.5_x64-setup.exe" data-measure>Download Vernier Stream Mini separately</a>
         </div>
         <div class="streamer">
           <h3 data-measure>Polar Stream Mini</h3>
           <p data-measure>For a Polar H10. Publishes signed acceleration-derived breathing waveforms and validity signals accepted by Respyra.</p>
-          <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/releases/download/v0.6.3/Polar-Stream-Mini_0.6.3_x64-setup.exe" data-measure>Download Polar Stream Mini for Windows</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Polar-Stream-Mini_0.6.5_x64-setup.exe" data-measure>Download Polar Stream Mini separately</a>
         </div>
         <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream" data-measure>Mini apps source and setup information</a>
       </section>
 
       <section id="download" aria-labelledby="download-title">
         <h2 id="download-title" data-measure>Download and set up</h2>
-        <p data-measure>The current installer supports Windows 10/11 x64. It includes its own Python/PsychoPy environment and recorder; you do not need to install Python or compile the project. A compatible Vernier or Polar Mini app must publish the breathing stream before a study can start.</p>
+        <p data-measure>The suite installer supports Windows 10/11 x64. It includes Respyra 2.0, both Mini apps, Python/PsychoPy, and the recorder. Connect a compatible Vernier or Polar sensor before starting a study.</p>
         <p data-measure>Recordings are saved in the data folder inside the Respyra 2.0 installation. Open it with the folder button beside Start experiment. Setup downloads Microsoft WebView2 if it is absent. Phone control needs an Internet connection.</p>
         <div class="link-list">
-          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.3" data-measure>Windows installer and source archive</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6" data-measure>Suite, separate installers, and source archive</a>
           <a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/main/docs/windows-install.md" data-measure>Installation and study guide</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/wiki" data-measure>Stream and data-flow wiki</a>
           <a href="https://github.com/GeorgeFejer91/respyra-2.0" data-measure>Source code and issues</a>
         </div>
-        <p class="qualification" data-measure>The installer is unsigned. Synthetic installed-app checks passed; physical sensors and full-duration scientific display timing still need validation on the study computer.</p>
+        <p class="qualification" data-measure>This unsigned v0.3.6 suite is a preview. Its installed files, shortcuts, synthetic XDF path, and three-window launch passed isolated checks. Physical Bluetooth reconnect, real-device recording, and upgrade retention still need validation.</p>
       </section>
 
       <section id="origin" aria-labelledby="origin-title">
