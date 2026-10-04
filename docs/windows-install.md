@@ -1,9 +1,9 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra 2.0_0.3.5_x64-setup.exe` on Windows 10/11 x64 for Respyra alone,
-or `Respyra-Suite_0.3.5_x64-setup.exe` for Respyra plus Polar Stream Mini and
-Vernier Stream Mini. The suite adds four Start menu shortcuts: one for each
-program and **Launch full suite**. The latter starts the two sensor publishers
+Run `Respyra 2.0_0.3.6_x64-setup.exe` on Windows 10/11 x64 for Respyra alone,
+or `Respyra-Suite_0.3.6_x64-setup.exe` for Respyra plus Polar Stream Mini and
+Vernier Stream Mini. The suite adds four Start menu and desktop shortcuts: one for each
+program and **Launch Respyra Suite**. The latter starts the two sensor publishers
 and Respyra together. The installer lets you choose a destination folder, creates
 a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
