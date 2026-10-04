@@ -13,6 +13,8 @@ The study builds on [the original respyra toolbox by Micah Allen and the Embodie
 
 The pinned `mini-streams` submodule provides [Vernier Stream Mini and Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream). `pnpm package:suite` builds both individual Mini installers, the separate Respyra installer, and a suite installer with all three applications and a common launcher. Clone with `git clone --recurse-submodules` to build the suite.
 
+The [v0.3.6 Windows suite preview](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6) has all four installers on this repository's GitHub Release.
+
 The importable Python package keeps its original name, `mpi`.
 
 Respyra 2.0's original study, controller and packaging code is licensed under

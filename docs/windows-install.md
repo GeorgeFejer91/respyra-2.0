@@ -1,6 +1,7 @@
 # Respyra 2.0 for Windows
 
-Run `Respyra 2.0_0.3.6_x64-setup.exe` on Windows 10/11 x64 for Respyra alone,
+Download the four installers from the [v0.3.6 Respyra GitHub Release](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6).
+Run `Respyra.2.0_0.3.6_x64-setup.exe` on Windows 10/11 x64 for Respyra alone,
 or `Respyra-Suite_0.3.6_x64-setup.exe` for Respyra plus Polar Stream Mini and
 Vernier Stream Mini. The suite adds four Start menu and desktop shortcuts: one for each
 program and **Launch Respyra Suite**. The latter starts the two sensor publishers
