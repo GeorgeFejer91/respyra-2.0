@@ -1,11 +1,18 @@
 # Respyra 2.0 for Windows
 
-Download the four installers from the [v0.3.6 Respyra GitHub Release](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6).
-Run `Respyra.2.0_0.3.6_x64-setup.exe` on Windows 10/11 x64 for Respyra alone,
-or `Respyra-Suite_0.3.6_x64-setup.exe` for Respyra plus Polar Stream Mini and
-Vernier Stream Mini. The suite adds four Start menu and desktop shortcuts: one for each
-program and **Launch Respyra Suite**. The latter starts the two sensor publishers
-and Respyra together. The installer lets you choose a destination folder, creates
+**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/00-Respyra-Suite_0.3.6_x64-setup.exe) for Windows 10/11 x64. Its published filename is
+`00-Respyra-Suite_0.3.6_x64-setup.exe`; the `00-` prefix places it first in the
+[v0.3.6 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6).
+It installs Respyra 2.0, Polar Stream Mini, and Vernier Stream Mini, and adds four
+Start menu and desktop shortcuts: one for each program and **Launch Respyra Suite**.
+The latter starts the two sensor publishers and Respyra together.
+
+Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Respyra-2.0_0.3.6_x64-setup.exe),
+[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Polar-Stream-Mini_0.6.5_x64-setup.exe),
+and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Vernier-Stream-Mini_0.6.5_x64-setup.exe).
+The [project wiki](https://github.com/GeorgeFejer91/respyra-2.0/wiki) diagrams
+the three-app data flow and explains each Mini's streams.
+The installer lets you choose a destination folder, creates
 a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program

@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-**[Project website](https://georgefejer91.github.io/respyra-2.0/)** · **[Windows releases](https://github.com/GeorgeFejer91/respyra-2.0/releases)** · [Installation guide](docs/windows-install.md)
+**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/00-Respyra-Suite_0.3.6_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
 
 Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -13,7 +13,7 @@ The study builds on [the original respyra toolbox by Micah Allen and the Embodie
 
 The pinned `mini-streams` submodule provides [Vernier Stream Mini and Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream). `pnpm package:suite` builds both individual Mini installers, the separate Respyra installer, and a suite installer with all three applications and a common launcher. Clone with `git clone --recurse-submodules` to build the suite.
 
-The [v0.3.6 Windows suite preview](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6) has all four installers on this repository's GitHub Release.
+The **v0.3.6 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6) are on this repository's GitHub Release. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
 
 The importable Python package keeps its original name, `mpi`.
 
