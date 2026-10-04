@@ -1,5 +1,19 @@
 # Native recording contract
 
+Default candidate capture: Start advertises one `Respyra-Comparison-*`
+normalized LSL outlet for every other live compatible Vernier Force or Polar
+PCA/signed-Phan input whose raw Record box remains checked. The native recorder
+requires each such raw and derived outlet to supply samples before the study
+starts. All outputs are NaN before calibration. During the accepted range
+attempt, each candidate accumulates its own valid samples; after acceptance,
+its own percentile center/amplitude activates finite output at the source
+timestamps. A skipped or lost candidate emits an event marker and is not
+claimed as a valid transformed signal. The selected input alone drives visual
+feedback. Unselected Polar candidates retain native +1 polarity because no
+inhale direction was chosen for them. Settings can turn comparison copies off;
+all other visible and later LSL streams still record by default unless their
+Record boxes were unchecked.
+
 Read for recorder, Start, calibration/stream lifecycle, XDF or remote-data work.
 The user superseded external-recorder-only operation with recording bundled into
 the standard experiment as **respyrecorder** (`respyrecorder.exe` on Windows).

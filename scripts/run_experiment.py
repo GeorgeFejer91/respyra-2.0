@@ -380,6 +380,9 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                 graded_max_error_n=1.5 * amplitude))
         if isinstance(belt, LSLForceSource):
             belt.calibrate(state.range_center, state.global_amplitude, markers.run_id)
+            comparisons = getattr(belt, "comparisons", None)
+            if comparisons is not None:
+                comparisons.activate(cfg.range_cal)
             if bridge is not None and bridge.recorder is not None:
                 deadline = time.monotonic() + 8
                 while belt.calibrated_sample is None:
@@ -389,6 +392,11 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
                         raise LSLForceError("Calibrated breathing has no live input samples")
                     time.sleep(.025)
                 bridge.recorder.wait_for_finite_data(belt.calibrated_id, belt.get_all, bridge.check_cancel)
+                if comparisons is not None:
+                    for alternative in comparisons.sources:
+                        if alternative.center is not None:
+                            bridge.recorder.wait_for_finite_data(
+                                alternative.calibrated_id, belt.get_all, bridge.check_cancel)
 
         # 8. Build trial order
         conditions = (cfg.trial.build_conditions(participant)

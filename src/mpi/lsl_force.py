@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 import tempfile
@@ -162,21 +163,28 @@ class LSLForceSource:
         self.calibrated_uid = None
         self.calibrated_sample = None
         self.center = self.amplitude = None
+        self.calibrated_run_id = None
+        self.comparisons = None
 
-    def start_derived(self, run_id):
+    def start_derived(self, run_id, comparison=False):
         """Advertise the derived channel before recording; NaN means not calibrated."""
         from pylsl import StreamInfo, StreamOutlet, cf_float32
-        identity = f"respyra-breathing-{run_id}"
+        suffix = hashlib.sha256(self.source_id.encode("utf-8")).hexdigest()[:16]
+        identity = (f"respyra-comparison-{run_id}-{suffix}" if comparison
+                    else f"respyra-breathing-{run_id}")
         if self.calibrated_outlet is not None:
             if self.calibrated_id != identity:
                 raise LSLForceError("A different derived breathing stream is already active")
             return
         self.calibrated_id = identity
-        info = StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 0, cf_float32, identity)
+        self.calibrated_run_id = run_id
+        name = f"Respyra-Comparison-{suffix}" if comparison else "Respyra-Calibrated-Breathing"
+        info = StreamInfo(name, "Respiration", 1, 0, cf_float32, identity)
         desc = info.desc()
         for key, value in {"application": "Respyra 2.0", "raw_source_id": self.source_id,
                            "formula": "(force_n - center_n) / amplitude_n",
-                           "before_calibration": "NaN; parameters are in calibration.completed markers"}.items():
+                           "before_calibration": "NaN; parameters are in calibration.completed markers",
+                           "role": "comparison" if comparison else "feedback"}.items():
             desc.append_child_value(key, value)
         channel = desc.append_child("channels").append_child("channel")
         channel.append_child_value("label", "Calibrated breathing")
@@ -188,7 +196,7 @@ class LSLForceSource:
         """Activate the accepted study calibration on the existing outlet."""
         if not math.isfinite(center) or not math.isfinite(amplitude) or amplitude <= 0:
             raise LSLForceError("Invalid breathing calibration")
-        if self.calibrated_outlet is None or self.calibrated_id != f"respyra-breathing-{run_id}":
+        if self.calibrated_outlet is None or self.calibrated_run_id != run_id:
             raise LSLForceError("Derived breathing outlet was not started before recording")
         self.center, self.amplitude = center, amplitude
 
@@ -230,10 +238,15 @@ class LSLForceSource:
             self.last_force_at = time.monotonic()
         elif time.monotonic() - self.last_force_at > 3.0:
             raise LSLForceError("Vernier LSL stream has supplied no Force samples for 3 seconds")
+        if self.comparisons is not None:
+            self.comparisons.drain()
         return forces
 
     def stop(self) -> None:
         self.stopped = True
+        if self.comparisons is not None:
+            self.comparisons.close()
+            self.comparisons = None
         self.inlet.close_stream()
         self.calibrated_outlet = None
         self.calibrated_uid = None

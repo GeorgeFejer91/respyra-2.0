@@ -1,5 +1,12 @@
 # Windows standalone packaging protocol
 
+Fresh suite preferences must retain the Mini defaults: Vernier raw Force and
+Polar direct ECG, ACC, heart rate, RR, the ACC breathing waveforms/quality
+metrics and All-in-one. Respyra defaults all visible/later LSL streams and
+parallel comparison waveforms to recording. User changes take precedence;
+install/upgrade must not overwrite saved Mini selections or Respyra settings.
+Verify the default and opt-out behavior in the exact packaged candidate.
+
 Current consumer: build/verify the downloadable Respyra 2.0 installer. Read this
 file for packaging, installation, dependency changes or release promotion.
 Product usage belongs in `docs/windows-install.md`; scripts/assets stay outside

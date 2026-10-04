@@ -117,9 +117,9 @@ pnpm tauri build --config src-tauri/installer.conf.json --config src-tauri/suite
 Require-Success 'Suite installer build'
 $tauriInstaller = Join-Path $repoRoot "src-tauri/target/release/bundle/nsis/Respyra 2.0_${respyraVersion}_x64-setup.exe"
 if (-not (Test-Path -LiteralPath $tauriInstaller -PathType Leaf)) { throw 'Finalized suite installer is missing.' }
-$suiteName = "Respyra-Suite_${respyraVersion}_x64-setup.exe"
+$suiteName = "00-Respyra-Suite_${respyraVersion}_x64-setup.exe"
 Copy-Item -LiteralPath $tauriInstaller -Destination (Join-Path $dist $suiteName)
-$standaloneName = "Respyra 2.0_${respyraVersion}_x64-setup.exe"
+$standaloneName = "Respyra-2.0_${respyraVersion}_x64-setup.exe"
 $manifest = [ordered]@{
     suite_version = $respyraVersion
     respyra_revision = (& git rev-parse HEAD).Trim()

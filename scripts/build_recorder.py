@@ -76,7 +76,8 @@ static std::string hex_text(const std::string &value) {
             }
             if constexpr (std::is_floating_point_v<T>) {
                 if (!finite_reported && !timestamps.empty() &&
-                    in->info().source_id().rfind("respyra-breathing-", 0) == 0) {
+                    (in->info().source_id().rfind("respyra-breathing-", 0) == 0 ||
+                     in->info().source_id().rfind("respyra-comparison-", 0) == 0)) {
                     for (const auto value : chunk) if (std::isfinite(value)) {
                         std::fprintf(stderr, "\\nRESPYRA_RECORDER_FINITE/1 %s\\n",
                             hex_text(in->info().source_id()).c_str()); std::fflush(stderr);

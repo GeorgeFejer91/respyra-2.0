@@ -41,8 +41,9 @@ $output = Join-Path $repoRoot 'dist'
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
 $productName = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).productName
-$name = "${productName}_${version}_x64-setup.exe"
-Copy-Item -LiteralPath (Join-Path $repoRoot "src-tauri/target/release/bundle/nsis/$name") -Destination (Join-Path $output $name)
+$tauriName = "${productName}_${version}_x64-setup.exe"
+$name = "Respyra-2.0_${version}_x64-setup.exe"
+Copy-Item -LiteralPath (Join-Path $repoRoot "src-tauri/target/release/bundle/nsis/$tauriName") -Destination (Join-Path $output $name)
 $checksum = Get-Sha256 (Join-Path $output $name)
 "$checksum  $name" | Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt') -Encoding ascii
 Copy-Item -LiteralPath (Join-Path $stagingRoot 'engine/manifest.json') -Destination (Join-Path $output 'runtime-manifest.json')

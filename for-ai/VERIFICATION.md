@@ -55,6 +55,12 @@ passes as background-qualified. This policy edit does not require a GUI test.
 
 ## Select checks by impact
 
+For parallel candidate recording, `tests/check_parallel_recording.py` must run
+headlessly in a private LSL SessionID. It must independently decode a closed
+XDF and check three raw inputs, three separate calibrated outlets, paired
+source timestamps and formulas, finite post-calibration samples and footers.
+Check the selected-only feedback path separately in the affected study test.
+
 This is the default for every task, including opening-panel UI work. The command
 lists below are a catalogue, not a checklist to run in full. Select only checks
 whose behavior or dependencies the final diff can affect. Repository impact
@@ -315,8 +321,12 @@ marker order, calibration, saved participant state and stream footers.
 
 ### Recorded XDF direct MNE import and separate BIDS compatibility
 
-For a changed Mini LSL contract or BIDS exporter, capture a short Polar and
-Vernier mock run with the current Mini build and Respyra recorder. Use the
+For a changed Mini LSL contract, recorder, parallel input transformation, or
+BIDS exporter, capture a short Polar and Vernier mock run with the current Mini
+build and Respyra recorder. The parallel-input mock must include three usable
+inputs (Vernier and both Polar waveforms), save all three raw streams and three
+distinct calibrated streams in one final XDF, and run both compatibility checks
+below against that same run. Use the
 isolated private desktop runner above for native app claims; a retained XDF may
 be reused only when its producer/recorder contracts did not change. Preserve
 each XDF, matching `bids/` dataset, executable/source revision, and XDF hash

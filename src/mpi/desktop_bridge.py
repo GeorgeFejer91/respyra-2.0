@@ -64,7 +64,7 @@ def validate_action(action):
     timestamp = action["ui_time_ms"]
     if type(timestamp) not in (int, float) or not math.isfinite(timestamp) or timestamp < 0:
         raise ValueError("Invalid UI timestamp")
-    if "field" in action and action["field"] not in ({"save_csv", "record_keyboard", "record_mouse", "polar_inverted"} if action["action"] == "option" else FIELDS):
+    if "field" in action and action["field"] not in ({"save_csv", "record_keyboard", "record_mouse", "polar_inverted", "compare_inputs"} if action["action"] == "option" else FIELDS):
         raise ValueError("Unknown participant field")
     if "enabled" in action and type(action["enabled"]) is not bool:
         raise ValueError("Invalid recording option")

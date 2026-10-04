@@ -90,6 +90,7 @@ if not desktop:
 cfg = root / "lsl.cfg"
 cfg.write_text("[lab]\nSessionID = " + name + "\n")
 os.environ["LSLAPICFG"] = str(cfg)
+os.environ["WEBVIEW2_USER_DATA_FOLDER"] = str(root / "webview")
 exe = args.mini_exe.resolve()
 if args.respyra_exe:
     os.environ["RESPYRA_DEBUG_EXE"] = str(args.respyra_exe.resolve())

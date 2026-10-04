@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import hashlib
 import time
 from collections import deque
 from xml.etree import ElementTree
@@ -64,22 +65,28 @@ class LSLPolarSource(LSLForceSource):
         self.polarity = 1
         self.ever_valid = False
 
-    def start_derived(self, run_id):
+    def start_derived(self, run_id, comparison=False):
         from pylsl import StreamInfo, StreamOutlet, cf_float32
 
-        identity = f"respyra-breathing-{run_id}"
+        suffix = hashlib.sha256(self.source_id.encode("utf-8")).hexdigest()[:16]
+        identity = (f"respyra-comparison-{run_id}-{suffix}" if comparison
+                    else f"respyra-breathing-{run_id}")
         if self.calibrated_outlet is not None:
             if self.calibrated_id != identity:
                 raise LSLForceError("A different derived breathing stream is already active")
             return
         self.calibrated_id = identity
-        info = StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 0, cf_float32, identity)
+        self.calibrated_run_id = run_id
+        name = f"Respyra-Comparison-{suffix}" if comparison else "Respyra-Calibrated-Breathing"
+        info = StreamInfo(name, "Respiration", 1, 0, cf_float32, identity)
         desc = info.desc()
         for key, value in {
             "application": "Respyra 2.0", "raw_source_id": self.source_id,
             "input_contract": self.contract_id,
             "formula": "(polarity * waveform_g - center_g) / amplitude_g",
             "before_calibration": "NaN; parameters are in calibration.completed markers",
+            "role": "comparison" if comparison else "feedback",
+            "comparison_polarity": "native +1; selected feedback direction is independent" if comparison else "operator selected",
         }.items():
             desc.append_child_value(key, value)
         channel = desc.append_child("channels").append_child("channel")
@@ -121,6 +128,8 @@ class LSLPolarSource(LSLForceSource):
             self.last_force_at = time.monotonic()
         elif self.ever_valid and time.monotonic() - self.last_force_at > 3.0:
             raise LSLForceError("Polar breathing candidate has supplied no valid samples for 3 seconds")
+        if self.comparisons is not None:
+            self.comparisons.drain()
         return accepted
 
     @staticmethod

@@ -366,3 +366,19 @@ decision and link both entries.
   Irregular streams need an explicitly chosen analysis grid for MNE Raw.
 - Supersedes: D-0017's implication that the separate export alone satisfied
   the experimenter's requested XDF interoperability.
+
+## D-0019 — Default to complete candidate capture with one feedback source
+
+- Date: 2026-10-04
+- Status: Accepted
+- Context: The experimenter wants useful Mini outputs preselected, one
+  unambiguous feedback choice, and paired raw/transformed inputs for analysis.
+- Decision: Keep one selected input for live feedback. Record all visible and
+  later LSL streams by default, and publish one calibrated comparison outlet
+  for each other live compatible input. Calibrate each from its own samples in
+  the accepted range attempt. Preserve user opt-outs and saved Mini choices.
+  Raw Mini contract outlets remain mandatory while their streamer runs.
+- Consequences: Three available inputs normally yield six raw/transformed
+  candidate outlets in XDF, plus markers and other Mini outputs. Missing or
+  invalid comparisons remain NaN and emit a marker. Unselected Polar
+  orientation stays native +1 and needs analytical review.

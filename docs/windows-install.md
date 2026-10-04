@@ -1,15 +1,15 @@
 # Respyra 2.0 for Windows
 
-**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/00-Respyra-Suite_0.3.6_x64-setup.exe) for Windows 10/11 x64. Its published filename is
-`00-Respyra-Suite_0.3.6_x64-setup.exe`; the `00-` prefix places it first in the
-[v0.3.6 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.6).
+**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/00-Respyra-Suite_0.3.7_x64-setup.exe) for Windows 10/11 x64. Its filename is
+`00-Respyra-Suite_0.3.7_x64-setup.exe`; the `00-` prefix places it first in the
+[v0.3.7 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.7).
 It installs Respyra 2.0, Polar Stream Mini, and Vernier Stream Mini, and adds four
 Start menu and desktop shortcuts: one for each program and **Launch Respyra Suite**.
 The latter starts the two sensor publishers and Respyra together.
 
-Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Respyra-2.0_0.3.6_x64-setup.exe),
-[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Polar-Stream-Mini_0.6.5_x64-setup.exe),
-and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.6/Vernier-Stream-Mini_0.6.5_x64-setup.exe).
+Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/Respyra-2.0_0.3.7_x64-setup.exe),
+[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/Polar-Stream-Mini_0.6.5_x64-setup.exe),
+and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.7/Vernier-Stream-Mini_0.6.5_x64-setup.exe).
 The [project wiki](https://github.com/GeorgeFejer91/respyra-2.0/wiki) diagrams
 the three-app data flow and explains each Mini's streams.
 The installer lets you choose a destination folder, creates
@@ -44,13 +44,29 @@ Numbers with a previously verified XDF are red in the dropdown and remain
 selectable. The selected number's odd/even parity chooses the block order;
 session defaults to `001` and remains only in recording metadata. A red number may have an
 early-stopped recording and does not certify all trials were completed. A unique
-live raw Force LSL stream connects automatically (ambiguous choices are in
-**Settings**). The middle panel includes all streams and stacked live channel
+compatible live input reconnects automatically. If several are available, the
+single **Main feedback input** dropdown lets you choose Vernier Force or either
+supported Polar waveform. Only this choice drives the on-screen feedback.
+The middle panel includes all streams and stacked live channel
 previews in one plot with stream tabs and event-marker lines. The red **Start Experiment** button waits for native
 recording readiness before opening PsychoPy, records raw input and markers through
 calibration/cleanup, and discovers additional streams during the run. **XDF recording**
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
+
+By default, Respyra records every visible and later LSL outlet, including Mini
+raw ECG, ACC, heart rate, RR, belt Force and breathing metrics when published.
+It also creates a separate calibrated comparison waveform for every other live
+compatible study input. Each candidate uses its own measured range from the
+same calibration attempt. Three compatible inputs therefore normally produce
+three raw and three Respyra-derived outlets in XDF, plus markers and other
+published Mini data. The chosen input alone controls the participant display.
+Unselected Polar comparison waveforms keep their native +1 direction; check
+their polarity before comparing phases. Use the Record checkboxes to omit an
+alternative raw input and its comparison, or turn off comparison copies in
+**Settings**. The chosen input, its calibrated waveform and markers are required
+while the study runs. A missing or unusable alternative is marked in the XDF
+events and is not silently replaced.
 
 The installer creates a default `data` folder inside the chosen Respyra 2.0 program
 folder. With the default per-user installation, it is

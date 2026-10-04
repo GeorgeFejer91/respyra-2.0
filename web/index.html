@@ -22,9 +22,9 @@
 
     <main class="content">
 
-      <section class="view" id="hub" aria-labelledby="hub-title">
+      <section class="view function-panel" id="hub" aria-labelledby="hub-title">
 
-        <div class="heading"><div><h1 id="hub-title" data-measure>Experiment hub</h1></div></div>
+        <div class="heading"><div><h1 id="hub-title" data-measure>Experiment hub</h1><p class="panel-purpose" data-measure>Participant and study controls</p></div></div>
         <div class="segment-body" id="hub-body">
 
         <label class="participant"><span class="field-label" data-measure>Participant number</span><select id="participant" aria-label="Participant number"></select></label>
@@ -55,13 +55,15 @@
 
         <div class="stream-selection" id="stream-selection">
 
-        <section aria-label="Breathing inputs">
+        <section class="function-panel input-panel" aria-label="Main feedback input">
 
-          <div class="stream-input"><label><span class="field-label" data-measure>Vernier breathing input</span><select id="vernier-source" disabled><option value="">Scanning Vernier streams…</option></select></label><label><span class="field-label" data-measure>Polar breathing input</span><select id="polar-source" disabled><option value="">Scanning Polar streams…</option></select></label><label id="polar-direction-field" hidden><span class="field-label" data-measure>Polar inhale direction</span><select id="polar-direction"><option value="">Choose direction…</option><option value="increasing">Inhale raises the waveform</option><option value="decreasing">Inhale lowers the waveform</option></select></label><span class="readiness" id="input-readiness" data-state="waiting" data-measure>Scanning for compatible breathing inputs…</span></div>
+          <p class="panel-purpose" data-measure>Choose one for feedback; record all by default.</p>
+
+          <div class="stream-input"><label><span class="field-label" data-measure>Main feedback input</span><select id="feedback-source" disabled><option value="">Scanning breathing inputs…</option></select></label><label id="polar-direction-field" hidden><span class="field-label" data-measure>Inhale direction</span><select id="polar-direction"><option value="">Choose direction…</option><option value="increasing">Inhale raises the waveform</option><option value="decreasing">Inhale lowers the waveform</option></select></label><span class="readiness" id="input-readiness" data-state="waiting" data-measure>Scanning for compatible breathing inputs…</span></div>
 
         </section>
 
-        <section class="section stream-section" aria-labelledby="record-title"><div class="section-head"><h2 id="record-title" data-measure>Available streams</h2><button id="marker-inventory-open" type="button" data-measure>Marker inventory</button><div class="marker-options" role="group" aria-label="Input markers"><label class="keyboard"><input id="include-keyboard-markers" type="checkbox" aria-label="Include keyboard markers"><span data-measure>Keyboard markers</span></label><label class="mouse"><input id="include-mouse-markers" type="checkbox" aria-label="Include mouse markers"><span data-measure>Mouse markers</span></label></div></div>
+        <section class="section stream-section function-panel record-panel" aria-labelledby="record-title"><div class="section-head"><div><h2 id="record-title" data-measure>Available streams</h2><p class="panel-purpose" data-measure>Checked streams are saved to XDF.</p></div><button id="marker-inventory-open" type="button" data-measure>Marker inventory</button><div class="marker-options" role="group" aria-label="Input markers"><label class="keyboard"><input id="include-keyboard-markers" type="checkbox" aria-label="Include keyboard markers"><span data-measure>Keyboard markers</span></label><label class="mouse"><input id="include-mouse-markers" type="checkbox" aria-label="Include mouse markers"><span data-measure>Mouse markers</span></label></div></div>
           <div id="stream-list"></div>
           <div class="pager" id="stream-pager"><button id="stream-prev" type="button" data-measure>Previous</button><span id="stream-page-count" data-measure></span><button id="stream-next" type="button" data-measure>Next</button></div>
         </section>
@@ -88,6 +90,7 @@
 
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <h2 id="settings-title" data-measure>Experiment settings</h2>
+    <label class="settings-check"><input id="compare-inputs" type="checkbox" checked><span data-measure>Record calibrated copies of other compatible inputs</span></label>
     <label><span data-measure>Event marker stream name</span><input id="marker-name" type="text" maxlength="128" spellcheck="false"></label>
     <label><span data-measure>Recording folder</span><input id="recordings-path" type="text" readonly></label>
     <button id="recordings-choose" type="button" data-measure>Choose folder…</button>

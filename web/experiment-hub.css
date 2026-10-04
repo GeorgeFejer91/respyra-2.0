@@ -69,8 +69,12 @@
 
     .content { width: min(100%, 1280px); flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, var(--hub-size, 28%)) 8px minmax(0, 1fr); margin: 0 auto; padding: var(--panel-pad) clamp(16px, 3vw, 32px); min-width: 0; }
     .view { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
-    #hub { padding-right: var(--group-gap); }
+    #hub { padding: 6px var(--group-gap) 6px 8px; border: 1px solid #455d6c; background: #101e26; }
     #streams { padding-left: var(--group-gap); }
+    .function-panel { min-width: 0; border: 1px solid #455d6c; }
+    .input-panel { padding: 6px 8px; border-color: #84bfe0; background: #10232d; }
+    .record-panel { padding: 6px 8px; border-color: #4e8a70; background: #10221f; }
+    .panel-purpose { color: #a7b8c0; font-size: .83em; line-height: 1.35; margin: 0 0 4px; }
     .splitter { position: relative; min-width: 0; min-height: 0; border: 0; padding: 0; border-radius: 0; background: transparent; touch-action: none; cursor: col-resize; }
     .splitter::before { content: ''; position: absolute; inset: 0; margin: auto; width: 1px; height: 100%; background: #2a414e; }
     .splitter::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 28px; border-radius: 2px; background: #455d6c; transform: translate(-50%, -50%); }
@@ -134,8 +138,8 @@
     .stream-input { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 8px; margin-bottom: 2px; }
     .stream-input label { min-width: 0; }
     .stream-input select { min-height: 36px; padding-block: 5px; }
-    #polar-direction-field { grid-column: 2; grid-row: 2; }
-    #input-readiness { grid-column: 1; grid-row: 2; align-self: end; white-space: normal; }
+    #polar-direction-field { grid-column: 2; grid-row: 1; }
+    #input-readiness { grid-column: 1 / -1; align-self: end; white-space: normal; }
     .input-hint { display: none; }
     .readiness { color: #4ed482; font-weight: 600; white-space: nowrap; }
     .readiness:empty { display: none; }
@@ -144,7 +148,7 @@
 
     #stream-body { grid-template-rows: minmax(0, var(--selection-size, 30%)) 8px minmax(0, 1fr); align-content: stretch; gap: 0; }
     .stream-selection { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: clamp(5px, .8vh, 8px); }
-    .stream-section.section { padding-top: 7px; }
+    .stream-section.section { padding-top: 6px; }
     #selection-divider { cursor: row-resize; }
     #selection-divider::before { width: 100%; height: 1px; }
     #selection-divider::after { width: 28px; height: 4px; }
@@ -224,7 +228,15 @@
       .preview-note { display: none; }
 
       .content { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-      #hub { padding-right: 0; }
+      #hub { padding: 0 8px; }
+      #hub .panel-purpose { display: none; }
+      .input-panel, .record-panel { padding: 0; border: 0; outline: 1px solid #455d6c; outline-offset: 2px; }
+      .input-panel:has(#polar-direction-field:not([hidden])) .panel-purpose { display: none; }
+      .record-panel .panel-purpose { display: none; }
+      .stream-input { grid-template-columns: minmax(0, 1fr); }
+      #polar-direction-field { grid-column: 1; grid-row: auto; }
+      #polar-direction-field:not([hidden]) { display: flex; align-items: center; gap: 6px; }
+      #polar-direction-field .field-label { flex: none; margin: 0; }
       #hub-body { align-content: start; }
       #hub-divider { display: none; }
       #streams { padding: 10px 0 0; border-top: 1px solid #2a414e; }

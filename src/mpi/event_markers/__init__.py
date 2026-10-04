@@ -92,9 +92,15 @@ class MarkerOutlet:
     def start_calibration_attempt(self) -> None:
         self.emit("calibration.attempt.started")
         self.calibration_attempt_open = True
+        comparisons = getattr(getattr(self.state, "belt", None), "comparisons", None)
+        if comparisons is not None:
+            comparisons.begin_range()
 
     def end_calibration_attempt(self, outcome: str) -> None:
         if self.calibration_attempt_open and self.state is not None:
+            comparisons = getattr(getattr(self.state, "belt", None), "comparisons", None)
+            if comparisons is not None:
+                comparisons.end_range()
             polar = bool(getattr(getattr(self.state, "belt", None), "contract_id", None))
             self.emit("calibration.attempt.ended", outcome=outcome,
                       center_n=None if polar else self.state.range_center,

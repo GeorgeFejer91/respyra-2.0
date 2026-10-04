@@ -1,5 +1,13 @@
 # HTML interface design principles
 
+The opening panel groups three functions with restrained visible boundaries:
+participant/study controls, one main feedback-input selector containing both
+Vernier and Polar candidates, and default-checked XDF stream recording. Use a
+short purpose line where it fits; compact layouts may rely on direct labels.
+Settings defaults comparison waveform recording on and lets the operator turn
+it off before Start. Nonselected raw inputs may be unchecked individually;
+the selected raw, its derived outlet and markers remain required during a run.
+
 Read this before any HTML interface change. Always use `uncodixfy-pretext`,
 its Pretext reference, `uncodixfy`, and `ponytail`. Reuse the locked local
 Pretext package/fonts; measure bounded text and verify the rendered DOM.
@@ -19,9 +27,9 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
 - Keep the Experiment hub and LSL streams on the same page. The compact hub has
   a participant-number dropdown (0–100), up to six remembered custom label/value
   pairs, and Start. Previously recorded numbers are red but remain selectable.
-  The streams segment has side-by-side Vernier and Polar breathing-input
-  dropdowns populated by validated LSL discovery. Selecting one makes it the sole
-  study input; the Polar dropdown offers the two exact signed waveforms.
+  The streams segment has one grouped Vernier/Polar breathing-input dropdown
+  populated by validated LSL discovery. Selecting one makes it the sole study
+  feedback input; Polar offers the two exact signed waveforms.
   Keep compact R/V choices and one shared XY plot with channel pagination.
   R selects XDF recording; V
   controls the local plot independently. The selected raw input and Respyra

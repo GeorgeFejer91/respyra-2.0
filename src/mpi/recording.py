@@ -214,9 +214,13 @@ class NativeRecording:
                                        "variables": [row.copy() for row in values.get("variables", [])]}
             if source.calibrated_id is None:
                 raise RecordingError("Derived breathing outlet was not prepared before recording")
-            self.required = (source.source_id, markers.health_snapshot()["source_id"], source.calibrated_id)
+            comparisons = getattr(source, "comparisons", None)
+            self.required = (source.source_id, markers.health_snapshot()["source_id"], source.calibrated_id,
+                             *(comparisons.required if comparisons is not None else ()))
             required_uids = {getattr(source, "uid", ""), getattr(source, "calibrated_uid", ""),
                              getattr(markers, "uid", "")}
+            if comparisons is not None:
+                required_uids.update(comparisons.required_uids)
             excluded = set(excluded_uids) - required_uids
             if len(excluded) > 128 or any(not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", uid) for uid in excluded):
                 raise RecordingError("Invalid LSL recording selection")
@@ -234,7 +238,8 @@ class NativeRecording:
                 with self._lock:
                     ready = (all(identity in self.streams for identity in self.required)
                              and source.source_id in self.data_sources
-                             and source.calibrated_id in self.data_sources)
+                             and all(identity in self.data_sources for identity in self.required
+                                     if identity != self.required[1]))
                 if ready:
                     self.phase = "recording"
                     markers.name_locked = True

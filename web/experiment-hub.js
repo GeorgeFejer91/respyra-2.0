@@ -103,10 +103,10 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       $('participant').disabled = !setup || operation > 0;
       $('add-field').disabled = !setup || operation > 0 || variables.length >= 6;
       $('refresh').disabled = !setup || !!nativeState.busy || operation > 0;
-      for (const [id, type] of [['vernier-source', 'VernierRaw'], ['polar-source', 'Respiration']])
-        $(id).disabled = !setup || !!nativeState.busy || operation > 0 || !nativeCandidates.some(row => row.compatible && row.stream_type === type);
+      $('feedback-source').disabled = !setup || !!nativeState.busy || operation > 0 || !nativeCandidates.some(row => row.compatible);
       $('polar-direction').disabled = !setup || operation > 0 || !nativeState.source?.contract_id?.startsWith('respyra-polar-');
       $('marker-name').disabled = !setup || operation > 0;
+      $('compare-inputs').disabled = !setup || operation > 0;
       $('recordings-choose').disabled = !setup || operation > 0;
       for (const input of $('variable-list').querySelectorAll('input, button')) input.disabled = !setup || operation > 0;
       for (const kind of ['keyboard', 'mouse']) $(`include-${kind}-markers`).disabled = !setup || operation > 0;
@@ -482,19 +482,20 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     }
 
     function renderSourceOptions(eligible) {
-      for (const [id, type, label] of [['vernier-source', 'VernierRaw', 'Vernier'], ['polar-source', 'Respiration', 'Polar']]) {
-        const options = eligible.filter(row => row.type === type);
-        const select = $(id); select.replaceChildren();
-        const placeholder = document.createElement('option'); placeholder.value = '';
-        placeholder.textContent = options.length ? `Choose ${label} stream` : `No ${label} stream found`;
-        select.append(placeholder);
-        for (const row of options) {
+      const select = $('feedback-source'); select.replaceChildren();
+      const placeholder = document.createElement('option'); placeholder.value = '';
+      placeholder.textContent = eligible.length ? 'Choose one breathing input' : 'No compatible input found';
+      select.append(placeholder);
+      for (const [type, label] of [['VernierRaw', 'Vernier'], ['Respiration', 'Polar']]) {
+        const group = document.createElement('optgroup'); group.label = label;
+        for (const row of eligible.filter(candidate => candidate.type === type)) {
           const option = document.createElement('option'); option.value = row.uid; option.textContent = row.name;
-          select.append(option);
+          group.append(option);
         }
-        select.value = options.some(row => row.uid === selectedSource) ? selectedSource : '';
-        select.disabled = !options.length;
+        if (group.children.length) select.append(group);
       }
+      select.value = eligible.some(row => row.uid === selectedSource) ? selectedSource : '';
+      select.disabled = !eligible.length;
       const source = streams.find(stream => stream.id === selectedSource);
       const live = native ? !!source && source.id === eligible.find(row => row.source_id === nativeSelectedId)?.uid && nativeProgress.health?.signal === 'live' : source?.signal === 'live';
       const polar = !!nativeState.source?.contract_id?.startsWith('respyra-polar-');
@@ -656,10 +657,12 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       if (native) void request('option', { field:kind === 'keyboard' ? 'record_keyboard' : 'record_mouse', enabled:$(`include-${kind}-markers`).checked });
       drawPlots();
     });
+    $('compare-inputs').addEventListener('change', () => {
+      if (native) void request('option', { field:'compare_inputs', enabled:$('compare-inputs').checked });
+    });
     function chooseSource(event) {
       const requestedSource = event.currentTarget.value;
       if (!requestedSource) return;
-      $(event.currentTarget.id === 'vernier-source' ? 'polar-source' : 'vernier-source').value = '';
       selectedSource = requestedSource; sourceAssigned = true; channelPage = 0;
       if (native && requestedSource) {
         const sourceId = latestRows.find(row => row.uid === requestedSource)?.source_id;
@@ -667,7 +670,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         if (row >= 0) void request('select', { row }).then(result => { if (result?.ok) void request('use'); });
       } else applyDiscovery({ streams: latestRows, error: discoveryError });
     }
-    for (const id of ['vernier-source', 'polar-source']) $(id).addEventListener('change', chooseSource);
+    $('feedback-source').addEventListener('change', chooseSource);
     $('polar-direction').addEventListener('change', () => {
       if (native && $('polar-direction').value)
         void request('option', { field:'polar_inverted', enabled:$('polar-direction').value === 'decreasing' });
@@ -703,6 +706,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         }
         $('include-keyboard-markers').checked = !!snapshot.record_keyboard;
         $('include-mouse-markers').checked = !!snapshot.record_mouse;
+        $('compare-inputs').checked = snapshot.compare_inputs !== false;
         if (document.activeElement !== $('marker-name')) $('marker-name').value = snapshot.marker_name || '';
         if (snapshot.output_folder) {
           $('recordings-open').title = snapshot.output_folder;

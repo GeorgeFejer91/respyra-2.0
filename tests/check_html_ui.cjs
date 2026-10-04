@@ -94,10 +94,9 @@ const path = require('node:path');
   });
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
-    await page.locator('#vernier-source option').nth(1).waitFor({ state:'attached' });
-    await page.locator('#polar-source option').nth(1).waitFor({ state:'attached' });
-    assert.deepEqual(await page.locator('#vernier-source option').allTextContents(), ['Choose Vernier stream', 'Vernier Stream Mini']);
-    assert.deepEqual(await page.locator('#polar-source option').allTextContents(), ['Choose Polar stream', 'StudyPolar_adrPcaWaveform']);
+    await page.locator('#feedback-source option').nth(2).waitFor({ state:'attached' });
+    assert.deepEqual(await page.locator('#feedback-source option').allTextContents(),
+      ['Choose one breathing input', 'Vernier Stream Mini', 'StudyPolar_adrPcaWaveform']);
     assert.equal(await page.title(), 'Respyra 2.0 — Experiment control');
     assert(await page.locator('#viewer-open').isVisible());
     await page.locator('#recordings-open').click();
@@ -134,9 +133,9 @@ const path = require('node:path');
     await page.locator('#add-field').click();
     await page.locator('#variable-list .variable-row input').first().fill('Age');
     await page.locator('#variable-list .variable-row input').nth(1).fill('28');
-    await page.locator('#vernier-source').selectOption('raw-ui');
+    await page.locator('#feedback-source').selectOption('raw-ui');
     await page.waitForFunction(() => !document.querySelector('#start').disabled);
-    assert.equal(await page.locator('#polar-source').inputValue(), '');
+    assert.equal(await page.locator('#feedback-source').inputValue(), 'raw-ui');
     const rawRow = page.locator('.stream-row').filter({ hasText:'Vernier Stream Mini' });
     assert(await rawRow.getByRole('checkbox', { name:/Record/ }).isChecked());
     assert(await rawRow.getByRole('checkbox', { name:/Record/ }).isDisabled());
@@ -146,6 +145,11 @@ const path = require('node:path');
     assert(await auxRow.getByRole('checkbox', { name:/Record/ }).isEnabled());
     assert(await auxRow.getByRole('checkbox', { name:/Display/ }).isEnabled());
     await page.locator('#settings-open').click();
+    assert(await page.locator('#compare-inputs').isChecked());
+    await page.locator('#compare-inputs').uncheck();
+    await page.waitForFunction(() => window.testSnapshot().compare_inputs === false);
+    await page.locator('#compare-inputs').check();
+    await page.waitForFunction(() => window.testSnapshot().compare_inputs === true);
     await page.locator('#marker-name').fill('Study Events');
     await page.keyboard.press('Escape');
     assert(await page.locator('#settings-dialog').isHidden());
@@ -212,17 +216,16 @@ const path = require('node:path');
     await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.documentElement.style.letterSpacing = ''; });
     await page.setViewportSize({ width:1200, height:760 });
     await page.waitForFunction(() => document.querySelector('#shell').getClientRects().length > 0);
-    await page.locator('#polar-source').selectOption('polar-ui');
+    await page.locator('#feedback-source').selectOption('polar-ui');
     await page.waitForFunction(() => window.testSnapshot().source?.contract_id === 'respyra-polar-pca/1');
-    assert.equal(await page.locator('#vernier-source').inputValue(), '');
-    assert.equal(await page.locator('#polar-source').inputValue(), 'polar-ui');
+    assert.equal(await page.locator('#feedback-source').inputValue(), 'polar-ui');
     await page.evaluate(() => {
       const rows = window.testSnapshot().progress.streams;
       window.testCandidates([]);
       window.testProgress({ streams:rows.filter(row => row.uid !== 'polar-ui') });
       window.testProgress({ streams:rows });
     });
-    assert.equal(await page.locator('#polar-source').inputValue(), 'polar-ui', 'remembered connected source stays visible without a scan list');
+    assert.equal(await page.locator('#feedback-source').inputValue(), 'polar-ui', 'remembered connected source stays visible without a scan list');
     assert(await page.locator('#polar-direction-field').isVisible());
     assert(await page.locator('#start').isDisabled());
     for (const [width, height] of [[820,760], [390,844], [320,480]]) {
@@ -236,7 +239,14 @@ const path = require('node:path');
           (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)).map(element => element.textContent) }));
       assert(fit.width <= width + 1 && fit.height <= height + 1 && (fit.shell || fit.notice), JSON.stringify({ width, height, fit }));
       if (fit.shell) assert(!fit.clipped.length, JSON.stringify({ width, height, fit }));
-      if (width === 390) assert(fit.shell, 'Polar source controls should fit the compact 390 px hub');
+      if (width === 390) assert(fit.shell, 'Polar source controls should fit the compact 390 px hub: ' + JSON.stringify(await page.evaluate(() => {
+        document.querySelector('#shell').hidden = false;
+        document.querySelector('#no-fit').hidden = true;
+        return { rows:['shell','.content','hub','streams','hub-body','.stream-selection','.stream-section','stream-list','plot-section','stream-body','plot-canvas'].map(id => {
+          const element = document.getElementById(id) || document.querySelector(id);
+          return [id,element.scrollWidth,element.clientWidth,element.scrollHeight,element.clientHeight];
+        }), typeFit:document.querySelector('#shell').dataset.typeFit };
+      })));
       if (width === 820 || width === 390) await page.screenshot({ path:path.resolve(__dirname, `../.for-ai-local/polar-hub-${width}.png`) });
     }
     await page.setViewportSize({ width:1200, height:760 });

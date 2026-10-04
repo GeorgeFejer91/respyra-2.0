@@ -1,6 +1,6 @@
 [package]
 name = "respyra-desktop"
-version = "0.3.6"
+version = "0.3.7"
 edition = "2024"
 description = "HTML setup shell for the PsychoPy Respyra experiment"
 license = "GPL-3.0-only"

@@ -106,6 +106,7 @@ class SourceSetup:
         self.variables = []
         self.save_csv = True
         self.record_keyboard = self.record_mouse = False
+        self.compare_inputs = True
         self.polar_inverted = self.polar_direction_set = False
         self.excluded_streams = set()
         self.automatic = False
@@ -171,6 +172,7 @@ class SourceSetup:
                 "marker_name": self.markers.name, "save_csv": self.save_csv,
                 "output_folder": str(getattr(self.recorder, "output", "")),
                 "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
+                "compare_inputs": self.compare_inputs,
                 "polar_inverted": self.polar_inverted,
                 "polar_direction_set": self.polar_direction_set,
                 "excluded_streams": sorted(self.excluded_streams),
@@ -299,9 +301,17 @@ class SourceSetup:
             if self.recorder is not None:
                 try:
                     self.source.start_derived(self.markers.run_id)
+                    if self.compare_inputs and isinstance(self.source, LSLForceSource):
+                        from mpi.parallel_inputs import ParallelInputs
+                        self.source.comparisons = ParallelInputs.discover(
+                            self.source, self.markers, self.excluded_streams)
                     self.recorder.start({**self.values, "variables": self.variables}, self.source, self.markers,
                                         self.cancel_check, self.excluded_streams)
                 except (RecordingError, LSLForceError, OSError) as exc:
+                    comparisons = getattr(self.source, "comparisons", None)
+                    if comparisons is not None:
+                        comparisons.close()
+                        self.source.comparisons = None
                     self.message = ("Recording could not start. Check the local recording view."
                                     if isinstance(exc, OSError) else str(exc))
                     raise SetupRejected(self.message) from exc

@@ -42,7 +42,7 @@ def main() -> None:
     check(not subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT),
           "Commit the exact release source before creating a source bundle")
     version = runtime["version"]
-    installer = DIST / f"Respyra 2.0_{version}_x64-setup.exe"
+    installer = DIST / f"Respyra-2.0_{version}_x64-setup.exe"
     check(installer.is_file(), "Matching NSIS installer is missing")
     installer_sha256 = digest(installer)
     suite_path = DIST / "suite-manifest.json"

@@ -106,6 +106,18 @@ feedback. See `RECORDING.md`.
 
 ## Signal boundary
 
+The suite starts with Mini acquisition defaults: Vernier publishes its raw
+`VernierRaw` Force outlet; Polar publishes direct ECG, ACC, heart rate and RR
+plus its Breathing/Breathing dynamics metrics and their quality companions.
+Saved Mini choices survive upgrade. Respyra offers one grouped selector for
+the main visual-feedback input. `mpi.parallel_inputs` opens other live
+compatible inputs at Start and publishes a separately calibrated comparison
+outlet for each. Native XDF records all visible and later LSL streams by
+default. The operator can uncheck nonrequired raw streams or turn comparison
+copies off in Settings. The selected raw, selected derived and markers are
+required while running. Each alternative's own samples define its range
+calibration; unselected Polar polarity stays native +1 pending analysis.
+
 - Stream ecosystem: [Polar Stream Mini and Vernier Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream)
   are pinned in the `mini-streams` submodule for the Windows suite build. Each
   keeps its own app identity and independent installer. The suite variant of
