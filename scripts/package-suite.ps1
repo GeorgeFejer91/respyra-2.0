@@ -53,7 +53,7 @@ New-Item -ItemType Directory -Path $dist -Force | Out-Null
 
 Push-Location -LiteralPath $miniRoot
 try {
-    npm ci
+    npm.cmd ci
     Require-Success 'Locked Mini frontend install'
 } finally { Pop-Location }
 
@@ -69,7 +69,7 @@ foreach ($app in @(
     $previousTarget = $env:CARGO_TARGET_DIR
     try {
         if ($env:RESPYRA_MINI_TARGET_DIR) { $env:CARGO_TARGET_DIR = $miniTarget }
-        npm exec -- tauri build --bundles nsis --ci -- --locked
+        npm.cmd exec -- tauri build --bundles nsis --ci -- --locked
         Require-Success "$($app.Product) installer build"
     } finally {
         if ($previousTarget) { $env:CARGO_TARGET_DIR = $previousTarget }
