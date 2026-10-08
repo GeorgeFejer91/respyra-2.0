@@ -849,3 +849,15 @@ the respective scope needs current evidence; panel styling does not need it.
   calibration algorithms and recorder/export implementation reuse unchanged
   scoped source evidence above. The baseline Mini battery no-fit limitation
   remains as documented in the preceding receipt.
+- Publication: the public [v0.3.9 prerelease](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.9)
+  contains all eight assets; every GitHub API digest matched the local file.
+  Anonymous HEAD returned 200 for the 118,812,517-byte suite download.
+  Pages build `322f78f45f120e91771a434ec667b476dde10ded` is `built`, with
+  `source.json` identifying website source `ff7c27fb4a7cb9b3aef8bd96020b923f7f64e255`.
+  Fresh anonymous HTTPS reads of nine site files matched that Pages commit
+  byte for byte. The final site check passed four pages/24 layouts, enlarged
+  text, versioned installer links, the seven primary signals and credits.
+  Evidence: ignored `minimal-release-parity.log`, `minimal-public-parity.log`,
+  `minimal-public-receipt.json`, `minimal-public-download.log`,
+  `minimal-pages-publish.log` and `minimal-site-release.log`. This subsequent
+  receipt-only commit does not change the published site or installer inputs.
