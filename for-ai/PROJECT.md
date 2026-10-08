@@ -80,7 +80,10 @@ feedback. See `RECORDING.md`.
   enabling the private link explicitly shares setup fields. `companion/` supplies Remote
   Panel/1 assets hosted on Respyra's own GitHub Pages site at
   `https://georgefejer91.github.io/respyra-2.0/`. The root is a public app
-  overview; existing private QR links redirect to the static controller at
+  overview, with `/study.html`, `/variables.html` (version-pinned default channels)
+  and `/about.html` for study procedure and credits. These scrollable public
+  documents reuse local Pretext/fonts and headless interface previews; their
+  layout policy is separate from the bounded desktop hub. Existing private QR links redirect to the static controller at
   `/remote.html`. Only static site/controller files and source provenance are
   published on gh-pages; Python/data/grants stay local.
   The experiment control window remains available during PsychoPy, without

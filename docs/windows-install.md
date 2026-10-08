@@ -1,5 +1,7 @@
 # Respyra 2.0 for Windows
 
+See the [default recorded-variable reference](https://georgefejer91.github.io/respyra-2.0/variables.html) for signal sources, units and interpretation, and the [study procedure](https://georgefejer91.github.io/respyra-2.0/study.html) for calibration and outputs.
+
 **Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/00-Respyra-Suite_0.3.8_x64-setup.exe) for Windows 10/11 x64. Its filename is
 `00-Respyra-Suite_0.3.8_x64-setup.exe`; the `00-` prefix places it first in the
 [v0.3.8 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.8).

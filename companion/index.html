@@ -11,19 +11,21 @@
   <script type="module" src="./site.js"></script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <div class="site-shell">
     <header class="site-header">
       <a class="brand" href="./" data-measure>Respyra 2.0</a>
       <nav aria-label="Site navigation">
-        <a href="#about" data-measure>About</a>
+        <a href="./" aria-current="page" data-measure>Overview</a>
+        <a href="./study.html" data-measure>Run a study</a>
+        <a href="./variables.html" data-measure>Default variables</a>
         <a href="#download" data-measure>Download</a>
-        <a href="#streamers" data-measure>Stream apps</a>
-        <a href="#origin" data-measure>Origins</a>
+        <a href="./about.html" data-measure>About</a>
         <a href="./remote.html" data-measure>Phone controller</a>
       </nav>
     </header>
 
-    <main>
+    <main id="main">
       <section class="intro" id="about">
         <img class="brand-art" src="./logo.svg" width="148" height="148" alt="Original Respyra logo, recreated as the app icon">
         <div class="intro-content">
@@ -34,6 +36,26 @@
             <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/Respyra-2.0_0.3.8_x64-setup.exe" data-measure>Respyra 2.0 only</a>
             <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.8" data-measure>Release notes and checksums</a>
           </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="documentation-title">
+        <h2 id="documentation-title" data-measure>Study documentation</h2>
+        <p data-measure>Use the default-variable reference to identify each recorded measurement, its raw source, units, processing and interpretation. The study guide covers sensor setup, calibration, the configured task and saved files.</p>
+        <div class="link-list">
+          <a href="./variables.html" data-measure>Read every default variable</a>
+          <a href="./study.html" data-measure>Run the experiment step by step</a>
+          <a href="./about.html" data-measure>George Fejer, origins and attribution</a>
+        </div>
+      </section>
+
+      <section aria-labelledby="apps-title">
+        <h2 id="apps-title" data-measure>The three apps</h2>
+        <p data-measure>One suite installer supplies three independent applications and a shared launcher. These interface previews use simulated setup states; they contain no participant recordings.</p>
+        <div class="screenshots">
+          <figure><a href="./images/respyra.png"><img src="./images/respyra.png" width="1200" height="760" alt="Respyra experiment hub with participant setup, selected Vernier input, recorded stream rows and data viewer" loading="lazy"></a><figcaption data-measure>Respyra 2.0 — choose one feedback input, record the selected streams and run the PsychoPy task.</figcaption></figure>
+          <figure><a href="./images/polar.png"><img src="./images/polar.png" alt="Polar Stream Mini with raw sensor outputs and default breathing metrics selected" loading="lazy"></a><figcaption data-measure>Polar Stream Mini — Polar H10 ECG, acceleration, cardiac timing and acceleration-derived breathing outputs.</figcaption></figure>
+          <figure><a href="./images/vernier.png"><img src="./images/vernier.png" alt="Vernier Stream Mini with all eight output choices checked" loading="lazy"></a><figcaption data-measure>Vernier Stream Mini — Go Direct belt force, device measurements, relative breathing and continuity markers.</figcaption></figure>
         </div>
       </section>
 
@@ -51,12 +73,12 @@
         <h2 id="streamers-title" data-measure>Get a breathing stream</h2>
         <p data-measure>The suite installs both Mini apps. Connect the one that matches your sensor; each publishes live data to Respyra over LSL.</p>
         <div class="streamer">
-          <h3 data-measure>Vernier Stream Mini</h3>
+          <h3><img class="app-icon" src="./images/vernier-icon.png" width="32" height="32" alt="Vernier Mini icon"><span data-measure>Vernier Stream Mini</span></h3>
           <p data-measure>For a Vernier Go Direct Respiration Belt. Fresh settings publish every raw and derived outlet, including the Force signal that Respyra can use.</p>
           <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/Vernier-Stream-Mini_0.6.6_x64-setup.exe" data-measure>Download Vernier Stream Mini separately</a>
         </div>
         <div class="streamer">
-          <h3 data-measure>Polar Stream Mini</h3>
+          <h3><img class="app-icon" src="./images/polar-icon.png" width="32" height="32" alt="Polar Mini icon"><span data-measure>Polar Stream Mini</span></h3>
           <p data-measure>For a Polar H10. Fresh settings publish raw ECG and accelerometer data, heart rate, RR intervals, breathing waveforms and phase signals.</p>
           <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/Polar-Stream-Mini_0.6.6_x64-setup.exe" data-measure>Download Polar Stream Mini separately</a>
         </div>
@@ -78,7 +100,7 @@
 
       <section id="origin" aria-labelledby="origin-title">
         <h2 id="origin-title" data-measure>Built on the original respyra</h2>
-        <p data-measure>Respyra 2.0 builds on the original respyra Python toolbox by Micah Allen and the Embodied Computation Group. Their work supplies the PsychoPy breathing target-tracking foundations and the original logo artwork. This project packages a configured study with LSL input selection, local recording, and experimenter controls.</p>
+        <p data-measure>Respyra 2.0 is developed by George Fejer on top of the original respyra toolbox by Micah Allen and the Embodied Computation Group. The original supplies the PsychoPy respiratory-tracking task and logo; this project adds the Windows suite, Polar/Vernier LSL inputs, synchronized recording and experimenter controls.</p>
         <p class="citation" data-measure>Allen, M. (2026). respyra: A General-Purpose Respiratory Tracking Toolbox for Interoception Research. PsyArXiv.</p>
         <div class="link-list">
           <a href="https://osf.io/preprints/psyarxiv/wjuce_v1" data-measure>Read the original preprint</a>
