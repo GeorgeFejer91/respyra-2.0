@@ -167,6 +167,10 @@ class MarkerOutlet:
         def observed_wait(*args, **kwargs):
             allowed = kwargs.pop("keyList", None)
             deadline = time.monotonic() + kwargs.get("maxWait", float("inf"))
+            # respyra clears stale keys before drawing/flipping each prompt.
+            # Clearing again here loses keys pressed as that prompt appears.
+            if self.screen is not None:
+                kwargs["clearEvents"] = False
             while True:
                 if cancel_check is not None:
                     cancel_check()

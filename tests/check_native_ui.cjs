@@ -225,7 +225,10 @@ const assert = require('node:assert/strict');
     await ui.locator('#start').click();
     const fs=require('node:fs');
     for(let i=0;i<250 && !fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH);i++) await new Promise(r=>setTimeout(r,100));
-    assert(fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH),'PsychoPy instructions did not reach a display flip');
+    assert(fs.existsSync(process.env.RESPYRA_UI_TEST_READY_PATH),
+      mode==='memory' && !process.env.RESPYRA_FULL_MOCK_STUDY ?
+        'PsychoPy did not advance from instructions to calibration after native Space' :
+        'PsychoPy instructions did not reach a display flip');
     if(mode==='remote') {
       await ui.locator('#xdf-state').getByText('Recording', {exact:true}).waitFor({timeout:10000});
       if(!process.env.RESPYRA_PRIVATE_READY_PATH)

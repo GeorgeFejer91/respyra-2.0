@@ -63,6 +63,11 @@ try:
         import copy
         import importlib.util
         from types import SimpleNamespace
+        native_keys = '--native-keys' in sys.argv
+        if native_keys:
+            sys.path.insert(0, str(root / 'tests'))
+            from check_native_keyboard import post_key, require_private_desktop
+            require_private_desktop()
         from psychopy import core, event
         from mpi.validation_study_jenny import CONFIG
         spec = importlib.util.spec_from_file_location('checked_study', root / 'scripts/run_experiment.py')
@@ -78,9 +83,17 @@ try:
         bridge = SimpleNamespace(recorder=recorder, check_cancel=recorder.check_health,
                                  send=lambda _: None, finish_stop=lambda _: None)
         study.run_source_setup = lambda *args: (dict(participant='2', session='001'), source)
-        event.getKeys = lambda **kwargs: []
-        event.waitKeys = lambda **kwargs: ['1' if markers.screen in {'accuracy', 'confidence'}
-                                         else 'n' if markers.screen == 'breathing_judgment' else 'space']
+        if native_keys:
+            def respond(payload):
+                if payload['event'].startswith('ui.') and payload['event'].endswith('.shown'):
+                    key = ('1' if payload['screen'] in {'accuracy', 'confidence'}
+                           else 'n' if payload['screen'] == 'breathing_judgment' else 'space')
+                    post_key(os.getpid(), key)
+            markers.observer = respond
+        else:
+            event.getKeys = lambda **kwargs: []
+            event.waitKeys = lambda **kwargs: ['1' if markers.screen in {'accuracy', 'confidence'}
+                                             else 'n' if markers.screen == 'breathing_judgment' else 'space']
         core.quit = lambda: None
         study.run_experiment(cfg, bridge, markers)
         assert markers.state is not None
@@ -143,6 +156,11 @@ try:
         assert len(ended) == len(CONFIG.trial.build_conditions('001')) == 48
         assert any(event['event'] == 'run.completed' for event in events)
         assert not any(event['event'] in {'run.failed', 'run.aborted'} for event in events)
+        if native_keys:
+            accepted = [event for event in events if event['event']=='input.key' and event['accepted']]
+            for screen in ['instructions', 'calibration_ready', 'calibration_result',
+                           'trial_ready', 'trial_feedback', 'accuracy', 'breathing_judgment', 'confidence', 'end']:
+                assert any(event['screen']==screen for event in accepted), screen
     print(json.dumps({"result": "passed", "full_study": '--full-study' in sys.argv, "trials": len(ended) if '--full-study' in sys.argv else 0,
                       "file": str(recorder.path), "preview_channels": sum(len(row["channels"]) for row in rows.values()), "streams": summary}))
 finally:

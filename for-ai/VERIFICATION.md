@@ -236,6 +236,19 @@ display creation, contiguous marker sequences, cleanup/finalization and footers.
 It verifies a synthetic source, not a physical belt. Give WebView2 a unique test
 user-data folder as described by [Playwright](https://playwright.dev/docs/webview2).
 
+An instruction flip alone does not qualify keyboard startup. The native
+`memory` check must post Space to the owned PsychoPy window on the private
+desktop, observe an accepted instruction key and dismissal, then observe the
+calibration-ready flip before Stop. Repeated launches require a fresh marker
+source ID so a cached outlet from the prior run cannot satisfy discovery.
+For prompt-buffer changes, run `tests/check_native_keyboard.py` with the
+packaged interpreter on a private desktop and set `RESPYRA_KEYBOARD_EVIDENCE`
+to an ignored JSON path. It exercises Space/Escape at the actual prompt flip;
+`tests/check_control_center.py --full-study --native-keys` checks all 48 shortened
+trials through native window messages. These checks refuse the input desktop.
+Targeted Win32 messages prove window/event dispatch, not physical keyboard
+routing or foreground-focus behavior on a participant's desktop.
+
 For recorder/calibration/input changes, select the affected checks below.
 Build the recorder only when its source/build inputs or required binary change.
 The full-study trigger is defined in the impact table; it is not a default

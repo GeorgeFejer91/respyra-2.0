@@ -172,6 +172,50 @@ def test_prompt_identity_and_key_timing(marker, cancel_only):
     assert marker._outlet.samples[2][0]["psychopy_time"] == 2.0
 
 
+@pytest.mark.parametrize("key", ["space", "escape"])
+def test_key_on_prompt_flip_survives_wait_start(marker, key):
+    """The visible prompt owns new keys; only pre-prompt input is stale."""
+    buffer = ["stale"]
+    event = types.ModuleType("psychopy.event")
+    event.getKeys = lambda **_kwargs: [(value, 2.0) for value in buffer]
+    event.clearEvents = lambda *_args, **_kwargs: buffer.clear()
+
+    def wait(**kwargs):
+        if kwargs.get("clearEvents", True):
+            event.clearEvents("keyboard")
+        assert buffer, "The key pressed on the visible flip was cleared"
+        keys = buffer[:]
+        buffer.clear()
+        return keys
+
+    event.waitKeys = wait
+    display = types.ModuleType("respyra.core.display")
+    events = types.ModuleType("respyra.core.events")
+    events.check_keys = lambda *_args: []
+
+    def show(win, text, key_list=None):
+        event.clearEvents()
+        win.callOnFlip(buffer.append, key)
+        win.flip()
+        return event.waitKeys(keyList=key_list)[0]
+
+    display.show_text_and_wait = show
+    psychopy = types.ModuleType("psychopy")
+    psychopy.event = event
+    core = types.ModuleType("respyra.core")
+    core.display, core.events = display, events
+    with patch.dict(sys.modules, {
+        "psychopy": psychopy, "psychopy.event": event,
+        "respyra.core": core, "respyra.core.display": display,
+        "respyra.core.events": events,
+    }):
+        with marker.observe_inputs_and_screens(cancel_check=lambda: None) as show_prompt:
+            assert show_prompt(Window(), "Press SPACE to begin.",
+                               key_list=["space", "escape"]) == key
+    keys = [sample[0] for sample in marker._outlet.samples if sample[0]["event"] == "input.key"]
+    assert [(item["key"], item["accepted"]) for item in keys] == [("stale", False), (key, True)]
+
+
 def test_flip_aligned_phase_and_countdown(marker):
     win = Window()
     stimulus = types.SimpleNamespace(text="3")

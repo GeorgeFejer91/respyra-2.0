@@ -5,17 +5,21 @@ import csv
 import math
 import os
 import subprocess
+import sys
 import threading
 import time
 import uuid
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(root / 'tests'))
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('modes', nargs='*', metavar='{select,memory,remote}')
 modes=parser.parse_args().modes or ['select','memory','remote']
 if any(mode not in {'select','memory','remote'} for mode in modes):
     parser.error('modes must be select, memory or remote')
+from check_native_keyboard import post_key, require_private_desktop
+require_private_desktop()
 # Configure before importing liblsl; keep test streams out of live lab sessions.
 external = os.environ.get('RESPYRA_TEST_SOURCE_ID')
 polar_metric = os.environ.get('RESPYRA_TEST_POLAR_METRIC')
@@ -70,6 +74,7 @@ if os.environ.get('RESPYRA_INSTALLED_EXE'):
 else:
     env['RESPYRA_DATA_DIR']=str(root/'.for-ai-local'/('native-recordings-'+uuid.uuid4().hex))
 results=[]
+seen_marker_ids=set()
 if modes[0] != 'select':
     # A focused reconnect/remote run owns its own saved-source fixture.
     from types import SimpleNamespace
@@ -78,18 +83,24 @@ if modes[0] != 'select':
     save_force_selection(SimpleNamespace(source_id=identity, stream_name=raw.name(), contract_id=contract),
                          Path(env['LOCALAPPDATA'])/'Respyra/lsl-source.json')
 try:
-    for mode in modes:
+    for run_number,mode in enumerate(modes, start=1):
+        keyboard_probe = mode == 'memory' and not full_mock
         Path(env['RESPYRA_UI_TEST_READY_PATH']).unlink(missing_ok=True)
         stderr=open(root/f'.for-ai-local/native-{mode}.log','w',encoding='utf-8')
         process=subprocess.Popen([str(exe)],cwd=work,env=env,stdout=stderr,stderr=stderr)
         inlet=None
+        markers=[]
         try:
-            streams=resolve_byprop('name','Respyra-Events',timeout=20)
+            discovery_deadline=time.monotonic()+20
+            streams=[]
+            while not streams and time.monotonic()<discovery_deadline:
+                streams=[stream for stream in resolve_byprop('name','Respyra-Events',timeout=.5)
+                         if stream.source_id() not in seen_marker_ids]
             assert len(streams)==1, 'Expected unique synthetic-run marker outlet'
+            seen_marker_ids.add(streams[0].source_id())
             inlet=StreamInlet(streams[0],recover=False)
             inlet.open_stream(timeout=5)
             ui=subprocess.Popen(['node',str(root/'tests/check_native_ui.cjs'),mode],cwd=root,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
-            markers=[]
             deadline=time.monotonic()+120+48*max(0,float(os.environ.get('RESPYRA_TEST_TRACKING_SECONDS','.15'))-.15)
             while process.poll() is None and time.monotonic()<deadline:
                 try: sample,ts=inlet.pull_sample(timeout=.1)
@@ -97,9 +108,15 @@ try:
                 if sample:
                     markers.append(json.loads(sample[0]))
                     if markers[-1]['event']=='ui.instructions.shown':
-                        Path(env['RESPYRA_UI_TEST_READY_PATH']).write_text('ready')
+                        if keyboard_probe:
+                            time.sleep(.2)
+                            post_key(process.pid)
+                        else:
+                            Path(env['RESPYRA_UI_TEST_READY_PATH']).write_text('ready')
                         if env.get('RESPYRA_PRIVATE_READY_PATH'):
                             Path(env['RESPYRA_PRIVATE_READY_PATH']).write_text('ready')
+                    if keyboard_probe and markers[-1]['event']=='ui.calibration_ready.shown':
+                        Path(env['RESPYRA_UI_TEST_READY_PATH']).write_text('ready')
                 if ui.poll() not in (None,0):
                     out,err=ui.communicate();raise AssertionError(out+err)
             assert process.poll()==0,'Native app did not close cleanly'
@@ -127,6 +144,12 @@ try:
                 assert 'source.scan.started' not in names
                 assert 'participant.dialog.accepted' in names and 'display.opened' in names
                 assert 'ui.instructions.shown' in names and 'ui.wrapper.closed' in names
+                if keyboard_probe:
+                    key = next(m for m in markers if m['event']=='input.key' and
+                               m['screen']=='instructions' and m['key']=='space')
+                    assert key['accepted'] is True and key['source']=='waitKeys', key
+                    assert next(m for m in markers if m['event']=='ui.instructions.dismissed')['key']=='space'
+                    assert names.index('ui.instructions.shown') < names.index('ui.instructions.dismissed') < names.index('ui.calibration_ready.shown')
                 assert 'display.closed' in names
                 if full_mock:
                     assert mode == 'remote' and 'run.aborted' not in names
@@ -149,6 +172,11 @@ try:
                 summaries=inspect_xdf(file,[identity,marker_id,derived_id])
                 recorded_events=[json.loads(row[0]) for row in by_id[marker_id]['time_series']]
                 recorded_names=[m['event'] for m in recorded_events]
+                if keyboard_probe:
+                    recorded_key=next(m for m in recorded_events if m['event']=='input.key' and
+                                      m['screen']=='instructions' and m['key']=='space')
+                    assert recorded_key['accepted'] is True and recorded_key['source']=='waitKeys', recorded_key
+                    assert recorded_names.index('ui.instructions.shown') < recorded_names.index('ui.instructions.dismissed') < recorded_names.index('ui.calibration_ready.shown')
                 for expected in ['recording.started','participant.dialog.accepted','display.opened',
                                  'ui.instructions.shown','run.failed' if disconnect_probe else 'run.completed' if full_mock else 'run.aborted',
                                  'source.disconnected','display.closed','recording.finalizing']:
@@ -180,6 +208,7 @@ try:
             print(out.strip(),flush=True)
             results.append({'mode':mode,'markers':len(markers),'first':names[0],'last':names[-1]})
         finally:
+            (root/f'.for-ai-local/native-{mode}-{run_number}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             if process.poll() is None: process.kill();process.wait()
             if inlet: inlet.close_stream()
             stderr.close()
