@@ -44,6 +44,15 @@ export const CONTROL_HTML = `
       </div>
     </fieldset>
   </form>
+  <section id="run-controls" aria-label="Experiment controls" hidden>
+    <h2 data-measure>Experiment controls</h2>
+    <div class="actions">
+      <button id="prompt-continue" type="button" hidden data-measure>Continue (Space)</button>
+      <button id="prompt-retry" type="button" hidden data-measure>Retry calibration (R)</button>
+      <button id="abort" type="button" hidden data-measure>Stop experiment</button>
+      <button id="close" type="button" hidden data-measure>Close</button>
+    </div>
+  </section>
   ${MONITOR_HTML}
   <section id="observation" aria-label="Experiment monitoring">
     <h2 data-measure>Experiment status</h2>
@@ -55,10 +64,6 @@ export const CONTROL_HTML = `
       <dt data-measure>Events sent</dt><dd id="sequence" data-measure>0</dd>
       <dt data-measure>Latest event</dt><dd id="event" data-measure>—</dd>
     </dl>
-    <div class="actions">
-      <button id="abort" type="button" hidden data-measure>Stop experiment</button>
-      <button id="close" type="button" hidden data-measure>Close</button>
-    </div>
     <details class="diagnostics"><summary data-measure>Recent markers and details</summary>
       <dl class="progress">
         <dt data-measure>Marker stream</dt><dd id="marker-identity" data-measure>—</dd>
@@ -80,6 +85,7 @@ export function mountController(root, send, onReady) {
   const monitor = mountLslMonitor(root);
   let state = { phase: 'starting' }, progress = {}, enabled = true, ready = false;
   let operation = 0, streamSignature = '', recentSignature = '';
+  let consumedPrompt = null;
   const edits = new Map();
   let variables = [];
 
@@ -106,6 +112,7 @@ export function mountController(root, send, onReady) {
 
   function availability() {
     const setup = state.phase === 'setup';
+    byId('run-controls').hidden = !['experiment','finished','error'].includes(state.phase);
     byId('setup').hidden = !setup && !document.body.classList.contains('desktop');
     byId('controls').disabled = !enabled || !setup || operation > 0;
     byId('scan').disabled = !enabled || !setup || !!state.busy || operation > 0;
@@ -120,6 +127,11 @@ export function mountController(root, send, onReady) {
     for (const input of byId('variable-list').querySelectorAll('input,button')) input.disabled = !enabled || !setup || operation > 0;
     byId('abort').hidden = state.phase !== 'experiment';
     byId('abort').disabled = !enabled || operation > 0 || progress.recording?.phase === 'finalizing';
+    for (const control of ['continue','retry']) {
+      const button = byId('prompt-' + control);
+      button.hidden = state.phase !== 'experiment' || !progress.prompt?.controls.includes(control);
+      button.disabled = !enabled || operation > 0 || consumedPrompt === progress.prompt?.id || progress.recording?.phase !== 'recording';
+    }
     byId('close').hidden = !['finished', 'error'].includes(state.phase);
     byId('close').disabled = !enabled || operation > 0 || ['preparing','recording','finalizing'].includes(progress.recording?.phase);
     for (const radio of byId('streams').querySelectorAll('input')) radio.disabled = !enabled || !setup || !!state.busy || operation > 0;
@@ -136,7 +148,10 @@ export function mountController(root, send, onReady) {
       const result = await send(action, fields);
       if (result?.ok === false) {
         byId('command-status').textContent = result.message || result.error || 'Command rejected. Review the current controls.';
-      } else if (discrete && result?.ok === true) byId('command-status').textContent = '';
+      } else if (discrete && result?.ok === true) {
+        if (action === 'prompt_control') consumedPrompt = fields.prompt_id;
+        byId('command-status').textContent = '';
+      }
     } finally {
       if (discrete) operation -= 1;
       if (action === 'field_edit' && edits.get(fields.field) === fields.value) edits.delete(fields.field);
@@ -148,6 +163,8 @@ export function mountController(root, send, onReady) {
     state = snapshot;
     root.dataset.phase = snapshot.phase;
     progress = snapshot.progress || progress;
+    root.dataset.prompt = progress.prompt?.screen || '';
+    root.dataset.promptId = progress.prompt?.id || '';
     byId('status').textContent = snapshot.message === 'Ready for this experiment.' ? '' : snapshot.message || '';
     byId('phase').textContent = phases[snapshot.phase] || 'Needs attention';
     byId('trial-summary').textContent = [progress.trial == null ? null : ' · Trial ' + progress.trial, progress.condition].filter(v => v !== null && v !== undefined).join(' · ');
@@ -233,6 +250,10 @@ export function mountController(root, send, onReady) {
     byId('variable-list').lastElementChild?.querySelector('input')?.focus();
   });
   for (const action of ['scan','use','cancel','abort','close']) byId(action).addEventListener('click', () => { void request(action); });
+  for (const control of ['continue','retry']) byId('prompt-' + control).addEventListener('click', () => {
+    if (!byId('prompt-' + control).disabled && progress.prompt?.controls.includes(control))
+      void request('prompt_control', {prompt_id:progress.prompt.id, control});
+  });
   byId('use').addEventListener('click', () => {
     if (!document.body.classList.contains('desktop')) byId('input-details').open = false;
   });
