@@ -5,6 +5,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const vendor = path.join(root, 'web/vendor');
 const catalog = JSON.parse(await readFile(path.join(root, 'src/mpi/event_markers/catalog.json'), 'utf8'));
+await import('./prepare-marker-reference.mjs');
 await writeFile(path.join(root, 'web/marker-catalog.js'),
   `export const EVENT_MARKERS = ${JSON.stringify(Object.entries(catalog.events).filter(([, details]) => details.active !== false).map(([name, details]) => ({name, when: details.when})))};\n`);
 await mkdir(path.join(vendor, 'fonts'), { recursive: true });

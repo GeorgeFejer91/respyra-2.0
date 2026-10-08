@@ -47,7 +47,7 @@ if ((RunGit $publishRoot @('branch', '--show-current')) -ne 'gh-pages' -or
 if (@(RunGit $publishRoot @('status', '--porcelain')).Count) {
     throw 'The publication worktree has changes; review them before publishing.'
 }
-$files = @('index.html', 'study.html', 'variables.html', 'about.html', 'images', 'remote.html', 'site.css', 'site.js', 'logo.svg', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js',
+$files = @('index.html', 'study.html', 'variables.html', 'markers.html', 'marker-catalog.json', 'about.html', 'images', 'remote.html', 'site.css', 'site.js', 'logo.svg', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js',
            'controller-ui.js', 'participant-options.js', 'action-queue.js', 'lsl-monitor.js', 'panel.json', 'vendor')
 foreach ($name in $files) {
     Copy-Item -LiteralPath (Join-Path $sourceRoot "companion/$name") -Destination $publishRoot -Recurse -Force

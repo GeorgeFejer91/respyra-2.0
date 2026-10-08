@@ -81,7 +81,10 @@ feedback. See `RECORDING.md`.
   Panel/1 assets hosted on Respyra's own GitHub Pages site at
   `https://georgefejer91.github.io/respyra-2.0/`. The root is a public app
   overview, with `/study.html`, `/variables.html` (version-pinned default channels)
-  and `/about.html` for study procedure and credits. These scrollable public
+  `/markers.html` (the complete event catalog and payload dictionary),
+  and `/about.html` for study procedure and credits. `prepare-marker-reference.mjs`
+  generates the static marker page and downloadable JSON from Python's catalog;
+  the page's search filters definitions, not participant recordings. These scrollable public
   documents reuse local Pretext/fonts and headless interface previews; their
   layout policy is separate from the bounded desktop hub. Existing private QR links redirect to the static controller at
   `/remote.html`. Only static site/controller files and source provenance are

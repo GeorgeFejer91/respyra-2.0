@@ -98,3 +98,18 @@ adding a deliberate visual delay. Plot only received finite channel values,
 retain declared units, show gaps and stale/paused status promptly, and label the
 coalesced trace as a preview. Keep recording
 status and Stop/Close accessible. Use `RECORDING.md` for data/authority boundaries.
+
+## Public documentation website
+
+The public `companion/` documentation follows the same restrained controls,
+compact app headers, ordered groups and shrinkable Grid/Flex geometry as the
+apps. Use Polar red, Vernier yellow and Respyra blue consistently in source
+headings, reference borders and interface captions; darker yellow text keeps
+light-theme labels readable. Keep the bundled Pretext/Noto Sans contract.
+Documentation uses ordinary page scrolling for the complete references;
+reference panels have no internal scrollbars. Spacing responds to both viewport
+dimensions, with full-text reflow instead of clipping or type reduction.
+`markers.html` and `marker-catalog.json` are generated from the Python catalog,
+including exact current events, timing, all payload definitions and separately
+identified retired names. Definitions describe possible events, not a promise
+that all occur or become separate XDF samples in every run.

@@ -15,7 +15,7 @@ const screenshots = path.resolve('.for-ai-local');
     const errors = [];
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(String(error)));
-    await context.route(base + '**', async route => {
+    const serve = async route => {
       const relative = new URL(route.request().url()).pathname.slice(new URL(base).pathname.length) || 'index.html';
       if (relative === 'text-spacing.css') return route.fulfill({ contentType:'text/css', body:'html{font-size:32px!important} *{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important} p{margin-bottom:2em!important}' });
       const file = path.resolve(root, relative);
@@ -23,7 +23,8 @@ const screenshots = path.resolve('.for-ai-local');
       try {
       await route.fulfill({ body:await fs.readFile(file), contentType:{ '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.woff2':'font/woff2', '.json':'application/json' }[path.extname(file)] || 'application/octet-stream' });
       } catch { await route.fulfill({ status:404, body:'Missing site file' }); }
-    });
+    };
+    await context.route(base + '**', serve);
     await page.goto(base);
     assert(await page.getByRole('heading', { name:'Breathing target-tracking studies on Windows' }).isVisible());
     assert(await page.getByRole('img', { name:/Respyra logo/u }).evaluate(image => image.complete && image.naturalWidth > 0));
@@ -70,9 +71,58 @@ const screenshots = path.resolve('.for-ai-local');
     assert.equal(await page.getByRole('link', {name:'George Fejer · Google Scholar'}).getAttribute('href'), 'https://scholar.google.com/citations?hl=en&user=GPARoloAAAAJ');
     assert.equal(await page.getByRole('link', {name:'George Fejer · ORCID'}).getAttribute('href'), 'https://orcid.org/0000-0002-4904-5504');
     assert(await page.getByText(/Micah Allen and the Embodied Computation Group created/).isVisible());
-    for (const file of ['', 'variables.html','study.html','about.html']) {
+    const markerCatalog = JSON.parse(await fs.readFile('src/mpi/event_markers/catalog.json', 'utf8'));
+    const activeMarkers = Object.entries(markerCatalog.events).filter(([, event]) => event.active !== false)
+      .sort(([a], [b]) => a.localeCompare(b));
+    assert.deepEqual(JSON.parse(await fs.readFile('companion/marker-catalog.json', 'utf8')), markerCatalog);
+    await page.goto(base + 'markers.html');
+    await page.waitForFunction(() => document.querySelector('#marker-filters').hidden === false);
+    assert.deepEqual(await page.locator('#marker-list > li').evaluateAll(rows => rows.map(row => row.dataset.markerName)), activeMarkers.map(([name]) => name));
+    for (const [name, event] of activeMarkers) {
+      const row = page.locator(`[data-marker-name="${name}"]`);
+      assert((await row.textContent()).includes(event.when), name + ' emission timing');
+      assert.deepEqual(await row.locator('[data-marker-field]').evaluateAll(fields => fields.map(field => field.dataset.markerField)), event.fields);
+    }
+    const dictionary = { ...markerCatalog.common_fields, ...markerCatalog.event_field_definitions };
+    assert.deepEqual(await page.locator('[data-field-name]').evaluateAll(rows => Object.fromEntries(rows.map(row => [row.dataset.fieldName, row.querySelector('dd').textContent]))), dictionary);
+    assert.equal(await page.locator('#retired [data-retired]').count(), Object.values(markerCatalog.events).filter(event => event.active === false).length);
+    await page.locator('#marker-search').fill('TRACKING.STARTED');
+    assert.equal(await page.locator('#marker-list > li:visible').count(), 1);
+    assert(await page.locator('[data-marker-name="tracking.started"]').isVisible());
+    await page.locator('#marker-reset').click();
+    for (const group of new Set(activeMarkers.map(([name]) => name.split('.')[0]))) {
+      await page.locator('#marker-family').selectOption(group);
+      assert.equal(await page.locator('#marker-list > li:visible').count(), activeMarkers.filter(([name]) => name.startsWith(group + '.')).length);
+    }
+    await page.locator('#marker-reset').click();
+    await page.locator('#marker-search').fill('pre_recording_events');
+    assert(await page.locator('[data-marker-name="recording.started"]').isVisible());
+    await page.locator('#marker-search').fill('this marker does not exist');
+    assert.equal(await page.locator('#marker-list > li:visible').count(), 0);
+    assert(await page.locator('#marker-empty').isVisible());
+    // A direct event link reveals its full row even when filters hid it.
+    await page.evaluate(() => { location.hash = 'event-tracking.started'; });
+    await page.locator('[data-marker-name="tracking.started"]').waitFor({ state:'visible' });
+    await page.locator('#marker-search').focus();
+    await page.keyboard.press('Tab');
+    assert(await page.locator('#marker-family').evaluate(element => element === document.activeElement));
+    await page.keyboard.press('Tab');
+    assert(await page.locator('#marker-reset').evaluate(element => element === document.activeElement));
+    await page.setViewportSize({ width:960,height:900 });
+    await page.locator('#inventory').scrollIntoViewIfNeeded();
+    await page.screenshot({ path:path.join(screenshots, 'project-markers-inventory.png') });
+    const staticContext = await browser.newContext({ javaScriptEnabled:false });
+    await staticContext.route(base + '**', serve);
+    const staticPage = await staticContext.newPage();
+    await staticPage.goto(base + 'markers.html');
+    assert.equal(await staticPage.locator('#marker-list > li:visible').count(), activeMarkers.length);
+    assert(await staticPage.locator('#fields').isVisible());
+    assert(await staticPage.locator('#marker-filters').evaluate(element => element.hidden));
+    await staticContext.close();
+    for (const file of ['', 'variables.html','markers.html','study.html','about.html']) {
       await page.goto(base + file);
       await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
+      assert.equal(await page.locator('nav[aria-label="Site navigation"] a[href="./markers.html"]').count(), 1);
       for (const image of await page.locator('img').all()) {
         await image.scrollIntoViewIfNeeded();
         await image.evaluate(image => image.decode());
@@ -85,7 +135,7 @@ const screenshots = path.resolve('.for-ai-local');
         const linked = await fs.readFile(path.join(root, relative));
         if (url.hash) assert(linked.toString().includes(`id="${url.hash.slice(1)}"`), 'Missing fragment: ' + href);
       }
-      for (const [width,height] of [[320,720],[390,844],[844,390],[960,900],[1440,900],[1920,1080]]) {
+      for (const [width,height] of [[320,720],[390,844],[600,720],[601,720],[844,390],[960,900],[1440,390],[1920,1080]]) {
       await page.setViewportSize({ width,height });
       await page.evaluate(() => document.fonts.ready);
       const result = await page.evaluate(() => ({
@@ -94,6 +144,13 @@ const screenshots = path.resolve('.for-ai-local');
           element.getClientRects().length && (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)).map(element => ({text:element.textContent.slice(0,60),scrollHeight:element.scrollHeight,clientHeight:element.clientHeight,scrollWidth:element.scrollWidth,clientWidth:element.clientWidth})),
       }));
       assert(!result.horizontal && !result.clipped.length, JSON.stringify({ width,result }));
+      if (file === 'markers.html') {
+        const panels = await page.locator('.app-reference').evaluateAll(elements => elements.map(element => ({
+          width:element.scrollWidth - element.clientWidth, height:element.scrollHeight - element.clientHeight,
+        })));
+        assert(panels.every(panel => panel.width <= 1 && panel.height <= 1), JSON.stringify({ width,panels }));
+        assert.notEqual(await page.locator('#marker-reset').getAttribute('data-pretext-fit'), null);
+      }
         if (width === 320 || width === 960) await page.screenshot({ path:path.join(screenshots, `project-${file || 'index'}-${width}.png`), fullPage:true });
         if (width === 960) {
           await page.evaluate(() => scrollTo(0,0));
@@ -101,6 +158,8 @@ const screenshots = path.resolve('.for-ai-local');
         }
       }
       await page.emulateMedia({ colorScheme:'dark', reducedMotion:'reduce' });
+      const dark = await page.evaluate(() => ({ horizontal:document.documentElement.scrollWidth > innerWidth + 1 }));
+      assert(!dark.horizontal, file + ' dark layout');
       await page.screenshot({ path:path.join(screenshots, `project-${file || 'index'}-dark.png`), fullPage:true });
       await page.emulateMedia({ colorScheme:'light' });
       await page.addStyleTag({ url:base + 'text-spacing.css' });
@@ -125,6 +184,23 @@ const screenshots = path.resolve('.for-ai-local');
     assert(!page.url().includes(secret), 'Phone page must scrub the invitation');
     assert(await page.getByRole('button', { name:'Request access' }).isVisible());
     assert.deepEqual(errors, []);
-    console.log('PASS: seven primary Polar signals, exact LSL names, separate technical flags, four study pages, installer links, 24 layouts, enlarged text, credits and private QR redirect');
+    await page.goto(base + 'variables.html');
+    for (const scheme of ['light','dark']) {
+      await page.emulateMedia({ colorScheme:scheme });
+      const colors = await page.locator('.source-links .polar, .source-links .vernier, .source-links .respyra').evaluateAll(links => links.map(link => getComputedStyle(link).borderBottomColor));
+      assert.deepEqual(colors, scheme === 'light' ? ['rgb(213, 0, 28)','rgb(229, 179, 27)','rgb(9, 105, 218)'] : ['rgb(255, 64, 85)','rgb(229, 179, 27)','rgb(127, 198, 255)']);
+      assert.deepEqual(await page.locator('#polar, #vernier, #respyra').evaluateAll(panels => panels.map(panel => getComputedStyle(panel).borderLeftColor)), colors);
+    }
+    assert.deepEqual(errors, []);
+    const checkedPaths = ['companion/index.html','companion/study.html','companion/variables.html','companion/markers.html','companion/about.html',
+      'companion/site.css','companion/site.js','companion/marker-catalog.json','companion/text-fit.js','companion/remote-profile.js',
+      'scripts/prepare-marker-reference.mjs','scripts/prepare-web.mjs','src/mpi/event_markers/catalog.json','tests/check_project_site.cjs','package.json','pnpm-lock.yaml'];
+    const hashes = {};
+    for (const file of checkedPaths) hashes[file] = require('node:crypto').createHash('sha256').update(await fs.readFile(file)).digest('hex');
+    await fs.writeFile(path.join(screenshots, 'markers-site-evidence.json'), JSON.stringify({
+      result:'VERIFIED', checkedAt:new Date().toISOString(), node:process.version, playwright:require('playwright/package.json').version,
+      browser:browser.version(), headless:true, currentMarkers:activeMarkers.length, pageLayouts:40, hashes,
+    }, null, 2));
+    console.log(`PASS: ${activeMarkers.length} current markers and retired catalog, exact timing/fields/dictionary, search/families/reset/deep links/keyboard/no-JS, app colors, five pages and 40 layouts, enlarged text, local links, installer links, credits and private QR redirect`);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
