@@ -18,6 +18,7 @@
       <nav aria-label="Site navigation"><a href="./" data-measure>Overview</a>
         <a href="./study.html" data-measure>Run a study</a>
         <a href="./variables.html" aria-current="page" data-measure>Default variables</a>
+        <a href="./markers.html" data-measure>Markers</a>
         <a href="./#download" data-measure>Download</a>
         <a href="./about.html" data-measure>About</a>
         <a href="./remote.html" data-measure>Phone controller</a></nav>
@@ -28,10 +29,10 @@
         <p data-measure>This reference describes a fresh Respyra Suite v0.3.9 installation, bundling Polar and Vernier Stream Mini v0.6.7. The standard Polar selection contains seven signal types, with all three accelerometer axes kept together. Required quality flags are listed separately; the Vernier and Respyra defaults remain documented below.</p>
         <p data-measure>Installations publish no physiological data without connected, streaming sensors. Saved preferences survive upgrades; selected outputs may remain empty during warmup, insufficient cycles or a disconnected sensor, and recording starts when you press Start.</p>
         <nav class="source-links" aria-label="Variable sources"><a class="polar" href="#polar" data-measure>Polar Stream Mini</a><a class="vernier" href="#vernier" data-measure>Vernier Stream Mini</a><a class="respyra" href="#respyra" data-measure>Respyra 2.0</a><a href="#outlets" data-measure>Stream inventory</a></nav>
-        <p data-measure>Green identifies Polar, teal Vernier and red Respyra, using the apps’ signal palette and study accent. Source headings and exact names also identify origin without relying on color.</p>
+        <p data-measure>Red identifies Polar, yellow Vernier and blue Respyra. The reference panels reuse the apps’ compact headers and grouped rows; yellow accents use darker text on light backgrounds for readability. Source headings and exact names also identify origin without relying on color.</p>
       </section>
-      <section id="polar" class="variables polar">
-        <h2 data-measure>Polar Stream Mini — seven study signals</h2>
+      <section id="polar" class="variables app-reference polar">
+        <header class="reference-heading"><img class="app-icon" src="./images/polar-icon.png" width="32" height="32" alt=""><h2 data-measure>Polar Stream Mini — seven study signals</h2></header>
         <p data-measure>Fresh settings select exactly these seven signal types. ECG, accelerometer, heart rate and RR intervals come directly from the H10; Mini computes two continuous breathing candidates and one phase classifier. Every selected outlet starts checked for recording in Respyra.</p>
         <p data-measure>Respyra identifies these inputs by floating-point format, g units, signed-waveform metadata and live validity flags, independently of stream names. PCA breathing and Phan breathing are the two supported Polar input contracts. They share the same chest-motion sensor and PCA axis; their units are acceleration, and neither is a validated measurement of airflow or lung volume.</p>
         <ul class="variable-list">
@@ -55,8 +56,8 @@
         </details>
         <p data-measure>All-in-one, alternative waveforms, additional phase/rate estimators, breathing dynamics and ECG/HRV features remain available through Add more metrics, with their checkboxes off by default. Saved selections survive upgrades; Use study defaults explicitly restores this minimal selection.</p>
       </section>
-      <section id="vernier" class="variables vernier">
-        <h2 data-measure>Vernier Stream Mini</h2>
+      <section id="vernier" class="variables app-reference vernier">
+        <header class="reference-heading"><img class="app-icon" src="./images/vernier-icon.png" width="32" height="32" alt=""><h2 data-measure>Vernier Stream Mini</h2></header>
         <p data-measure>All eight output choices start selected. The supported GDX-RB exposes Force, Respiration Rate, Steps and Step Rate; the complete raw outlet also includes the seven diagnostics below. Other metadata-exposed channels are device-dependent and keep their declared label and unit.</p>
         <ul class="variable-list">
           <li data-variable-id="force"><div><strong data-measure>Force</strong><code>Force · Vernier-GDX-Mini_rawVernier; copy: _rawForce</code></div><p data-measure>The belt’s force transducer measures belt tension in newtons (N), forwarded from the Go Direct measurement channel without Mini normalization. Increasing force is associated with inhalation when correctly fitted, but absolute tension depends on placement and preload and is not airflow or tidal volume.</p></li>
@@ -75,8 +76,8 @@
         </ul>
         <p>Device rate/count definitions: <a href="https://www.vernier.com/manuals/GDX-RB">Vernier GDX-RB manual</a>. Transformation and diagnostic definitions: <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/9f9657b21c3b8255747b68be02f58007b76bab0a/crates/polar-h10-metrics/src/vernier_breathing.rs">Mini force processor</a> and <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/9f9657b21c3b8255747b68be02f58007b76bab0a/crates/polar-h10-output/src/lsl.rs">recorded channel metadata</a>.</p>
       </section>
-      <section id="respyra" class="variables respyra">
-        <h2 data-measure>Respyra 2.0</h2>
+      <section id="respyra" class="variables app-reference respyra">
+        <header class="reference-heading"><img class="app-icon" src="./logo.svg" width="32" height="32" alt=""><h2 data-measure>Respyra 2.0</h2></header>
         <p data-measure>One selected input drives the task: Vernier raw Force, PCA breathing, or Phan breathing. Respyra adds the selected calibrated waveform, separate comparison copies for usable alternatives and study events; comparison recording starts On in fresh settings.</p>
         <ul class="variable-list">
           <li data-variable-id="calibrated_breathing"><div><strong data-measure>Calibrated breathing — selected input</strong><code>Respyra-Calibrated-Breathing · Calibrated breathing</code></div><p data-measure>Respyra records (Force − center)/amplitude for Vernier input, or (polarity × waveform − center)/amplitude for selected Polar input, using the accepted study range. The output is dimensionless, unclipped and independent of feedback gain; NaN precedes calibration, 0 marks center and ±1 marks the scaled half-range, not physical volume.</p></li>
@@ -94,9 +95,9 @@
 <tr><th scope="row"><code>condition</code></th><td>Condition name, or null outside a trial.</td></tr>
 <tr><th scope="row"><code>phase</code></th><td>Active phase name, or null between phases.</td></tr>
 <tr><th scope="row"><code>screen</code></th><td>Active HTML startup form or blocking PsychoPy screen identity, otherwise null.</td></tr></tbody></table>
-        <p><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v0.3.9/src/mpi/event_markers/catalog.json">Complete shipped event types and payload-field definitions</a> · <a href="./study.html#files">Additional sample and assessment CSV variables</a></p>
+        <div class="reference-footer"><a href="./markers.html" data-measure>Complete marker inventory and payload dictionary</a><a href="./study.html#files" data-measure>Additional sample and assessment CSV variables</a></div>
       </section>
-      <section id="csv" class="variables respyra">
+      <section id="csv" class="variables app-reference respyra">
         <h2 data-measure>Additional task CSV variables</h2>
         <p data-measure>These are saved automatically by Respyra’s sample and assessment loggers, alongside XDF. They are task-table fields, not additional default LSL outlets; trial and condition also appear in event JSON.</p>
         <ul class="variable-list">
