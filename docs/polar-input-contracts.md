@@ -9,18 +9,27 @@ or lowers its waveform. Start remains disabled until that direction is set.
 
 | Contract | Polar metric ID and outlet suffix | Required validity outlets |
 | --- | --- | --- |
-| `respyra-polar-pca/1` | `adr_pca_waveform`, `_adrPcaWaveform` | `_adrPcaValid` |
-| `respyra-polar-phan-signed/1` | `adr_axis_mean_difference`, `_adrAxisMeanDifference` | `_adrPcaValid`, `_adrAxisDifferenceValid` |
+| `respyra-polar-pca/1` | PCA breathing: `adr_pca_waveform`, `_PCA-Breathing` | `_PCA-Valid` |
+| `respyra-polar-phan-signed/1` | Phan breathing: `adr_axis_mean_difference`, `_Phan-Breathing` | `_PCA-Valid`, `_Phan-Valid` |
 
-Each candidate is `Respiration`, one `Float32` channel in `g`, with irregular
-source-timed samples. The source ID is `polar-h10-<outlet name>`. Its metadata
+These are default display names, never discovery rules. Respyra identifies a
+compatible waveform from one floating-point (`Float32` or `Double64`) channel
+in `g`, a valid nonnegative nominal rate, and the declared signed waveform
+role and contract. The Mini emits irregular source-timed `Float32` samples;
+compatible regular-rate streams can also be read. Its metadata
 must declare `schema=adr-waveform/1`, `stream_role=respiration_candidate`,
 `raw_source_metric_id=raw_acc`, `respyra_signal_role=signed_breathing_level`,
-and the matching `respyra_input_contract`. Respyra checks the companion outlet
-identities, `SignalQuality` type, one `Float32` channel, and `0/1` unit. It
+and a supported `respyra_input_contract`. `validity_streams` declares readiness
+references and `validity_source_ids` binds them to stable source identities;
+the waveform's label, stream name and source-ID spelling are unrestricted.
+Earlier Mini metadata declares companion metric IDs and stream references and
+remains supported. Respyra checks `SignalQuality`, one floating-point channel,
+and `0/1` units on readiness inputs. It
 consumes finite waveform values only while the required validity flags are live.
-The unsigned/rectified Phan magnitude is deliberately excluded: its peaks do
-not retain inhale/exhale direction.
+Flowborne's unitless phase classes and the rectified Phan magnitude are excluded:
+they do not declare the supported continuous signed waveform role. A curve's
+visual appearance alone does not establish respiratory meaning; ECG and
+arbitrary motion remain incompatible without the required units and semantics.
 
 Polar waveform `g` values are acceleration-derived projections, **not chest
 displacement or belt force**. Respyra applies the selected direction, performs

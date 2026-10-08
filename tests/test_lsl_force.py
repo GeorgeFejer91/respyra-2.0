@@ -23,6 +23,7 @@ XML = """<info><desc>
 
 def test_force_channel_requires_raw_newtons_metadata():
     assert force_channel_index(XML, 2) == 1
+    assert force_channel_index(XML.replace("<label>Force</label>", "<label>Belt tension</label>"), 2) == 1
     assert force_channel_index(XML.replace("<model>GDX-RB</model>", "<model>GDX-RB-MOCK</model>"), 2) == 1
     with pytest.raises(LSLForceError):
         force_channel_index(XML.replace("<model>GDX-RB</model>", "<model>OTHER</model>"), 2)
@@ -149,7 +150,7 @@ def test_scan_displays_rejected_units_and_rejects_duplicate_identities():
         Info("duplicate2", identity="polar-stream-vernier-raw-duplicate"),
         Info("unstable", identity=""),
     ]
-    streams[-1].identity = "unrelated-producer"
+    streams[-1].identity = ""
     module = types.SimpleNamespace(resolve_streams=lambda **_kwargs: streams,
                                    StreamInlet=Inlet, cf_float32=1, cf_double64=2)
     with patch.dict(sys.modules, {"pylsl": module}):
@@ -172,7 +173,10 @@ def test_selection_memory_contains_identity_only_and_rejects_corruption(tmp_path
     }
     assert list(path.parent.iterdir()) == [path]
     for invalid in ('{broken', '[]', '{"version": 2}',
-                    '{"version":1,"source_id":"different-producer","stream_name":"Test"}'):
+                    '{"version":1,"source_id":"","stream_name":"Test"}'):
         path.write_text(invalid, encoding="utf-8")
         with pytest.raises(LSLForceError, match="choose a stream again"):
             load_force_selection(path)
+    source = types.SimpleNamespace(source_id="stable-device-7", stream_name="Chest movement", contract_id="respyra-polar-pca/1")
+    save_force_selection(source, path)
+    assert load_force_selection(path)["source_id"] == "stable-device-7"

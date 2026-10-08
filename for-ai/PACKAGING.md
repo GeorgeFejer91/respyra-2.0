@@ -1,8 +1,9 @@
 # Windows standalone packaging protocol
 
 Fresh suite preferences must retain the Mini defaults: Vernier raw Force and
-Polar direct ECG, ACC, heart rate, RR, the ACC breathing waveforms/quality
-metrics and All-in-one. Respyra defaults all visible/later LSL streams and
+Polar direct ECG, ACC, native heart rate/RR, PCA breathing, Phan breathing
+and Flowborne phase, with required PCA quality/validity and Phan validity.
+Polar All-in-one and other derived metrics start off. Respyra defaults all visible/later LSL streams and
 parallel comparison waveforms to recording. User changes take precedence;
 install/upgrade must not overwrite saved Mini selections or Respyra settings.
 Verify the default and opt-out behavior in the exact packaged candidate.

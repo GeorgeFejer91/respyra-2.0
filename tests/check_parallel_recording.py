@@ -26,21 +26,21 @@ from mpi.parallel_inputs import ParallelInputs  # noqa: E402
 from mpi.recording import NativeRecording, inspect_xdf  # noqa: E402
 
 base = "Parallel" + uuid4().hex[:8]
-force_id = "polar-stream-vernier-raw-" + base
-force_info = StreamInfo(base + "_rawVernier", "VernierRaw", 1, 0, cf_float32, force_id)
+force_id = "device-force-" + base
+force_info = StreamInfo(base + " Belt tension", "VernierRaw", 1, 0, cf_float32, force_id)
 desc = force_info.desc()
 for key, value in dict(manufacturer="Vernier", model="GDX-RB-MOCK",
                        stream_role="raw_measurement_recording").items():
     desc.append_child_value(key, value)
 channel = desc.append_child("channels").append_child("channel")
-for key, value in dict(label="Force", unit="N", sensor_number="1", type="RawMeasurement").items():
+for key, value in dict(label="Belt tension", unit="N", sensor_number="1", type="RawMeasurement").items():
     channel.append_child_value(key, value)
 force = StreamOutlet(force_info)
 
 validity = {}
 for suffix in ("adrPcaValid", "adrAxisDifferenceValid"):
-    name = base + "_" + suffix
-    info = StreamInfo(name, "SignalQuality", 1, 0, cf_float32, "polar-h10-" + name)
+    name = base + " Gate label " + suffix
+    info = StreamInfo(name, "SignalQuality", 1, 0, cf_float32, "device-gate-" + base + suffix)
     channel = info.desc().append_child("channels").append_child("channel")
     channel.append_child_value("label", suffix)
     channel.append_child_value("unit", "0/1")
@@ -52,14 +52,16 @@ for metric, suffix, contract, companions in (
     ("adr_axis_mean_difference", "adrAxisMeanDifference", "respyra-polar-phan-signed/1",
      ("adrPcaValid", "adrAxisDifferenceValid")),
 ):
-    name = base + "_" + suffix
-    info = StreamInfo(name, "Respiration", 1, 0, cf_float32, "polar-h10-" + name)
+    name = base + (" Operator waveform A" if metric == "adr_pca_waveform" else " Operator waveform B")
+    info = StreamInfo(name, "Custom waveform", 1, 0, cf_float32, "device-waveform-" + metric + base)
     desc = info.desc()
     for key, value in dict(manufacturer="Polar", model="H10", schema="adr-waveform/1",
                            stream_role="respiration_candidate", metric_id=metric,
                            raw_source_metric_id="raw_acc", respyra_input_contract=contract,
                            respyra_signal_role="signed_breathing_level",
-                           companion_streams=",".join(base + "_" + flag for flag in companions)).items():
+                           companion_streams=",".join(base + "_" + flag for flag in companions),
+                           validity_streams=",".join(base + "_" + flag for flag in companions),
+                           validity_source_ids=",".join("device-gate-" + base + flag for flag in companions)).items():
         desc.append_child_value(key, value)
     channel = desc.append_child("channels").append_child("channel")
     channel.append_child_value("label", suffix)
@@ -91,7 +93,7 @@ try:
     source.start_derived(markers.run_id)
     source.comparisons = ParallelInputs.discover(source, markers)
     assert len(source.comparisons.sources) == 2, [s.source_id for s in source.comparisons.sources]
-    recorder = NativeRecording(root / ".for-ai-local/recorder/runtime", output)
+    recorder = NativeRecording(os.environ.get("RESPYRA_RECORDER_RUNTIME", root / ".for-ai-local/recorder/runtime"), output)
     recorder.start({"participant": "17", "session": "001"}, source, markers)
     assert len(recorder.required) == 7, recorder.required  # 3 raw + 3 calibrated + markers
     source.comparisons.begin_range()

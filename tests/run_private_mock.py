@@ -57,6 +57,7 @@ parser.add_argument("mode", choices=["full", "memory", "remote", "remote-full", 
 parser.add_argument("--mini-exe", type=Path,
                     default=Path(os.environ["LOCALAPPDATA"]) / "Vernier Stream Mini/vernier-stream-mini.exe")
 parser.add_argument("--respyra-exe", type=Path)
+parser.add_argument("--python-exe", type=Path, help="Bundled interpreter for an installed candidate")
 parser.add_argument("--published-phone", action="store_true")
 parser.add_argument("--polar-metric", choices=["pca", "phan"])
 parser.add_argument("--invert", action="store_true")
@@ -71,7 +72,7 @@ if args.disconnect_after_ready and (args.mode != "remote-full" or args.repeat !=
 if args.mode == "startup" and not args.polar_metric:
     parser.error("startup requires --polar-metric")
 project = Path(__file__).resolve().parents[1]
-python = project / ".venv/Scripts/pythonw.exe"
+python = args.python_exe or project / ".venv/Scripts/pythonw.exe"
 if not args.mini_exe.is_file():
     parser.error(f"Mini executable missing: {args.mini_exe}")
 if not python.is_file():
@@ -90,6 +91,7 @@ if not desktop:
 cfg = root / "lsl.cfg"
 cfg.write_text("[lab]\nSessionID = " + name + "\n")
 os.environ["LSLAPICFG"] = str(cfg)
+os.environ["LOCALAPPDATA"] = str(root / "settings")
 os.environ["WEBVIEW2_USER_DATA_FOLDER"] = str(root / "webview")
 exe = args.mini_exe.resolve()
 if args.respyra_exe:
@@ -116,7 +118,7 @@ try:
     from pylsl import StreamInlet, resolve_streams
     deadline = time.monotonic() + 30
     source_id = None
-    suffix = {"pca": "_adrPcaWaveform", "phan": "_adrAxisMeanDifference"}.get(args.polar_metric)
+    suffix = {"pca": "_PCA-Breathing", "phan": "_Phan-Breathing"}.get(args.polar_metric)
     while time.monotonic() < deadline:
         streams = [stream for stream in resolve_streams(wait_time=1)
                    if (stream.name().endswith(suffix) if suffix else "Vernier" in stream.name())]
@@ -144,11 +146,11 @@ try:
     if args.mode == "startup":
         from pylsl import resolve_byprop
         base = source_id.removeprefix("polar-h10-").removesuffix(suffix)
-        names = {"pca": base + "_adrPcaWaveform",
-                 "phan": base + "_adrAxisMeanDifference",
-                 "pca_valid": base + "_adrPcaValid",
-                 "axis_valid": base + "_adrAxisDifferenceValid",
-                 "quality": base + "_adrPcaQuality"}
+        names = {"pca": base + "_PCA-Breathing",
+                 "phan": base + "_Phan-Breathing",
+                 "pca_valid": base + "_PCA-Valid",
+                 "axis_valid": base + "_Phan-Valid",
+                 "quality": base + "_PCA-Quality"}
         inlets = {key: StreamInlet(resolve_byprop("name", name, timeout=5)[0], recover=False)
                   for key, name in names.items()}
         reference = {}

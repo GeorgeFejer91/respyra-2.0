@@ -23,6 +23,11 @@ METRICS = {
 }
 CONTRACTS = {"pca": ("adr_pca_waveform", "respyra-polar-pca/1"),
              "phan": ("adr_axis_mean_difference", "respyra-polar-phan-signed/1")}
+CURRENT_SUFFIXES = {
+    "adr_pca_waveform": "PCA-Breathing", "adr_axis_mean_difference": "Phan-Breathing",
+    "adr_pca_valid": "PCA-Valid", "adr_axis_difference_valid": "Phan-Valid",
+    "adr_pca_quality": "PCA-Quality",
+}
 
 
 def _round_rust(values):
@@ -64,8 +69,10 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     assert len(by_name) == len(streams), "Duplicate stream names in XDF"
     raw = next(stream for stream in streams if stream["info"]["type"][0] == "Accelerometer"
                and "-Mock-" in stream["info"]["name"][0])
-    base = raw["info"]["name"][0].removesuffix("_rawACC")
-    assert raw["info"]["name"] == [base + "_rawACC"]
+    raw_suffix = "_Accelerometer" if raw["info"]["name"][0].endswith("_Accelerometer") else "_rawACC"
+    base = raw["info"]["name"][0].removesuffix(raw_suffix)
+    assert raw["info"]["name"] == [base + raw_suffix]
+    metric_names = CURRENT_SUFFIXES if raw_suffix == "_Accelerometer" else METRICS
     assert raw["info"]["channel_format"] == ["float32"]
     channels = raw["info"]["desc"][0]["channels"][0]["channel"]
     assert [(item["label"][0], item["unit"][0]) for item in channels] == [
@@ -99,7 +106,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     metric_streams = {}
     metric_errors = {}
     post_finalization_tail = {}
-    for metric, suffix in METRICS.items():
+    for metric, suffix in metric_names.items():
         stream = by_name[base + "_" + suffix]
         info, description = stream["info"], stream["info"]["desc"][0]
         assert info["source_id"] == ["polar-h10-" + info["name"][0]]
@@ -149,10 +156,10 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
         description = metric_streams[metric]["info"]["desc"][0]
         assert description["respyra_input_contract"] == [contract]
         companions = set(description["companion_streams"][0].split(","))
-        required = {base + "_adrPcaValid"}
+        required = {base + "_" + metric_names["adr_pca_valid"]}
         if mode == "phan":
-            required.add(base + "_adrAxisDifferenceValid")
-        assert required <= companions and base + "_adrPcaQuality" in companions
+            required.add(base + "_" + metric_names["adr_axis_difference_valid"])
+        assert required <= companions and base + "_" + metric_names["adr_pca_quality"] in companions
     signed = metric_streams["adr_axis_mean_difference"]["time_series"][:, 0]
     assert np.min(signed) < 0 < np.max(signed), "Phan candidate lost its sign"
 

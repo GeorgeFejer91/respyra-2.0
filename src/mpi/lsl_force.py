@@ -32,8 +32,7 @@ def force_channel_index(xml: str, channel_count: int) -> int:
     matches = [
         index
         for index, channel in enumerate(channels)
-        if channel.findtext("label") == "Force"
-        and channel.findtext("unit") == "N"
+        if channel.findtext("unit") == "N"
         and channel.findtext("sensor_number") == "1"
         and channel.findtext("type") == "RawMeasurement"
     ]
@@ -48,8 +47,8 @@ def validate_force_info(info) -> int:
 
     if info.type() != "VernierRaw":
         raise LSLForceError("Requires VernierRaw Force (N), not a derived breathing stream")
-    if not info.source_id().startswith("polar-stream-vernier-raw-"):
-        raise LSLForceError("Missing stable Vernier Stream Mini source ID")
+    if not info.source_id():
+        raise LSLForceError("Missing stable raw Force source ID")
     if info.channel_format() not in (cf_float32, cf_double64):
         raise LSLForceError("Raw Force must use floating-point LSL samples")
     return force_channel_index(info.as_xml(), info.channel_count())
@@ -73,8 +72,6 @@ def scan_force_streams(wait_time: float = 1.0) -> list[ForceStreamCandidate]:
         inlet = None
         index = None
         try:
-            if info.type() not in {"VernierRaw", "Respiration"}:
-                raise LSLForceError("Requires VernierRaw Force or a supported Polar waveform")
             inlet = StreamInlet(info, max_buflen=1, recover=False)
             # Full inlet info validates metadata; retain resolver info for reconnecting.
             full_info = inlet.info(timeout=1.0)
@@ -116,10 +113,10 @@ def load_force_selection(path: Path | None = None) -> dict | None:
         polar = saved.get("version") == 2 and saved.get("contract_id") in {
             "respyra-polar-pca/1", "respyra-polar-phan-signed/1"
         }
-        force = saved.get("version") == 1 and isinstance(saved.get("source_id"), str) and saved["source_id"].startswith("polar-stream-vernier-raw-")
+        force = saved.get("version") == 1
         if (not isinstance(saved.get("source_id"), str)
                 or not isinstance(saved.get("stream_name"), str)
-                or not (force or (polar and saved["source_id"] == "polar-h10-" + saved["stream_name"]))):
+                or not saved["source_id"] or not (force or polar)):
             raise ValueError("Unsupported selection")
         return saved
     except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -281,7 +278,7 @@ def connect_force_source(timeout: float = 5.0, source_id: str | None = None,
 def open_force_source(resolved, timeout: float = 5.0) -> LSLForceSource:
     """Revalidate the selected outlet and require live data before acceptance."""
     from pylsl import StreamInlet, proc_clocksync
-    if resolved.type() == "Respiration":
+    if resolved.type() != "VernierRaw":
         from mpi.lsl_polar import open_polar_source
         return open_polar_source(resolved, timeout=max(timeout, 20.0))
 

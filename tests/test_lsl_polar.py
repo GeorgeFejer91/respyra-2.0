@@ -19,6 +19,7 @@ def candidate(metric, contract, suffix, flags, unit="g"):
            f"<respyra_input_contract>{contract}</respyra_input_contract>"
            "<respyra_signal_role>signed_breathing_level</respyra_signal_role>"
            f"<companion_streams>{companions}</companion_streams>"
+           f"<validity_streams>{companions}</validity_streams>"
            f"<channels><channel><unit>{unit}</unit></channel></channels></desc></info>")
     return Info(name, "Respiration", xml)
 
@@ -37,6 +38,9 @@ class Info:
 
 
 @pytest.mark.parametrize("metric,contract,suffix,flags", [
+    ("adr_pca_waveform", "respyra-polar-pca/1", "PCA-Breathing", ("PCA-Valid",)),
+    ("adr_axis_mean_difference", "respyra-polar-phan-signed/1", "Phan-Breathing",
+     ("PCA-Valid", "Phan-Valid")),
     ("adr_pca_waveform", "respyra-polar-pca/1", "adrPcaWaveform", ("adrPcaValid",)),
     ("adr_axis_mean_difference", "respyra-polar-phan-signed/1", "adrAxisMeanDifference",
      ("adrPcaValid", "adrAxisDifferenceValid")),
@@ -60,7 +64,7 @@ def test_exact_contracts_connect_with_live_validity(metric, contract, suffix, fl
         def close_stream(self): self.closed = True
 
     module = types.SimpleNamespace(StreamInlet=Inlet, resolve_streams=lambda **_kwargs: [primary, *companions],
-                                   cf_float32=1, proc_clocksync=1)
+                                   cf_float32=1, cf_double64=2, proc_clocksync=1)
     with patch.dict(sys.modules, {"pylsl": module}):
         source = open_polar_source(primary, timeout=1.0)
         assert source.contract_id == contract and source.get_all() == [(100.0, 0.02)]
@@ -74,18 +78,41 @@ def test_exact_contracts_connect_with_live_validity(metric, contract, suffix, fl
     assert all(inlet.closed for inlet in inlets)
 
 
-def test_polar_contract_rejects_wrong_unit_and_wrong_method():
+def test_polar_contract_rejects_wrong_format_and_discrete_classification():
     from pylsl import cf_float32
     assert cf_float32 == 1
     info = candidate("adr_pca_waveform", "respyra-polar-pca/1", "adrPcaWaveform", ("adrPcaValid",))
     assert validate_polar_info(info)[0] == "respyra-polar-pca/1"
     for wrong in (
         candidate("adr_pca_waveform", "respyra-polar-pca/1", "adrPcaWaveform", ("adrPcaValid",), "N"),
-        candidate("adr_pca_waveform", "respyra-polar-phan-signed/1", "adrPcaWaveform", ("adrPcaValid",)),
-        candidate("adr_axis_difference_magnitude", "respyra-polar-pca/1", "adrAxisDifferenceMagnitude", ("adrPcaValid",)),
+        candidate("adr_pca_waveform", "unsupported/1", "adrPcaWaveform", ("adrPcaValid",)),
+        candidate("adr_axis_difference_magnitude", "", "adrAxisDifferenceMagnitude", ("adrPcaValid",)),
+        candidate("adr_moving_average_phase", "", "Flowborne", (), "class"),
+        candidate("adr_pca_waveform", "respyra-polar-pca/1", "Anything", ()),
     ):
         with pytest.raises(LSLForceError):
             validate_polar_info(wrong)
+
+
+def test_waveform_eligibility_ignores_names_and_accepts_double_precision():
+    info = candidate("custom_projection", "respyra-polar-pca/1", "Operator-label", ("my-readiness",))
+    info.label = "Chest movement session A"
+    info.kind = "Custom sensor waveform"
+    info.source_id = lambda: "stable-device-7"
+    info.channel_format = lambda: 2
+    info.nominal_srate = lambda: 25.0
+    assert validate_polar_info(info) == ("respyra-polar-pca/1", ("StudyPolar_my-readiness",))
+    info.channel_format = lambda: 3
+    with pytest.raises(LSLForceError, match="floating-point"):
+        validate_polar_info(info)
+
+
+def test_earlier_mini_metadata_identifies_flags_without_a_name_pattern():
+    info = candidate("adr_pca_waveform", "respyra-polar-pca/1", "adrPcaWaveform", ("adrPcaValid",))
+    info.xml = info.xml.replace("<validity_streams>StudyPolar_adrPcaValid</validity_streams>",
+        "<processing><companion_metric_ids>adr_pca_valid</companion_metric_ids></processing>")
+    info.label = "Renamed legacy breathing"
+    assert validate_polar_info(info)[1] == ("StudyPolar_adrPcaValid",)
 
 
 def test_validity_is_matched_to_each_waveform_timestamp():

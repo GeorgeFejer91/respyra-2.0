@@ -111,7 +111,8 @@ feedback. See `RECORDING.md`.
 
 The suite starts with Mini acquisition defaults: Vernier publishes its raw
 `VernierRaw` Force outlet; Polar publishes direct ECG, ACC, heart rate and RR
-plus its Breathing/Breathing dynamics metrics and their quality companions.
+plus PCA breathing, Phan breathing and Flowborne phase, with the three required
+quality/validity companions. All-in-one and other derived metrics start off.
 Saved Mini choices survive upgrade. Respyra offers one grouped selector for
 the main visual-feedback input. `mpi.parallel_inputs` opens other live
 compatible inputs at Start and publishes a separately calibrated comparison

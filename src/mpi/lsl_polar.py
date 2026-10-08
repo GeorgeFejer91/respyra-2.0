@@ -1,4 +1,4 @@
-"""Two exact Polar Mini breathing-level input contracts for the study."""
+"""Identify signed breathing waveforms by format and metadata, never names."""
 
 from __future__ import annotations
 
@@ -11,46 +11,40 @@ from xml.etree import ElementTree
 from mpi.lsl_force import LSLForceError, LSLForceSource
 
 
-POLAR_CONTRACTS = {
-    "adr_pca_waveform": ("respyra-polar-pca/1", "adrPcaWaveform", ("adrPcaValid",)),
-    "adr_axis_mean_difference": (
-        "respyra-polar-phan-signed/1", "adrAxisMeanDifference",
-        ("adrPcaValid", "adrAxisDifferenceValid"),
-    ),
-}
+POLAR_CONTRACTS = {"respyra-polar-pca/1": 1, "respyra-polar-phan-signed/1": 2}
 
 
 def validate_polar_info(info) -> tuple[str, tuple[str, ...]]:
-    """Return the exact contract and validity outlet names, or reject the stream."""
-    from pylsl import cf_float32
+    """Return a compatible waveform contract and its declared validity references."""
+    from pylsl import cf_float32, cf_double64
 
-    if info.type() != "Respiration" or info.channel_count() != 1 or info.channel_format() != cf_float32:
-        raise LSLForceError("Requires a one-channel Float32 Polar respiration candidate")
-    if info.nominal_srate() != 0:
-        raise LSLForceError("Polar respiration candidate must use source-timed irregular samples")
+    if info.channel_count() != 1 or info.channel_format() not in (cf_float32, cf_double64):
+        raise LSLForceError("Requires a one-channel floating-point breathing waveform")
+    if not math.isfinite(info.nominal_srate()) or info.nominal_srate() < 0:
+        raise LSLForceError("Breathing waveform has an invalid sampling rate")
     root = ElementTree.fromstring(info.as_xml())
     desc = root.find("desc")
     if desc is None:
         raise LSLForceError("Polar candidate has no LSL metadata")
-    metric_id = desc.findtext("metric_id")
-    if metric_id not in POLAR_CONTRACTS:
+    contract = desc.findtext("respyra_input_contract")
+    if contract not in POLAR_CONTRACTS:
         raise LSLForceError("Requires a supported signed Polar breathing-level candidate")
-    contract, suffix, flags = POLAR_CONTRACTS[metric_id]
-    base = info.name().removesuffix("_" + suffix)
-    required = {base + "_" + flag for flag in flags}
-    actual = set((desc.findtext("companion_streams") or "").split(","))
-    if (not base or info.name() != base + "_" + suffix
-            or info.source_id() != "polar-h10-" + info.name()
-            or desc.findtext("manufacturer") != "Polar" or desc.findtext("model") != "H10"
+    declared = tuple(filter(None, (desc.findtext("validity_streams") or "").split(",")))
+    if not declared:
+        # Earlier Mini versions declare the same references alongside metric IDs.
+        ids = (desc.findtext(".//companion_metric_ids") or "").split(",")
+        names = (desc.findtext("companion_streams") or "").split(",")
+        if len(ids) == len(names):
+            declared = tuple(name for metric, name in zip(ids, names) if metric.endswith("_valid") and name)
+    if (not info.source_id()
             or desc.findtext("schema") != "adr-waveform/1"
             or desc.findtext("stream_role") != "respiration_candidate"
             or desc.findtext("raw_source_metric_id") != "raw_acc"
-            or desc.findtext("respyra_input_contract") != contract
             or desc.findtext("respyra_signal_role") != "signed_breathing_level"
             or desc.findtext("channels/channel/unit") != "g"
-            or not required <= actual):
+            or len(set(declared)) != POLAR_CONTRACTS[contract]):
         raise LSLForceError("Polar candidate does not match its Respyra input contract")
-    return contract, tuple(sorted(required))
+    return contract, tuple(sorted(declared))
 
 
 class LSLPolarSource(LSLForceSource):
@@ -149,7 +143,7 @@ class LSLPolarSource(LSLForceSource):
 
 
 def open_polar_source(resolved, timeout=20.0):
-    from pylsl import StreamInlet, cf_float32, proc_clocksync, resolve_streams
+    from pylsl import StreamInlet, cf_float32, cf_double64, proc_clocksync, resolve_streams
 
     inlet = StreamInlet(resolved, max_buflen=2, processing_flags=proc_clocksync, recover=False)
     valid_inlets = {}
@@ -158,25 +152,30 @@ def open_polar_source(resolved, timeout=20.0):
         if info.source_id() != resolved.source_id():
             raise LSLForceError("Selected Polar stream identity changed during connection")
         contract, flags = validate_polar_info(info)
+        desc = ElementTree.fromstring(info.as_xml()).find("desc")
+        names = (desc.findtext("validity_streams") or "").split(",")
+        identities = (desc.findtext("validity_source_ids") or "").split(",")
+        references = dict(zip(names, identities)) if len(names) == len(identities) and all(identities) else {}
+        def referenced(item, name):
+            return (item.source_id() == references[name] if name in references
+                    else item.name() == name)
         deadline = time.monotonic() + timeout
         found = []
         while time.monotonic() < deadline:
             found = resolve_streams(wait_time=min(1.0, deadline - time.monotonic()))
-            if all(sum(item.name() == name and item.source_id() == "polar-h10-" + name
-                       for item in found) == 1 for name in flags):
+            if all(sum(referenced(item, name) for item in found) == 1 for name in flags):
                 break
         for name in flags:
-            matches = [item for item in found if item.name() == name
-                       and item.source_id() == "polar-h10-" + name
+            matches = [item for item in found if referenced(item, name)
                        and item.type() == "SignalQuality" and item.channel_count() == 1
-                       and item.channel_format() == cf_float32]
+                       and item.channel_format() in (cf_float32, cf_double64)]
             if len(matches) != 1:
                 raise LSLForceError(f"Required Polar validity outlet is unavailable: {name}")
             companion = StreamInlet(matches[0], max_buflen=2,
                                      processing_flags=proc_clocksync, recover=False)
             full = companion.info(timeout=min(5.0, max(0.1, deadline - time.monotonic())))
             if (full.source_id() != matches[0].source_id() or full.type() != "SignalQuality"
-                    or full.channel_count() != 1 or full.channel_format() != cf_float32
+                    or full.channel_count() != 1 or full.channel_format() not in (cf_float32, cf_double64)
                     or ElementTree.fromstring(full.as_xml()).findtext("./desc/channels/channel/unit") != "0/1"):
                 companion.close_stream()
                 raise LSLForceError(f"Polar validity outlet metadata changed: {name}")

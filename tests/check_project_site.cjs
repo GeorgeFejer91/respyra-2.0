@@ -30,35 +30,40 @@ const screenshots = path.resolve('.for-ai-local');
     await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
     assert.notEqual(await page.locator('html').getAttribute('data-pretext-fit'), 'unavailable');
     assert.equal(await page.getByRole('link', { name:'Download Respyra Suite for Windows' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/00-Respyra-Suite_0.3.8_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.9/00-Respyra-Suite_0.3.9_x64-setup.exe');
     assert.equal(await page.getByRole('link', { name:'Respyra 2.0 only' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/Respyra-2.0_0.3.8_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.9/Respyra-2.0_0.3.9_x64-setup.exe');
     for (const [name, file] of [
-      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.6_x64-setup.exe'],
-      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.6_x64-setup.exe'],
+      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.7_x64-setup.exe'],
+      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.7_x64-setup.exe'],
     ]) {
       assert.equal(await page.getByRole('link', { name }).getAttribute('href'),
-        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.8/' + file);
+        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.9/' + file);
     }
     for (const name of ['Download Vernier Stream Mini separately', 'Download Polar Stream Mini separately', 'Stream and data-flow wiki', 'Read the original preprint']) {
       assert(await page.getByRole('link', { name }).isVisible(), name);
     }
     const catalogSource = await fs.readFile('mini-streams/docs/metric-catalog.js', 'utf8');
     const catalog = JSON.parse(catalogSource.slice(catalogSource.indexOf('['), catalogSource.lastIndexOf(']') + 1));
-    const defaults = catalog.filter(metric => ['raw_ecg','raw_acc','heart_rate','rr_interval'].includes(metric.id)
-      || ['Breathing','Breathing dynamics'].includes(metric.category));
-    assert.equal(defaults.length, 37);
+    const primaryIds = ['raw_ecg','raw_acc','heart_rate','rr_interval','adr_pca_waveform','adr_axis_mean_difference','adr_moving_average_phase'];
+    const defaults = primaryIds.map(id => catalog.find(metric => metric.id === id));
+    assert(defaults.every(Boolean));
     await page.goto(base + 'variables.html');
-    const polarIds = defaults.flatMap(metric => metric.id === 'raw_acc' ? ['raw_acc_x','raw_acc_y','raw_acc_z'] : [metric.id]);
     assert.deepEqual(await page.locator('#polar [data-variable-id]').evaluateAll(rows => rows.map(row => row.dataset.variableId)),
-      [...polarIds, 'polar_signal_state','event_kind']);
+      primaryIds);
+    for (const metric of defaults) assert((await page.locator(`[data-variable-id="${metric.id}"] code`).textContent()).includes('Polar-H10-Mini_' + metric.streamSuffix));
+    assert.deepEqual(await page.locator('#polar [data-support-id]').evaluateAll(rows => rows.map(row => row.dataset.supportId)),
+      ['adr_pca_quality','adr_pca_valid','adr_axis_difference_valid','polar_signal_state']);
+    assert.equal(await page.locator('#polar-support').getAttribute('open'), null);
+    await page.locator('#polar-support summary').click();
+    assert(await page.locator('[data-support-id="adr_pca_valid"]').isVisible());
     const vernierDiagnostics = ['sequence','dropped_rows_before','device_drop_reports_before','sample_period_us','decode_latency_ns','host_receive_timestamp_ns','encoding_code'];
     assert.deepEqual(await page.locator('#vernier [data-variable-id]').evaluateAll(rows => rows.map(row => row.dataset.variableId)),
       ['force','respiration_rate','steps','step_rate','vernier_breathing','vernier_signal_state',...vernierDiagnostics]);
     assert.equal(await page.locator('#respyra [data-variable-id]').count(), 3);
-    assert.equal(await page.locator('[data-variable-id] strong').count(), 57);
+    assert.equal(await page.locator('[data-variable-id] strong').count(), 23);
     assert.equal(await page.locator('[data-csv-id] strong').count(), 13);
-    assert(await page.getByText(/can advertise 51 outlets/).isVisible());
+    assert(await page.getByText(/can advertise 23 outlets/).isVisible());
     const definitions = await page.locator('[data-variable-id] p').allTextContents();
     assert(definitions.every(text => text.length > 80), 'Every default variable needs a substantive definition');
     await page.goto(base + 'about.html');
@@ -120,6 +125,6 @@ const screenshots = path.resolve('.for-ai-local');
     assert(!page.url().includes(secret), 'Phone page must scrub the invitation');
     assert(await page.getByRole('button', { name:'Request access' }).isVisible());
     assert.deepEqual(errors, []);
-    console.log('PASS: four study pages, 57 LSL definitions and 13 task CSV fields, pinned installer links, screenshots, 24 layouts, enlarged text, credits and private QR redirect');
+    console.log('PASS: seven primary Polar signals, exact LSL names, separate technical flags, four study pages, installer links, 24 layouts, enlarged text, credits and private QR redirect');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

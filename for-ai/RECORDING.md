@@ -15,6 +15,13 @@ all other visible and later LSL streams still record by default unless their
 Record boxes were unchecked.
 
 Read for recorder, Start, calibration/stream lifecycle, XDF or remote-data work.
+Input suitability uses channel format, units, measurement/waveform role and
+declared readiness references, never stream or channel display names. Stable
+source IDs bind recording/reconnection and declared validity companions;
+their spelling is unrestricted. Polar supports one Float32/Double64 signed
+g waveform with a known processing contract and finite live valid samples;
+Flowborne class codes cannot drive feedback. Legacy Mini companion metadata
+remains accepted. Raw Vernier Force is selected by sensor/unit/type metadata.
 The user superseded external-recorder-only operation with recording bundled into
 the standard experiment as **respyrecorder** (`respyrecorder.exe` on Windows).
 Source/provenance is in `native/recorder/README.md`.

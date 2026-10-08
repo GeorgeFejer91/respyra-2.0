@@ -36,6 +36,7 @@ def run(metric, suffix, contract, flags):
         "raw_source_metric_id": "raw_acc", "respyra_input_contract": contract,
         "respyra_signal_role": "signed_breathing_level",
         "companion_streams": ",".join(base + "_" + flag for flag in flags),
+        "validity_streams": ",".join(base + "_" + flag for flag in flags),
     }.items():
         desc.append_child_value(key, value)
     desc.append_child("channels").append_child("channel").append_child_value("unit", "g")
