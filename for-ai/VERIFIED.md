@@ -786,4 +786,66 @@ the respective scope needs current evidence; panel styling does not need it.
 - Result/date: `VERIFIED` for source defaults, format/metadata eligibility, renamed-input recording and documentation layout, 2026-10-08. Mini source `9f9657b21c3b8255747b68be02f58007b76bab0a`; seven primary signals plus three required quality/validity companions, with All-in-one and other metrics off. Existing saved selections remain authoritative; Use study defaults restores the minimal selection.
 - Checks: focused metrics/output/runtime Cargo tests, locked all-targets Clippy (`-D warnings`), Rustfmt, 61-entry generated catalog/docs check, and 46 Python input/setup/recording tests passed. Official LSL readback passed separate, combined and simultaneous output modes. A private three-input closed-XDF integration accepted renamed waveform/type/source labels and renamed validity outlets bound by stable IDs; PyXDF verified all nine streams, timestamps, calibration formulas and footers. The site check passed four pages at 24 layouts, enlarged text, seven primary Polar definitions, technical details, credits and phone-controller privacy checks. Both structural context checks passed; bootstrap `origin/main` equality is inapplicable to these feature branches.
 - UI limit: the complete Mini validator reproduced an unchanged enlarged-text battery Pretext no-fit result on both the baseline and candidate. The focused validator omitted that one baseline failure and passed affected defaults/reset, optional selections, required companions, resize and mock checks. No production battery UI was changed. Synthetic checks establish format compatibility, not physiological respiratory accuracy; physical BLE and the exact new installer are not yet qualified in this receipt.
-- Evidence: ignored `minimal-python-tests.log`, `minimal-mini-final-rust.log`, `minimal-mini-clippy.log`, `minimal-mini-docs.log`, `minimal-mini-ui-focused.log`, `battery-baseline.log`, `minimal-live-adr.log`, `minimal-renamed-xdf.log`, `minimal-final-site.log` and `minimal-adr-*` readback files. Unchanged calibration algorithms, study progression and recorder/export implementation reuse the earlier scoped evidence.
+- Evidence: ignored `minimal-python-tests.log`, `minimal-polar-final-rust.log`, `minimal-mini-clippy.log`, `minimal-mini-docs.log`, `minimal-mini-ui-focused.log`, `battery-baseline.log`, `minimal-live-adr.log`, `minimal-renamed-xdf.log`, `minimal-final-site.log` and `minimal-adr-*` readback files. Unchanged calibration algorithms, study progression and recorder/export implementation reuse the earlier scoped evidence.
+
+### Minimal-default 0.3.9 exact Windows suite qualification
+
+- Result/date: `VERIFIED` for the named exact-artifact software checks; `PARTIAL`
+  for physical acquisition, 2026-10-08. Artifact source/tag `v0.3.9` is
+  `146e9b06ddc51e5868735c028fd742b2d65ffa4e`, Mini
+  `9f9657b21c3b8255747b68be02f58007b76bab0a`. Both were clean at build.
+  Suite SHA-256 `29a039c87e9f59c7c51b8d8a7d8595bc2ace338bebdc5f732d769850f1c370b1`;
+  source ZIP `b319712d37f1d9a9115674487ff8d88b2aeaa199fb2d13c9ff318c93c5072c82`
+  (704,567,499 bytes). `npm.cmd` preserves Windows CLI argument separators.
+- Build/install: `pnpm package:suite` passed all four NSIS builds, isolated
+  embedded imports and native three-stream XDF. The exact suite installed on a
+  private Win32 desktop in `.for-ai-local/Installed Respyra Suite 0.3.9/`.
+  All 18,449 engine files, two Mini payloads/25 resources and eight shortcut
+  targets matched. Installed main SHA-256 is
+  `8766507ae4d1a07a4e614f6a8248053b67b7c37d048e70baccdf590de1511a17`,
+  matching extraction from the final installer; Tauri restores a different
+  generic build executable after NSIS patches the shipped binary.
+- Native behavior: the suite launcher opened exactly three app processes and
+  three private-desktop windows. Start remained disabled and a forced Start was
+  rejected without input. Fresh installed Polar settings selected the seven
+  primary signals and three companions; a saved opt-out survived restart and
+  Use study defaults restored the same set. Installed PCA and Phan runs accepted
+  native Space at instructions, reached calibration readiness, then saved closed
+  14-stream XDFs and original-schema CSVs after Stop. All seven primary Polar
+  signals were nonempty; both waveform references differed by less than `5e-10`.
+  Installed Vernier used the hosted phone page, decoded the actual QR and saved
+  a closed ten-stream XDF with remote edits/Start/Stop/Close. These were short
+  synthetic runs, not full-duration studies or physical keyboard routing.
+- Compatibility/retention: the current consumer accepted both actual legacy
+  Mini 0.6.6 waveform outlets and live flags. The renamed three-input XDF opened
+  eight numeric streams in MNE 1.13.2/MNELAB 1.5.6; its matching BIDS export
+  passed MNE-BIDS 0.20.0 and validator 1.15.0 with zero errors and optional
+  `NO_AUTHORS`. Upgrade from 0.3.8 and repeat install retained test data. Private
+  uninstall retained all 130 recording/metadata files with identical hashes.
+  Existing user installation, registration and shortcut bytes were preserved.
+- Harness corrections: the reset assertion compares selected sets because UI
+  catalog order may differ from fresh preference order. The mock auditor now
+  matches the full ACC sequence before choosing its age offset; identical flat
+  prefixes previously chose offset 6054 instead of 6050. Three regressions
+  verify the correct offset and reject altered samples/incorrect stream ages.
+  Every timestamp, metric, marker and footer assertion remains. The private
+  adaptation allows up to 60 seconds for the instruction flip on a heavily
+  loaded machine; an earlier hosted-phone attempt exceeded the 25-second bound.
+- Evidence: ignored `minimal-suite-build.log`, `minimal-installed-upgrade.log`,
+  `minimal-installed-engine.log`, `minimal-suite-launch.log`,
+  `minimal-installed-mini-ui.log`, `minimal-installed-pca-final.log`,
+  `minimal-installed-phan.log`, `minimal-installed-vernier-final.log`,
+  `minimal-pca-canonical-audit.log`, `minimal-phan-canonical-audit.log`,
+  `minimal-auditor-tests.log`, `minimal-legacy-worker.log`,
+  `minimal-renamed-mne.log`, `minimal-renamed-bids.log`,
+  `minimal-installed-uninstall.log`, `minimal-install-evidence/` and
+  `minimal-source-bundle.log`. The later auditor/website/receipt changes do not
+  alter the qualified installers or their pinned source bundle.
+- Limits: unsigned preview; physical sensors/BLE reconnection, real phone and
+  keyboard routing, full-duration scientific timing and clean-machine install
+  remain unqualified. The earlier 0.3.8 Polar timestamp-tail failure remains
+  a historical unresolved result; these successful short candidate recordings
+  do not identify or universally resolve its cause. Full study progression,
+  calibration algorithms and recorder/export implementation reuse unchanged
+  scoped source evidence above. The baseline Mini battery no-fit limitation
+  remains as documented in the preceding receipt.

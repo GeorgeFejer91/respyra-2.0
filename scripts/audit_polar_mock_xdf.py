@@ -61,6 +61,18 @@ def _nearest(source, query):
                     np.abs(source[following] - query), previous, following)
 
 
+def _mock_sequence_start(acc, expected_acc, age_samples):
+    # A short prefix can be identical at many positions on a flat plateau.
+    # Match the complete recording before choosing the closest stream age.
+    starts = np.flatnonzero(np.all(expected_acc[:len(expected_acc)-len(acc)+1] == acc[0], axis=1))
+    starts = [int(start) for start in starts if start % 2 == 0
+              and np.array_equal(expected_acc[start:start+len(acc)], acc)]
+    assert starts, "Lost, duplicated or altered ACC samples"
+    start = min(starts, key=lambda value: abs(value - age_samples))
+    assert abs(start - age_samples) < 400, "Mock sequence is inconsistent with stream age"
+    return start
+
+
 def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
           expect_disconnect: bool = False) -> dict:
     path = Path(path)
@@ -91,14 +103,8 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     replay = _reference(reference)
     max_samples = 2 * (max(replay["adr_pca_valid"]) + 1)
     expected_acc = _mock_acc(max_samples)
-    prefix = min(32, len(acc))
-    starts = np.flatnonzero(np.all(expected_acc[:max_samples-prefix+1] == acc[0], axis=1))
-    starts = [int(start) for start in starts
-              if np.array_equal(expected_acc[start:start+prefix], acc[:prefix])]
-    assert starts, "Raw ACC has no matching mock sequence"
     age_samples = (acc_time[0] - float(raw["info"]["created_at"][0])) * 200
-    start = min(starts, key=lambda value: abs(value - age_samples))
-    assert abs(start - age_samples) < 400, "Mock sequence is inconsistent with stream age"
+    start = _mock_sequence_start(acc, expected_acc, age_samples)
     assert start % 2 == 0 and start + len(acc) <= max_samples
     assert np.array_equal(acc, expected_acc[start:start + len(acc)]), "Lost, duplicated or altered ACC samples"
 
