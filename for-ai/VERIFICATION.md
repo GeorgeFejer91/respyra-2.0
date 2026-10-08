@@ -249,6 +249,19 @@ trials through native window messages. These checks refuse the input desktop.
 Targeted Win32 messages prove window/event dispatch, not physical keyboard
 routing or foreground-focus behavior on a participant's desktop.
 
+For typed Continue/Retry controls, the focused bridge/marker tests must reject
+pre-flip, stale-instance, unavailable and interrupted intents and acknowledge
+only after normal dismissal markers. `tests/check_control_center.py --full-study
+--remote-controls` combines typed controller prompts with private-desktop native
+questionnaire keys across all 48 shortened trials and independently decodes XDF.
+Set `RESPYRA_TEST_PROMPT_CONTROLS=1` for the private native `remote` gate: the
+real phone must Continue instructions/readiness, Retry, Continue the new
+readiness/result, enter a trial, then Stop/Close. Require six unique prompt IDs,
+remote-origin accepted command markers in closed XDF, normal dismiss/retry
+ordering and finite derived samples. Retry returns to calibration readiness;
+the next Continue requires its fresh prompt ID. Keep this separate from mock
+iframe rendering and physical phone/keyboard evidence.
+
 For recorder/calibration/input changes, select the affected checks below.
 Build the recorder only when its source/build inputs or required binary change.
 The full-study trigger is defined in the impact table; it is not a default

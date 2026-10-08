@@ -270,6 +270,31 @@ const path = require('node:path');
     assert.equal((await page.evaluate(() => window.testSnapshot())).polar_inverted, true);
     await page.locator('#start').click();
     await page.locator('#stop').waitFor({ state:'visible' });
+    await page.evaluate(() => window.testProgress({prompt:{id:'run:10',screen:'calibration_result',controls:['continue','retry']}}));
+    await page.locator('#prompt-retry').waitFor({state:'visible'});
+    for (const [width,height,size] of [[820,760,16],[1440,900,16],[320,480,32]]) {
+      await page.setViewportSize({width,height});
+      await page.evaluate(size => {document.documentElement.style.fontSize=size+'px';},size);
+      await page.waitForTimeout(150);
+      const fit=await page.evaluate(() => ({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,
+        shown:!!document.getElementById('shell').getClientRects().length,notice:!!document.getElementById('no-fit').getClientRects().length,
+        clipped:[...document.querySelectorAll('[data-measure]')].filter(e=>e.getClientRects().length &&
+          (e.scrollWidth>e.clientWidth+1 || e.scrollHeight>e.clientHeight+1)).map(e=>e.textContent)}));
+      assert(fit.width<=width+1 && fit.height<=height+1 && (fit.shown||fit.notice) && !fit.clipped.length,JSON.stringify(fit));
+      if(width>=820) assert(fit.shown,'Prompt controls must fit supported desktop sizes');
+    }
+    await page.setViewportSize({width:1200,height:760});
+    await page.evaluate(() => {document.documentElement.style.fontSize='16px';});
+    await page.waitForTimeout(150);
+    await page.locator('#prompt-retry').click();
+    assert(await page.locator('#prompt-continue').isDisabled(), 'One accepted command disables its old prompt');
+    await page.evaluate(() => window.testProgress({prompt:{id:'run:20',screen:'instructions',controls:['continue']}}));
+    await page.locator('#prompt-continue').click();
+    assert(await page.locator('#prompt-retry').isHidden());
+    const promptActions = await page.evaluate(() => window.testActions.filter(a => a.action === 'prompt_control'));
+    assert.deepEqual(promptActions.map(a => [a.prompt_id,a.control]), [['run:10','retry'], ['run:20','continue']]);
+    await page.evaluate(() => window.testProgress({prompt:null}));
+    assert(await page.locator('#prompt-continue').isHidden());
     assert(await page.locator('#participant').isDisabled());
     assert(await page.locator('#start').isHidden());
     await page.locator('#marker-inventory-open').click();

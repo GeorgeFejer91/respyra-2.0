@@ -147,7 +147,7 @@ class MarkerOutlet:
             self.observer(payload)
 
     @contextmanager
-    def observe_inputs_and_screens(self, cancel_check=None, idle_check=None):
+    def observe_inputs_and_screens(self, cancel_check=None, idle_check=None, prompt_controls=None):
         """Mark accepted/rejected keys and every known respyra text screen."""
         from psychopy import event
         from respyra.core import display, events
@@ -157,6 +157,7 @@ class MarkerOutlet:
         original_get = event.getKeys
         original_check = events.check_keys
         original_show = display.show_text_and_wait
+        control_action = None
 
         def mark_key(key, accepted: bool, source: str, psychopy_time=None):
             self.emit("input.key", key=key, accepted=accepted, source=source,
@@ -165,6 +166,7 @@ class MarkerOutlet:
                 self.emit("input.escape", source=source)
 
         def observed_wait(*args, **kwargs):
+            nonlocal control_action
             allowed = kwargs.pop("keyList", None)
             deadline = time.monotonic() + kwargs.get("maxWait", float("inf"))
             # respyra clears stale keys before drawing/flipping each prompt.
@@ -176,6 +178,13 @@ class MarkerOutlet:
                     cancel_check()
                 if idle_check is not None:
                     idle_check()
+                if prompt_controls is not None:
+                    response = prompt_controls.take_prompt_control(allowed)
+                    if response is not None:
+                        key, action = response
+                        mark_key(key, True, action.get("ui_origin", "local") + "_control")
+                        control_action = action
+                        return [key]
                 if cancel_check is not None or idle_check is not None:
                     kwargs["maxWait"] = min(0.1, max(0, deadline - time.monotonic()))
                 keys = original_wait(*args, keyList=None, **kwargs)
@@ -215,6 +224,7 @@ class MarkerOutlet:
             return original_clear(*args, **kwargs)
 
         def observed_show(win, text, key_list=None, **kwargs):
+            nonlocal control_action
             screen = prompt_name(text)
             previous_screen = self.screen
             self.screen = screen
@@ -223,6 +233,8 @@ class MarkerOutlet:
                 if "WARNING: Sensor saturation detected" in text:
                     self.emit("calibration.saturation")
             win.callOnFlip(self.emit, f"ui.{screen}.shown")
+            if prompt_controls is not None:
+                win.callOnFlip(prompt_controls.open_prompt, screen, key_list)
             try:
                 result = original_show(win, text, key_list=key_list, **kwargs)
                 key = result[0] if isinstance(result, tuple) else result
@@ -238,8 +250,16 @@ class MarkerOutlet:
                         self.emit("calibration.retry")
                     elif key == "space":
                         self.emit("calibration.accepted")
+                if control_action is not None:
+                    action, control_action = control_action, None
+                    prompt_controls.finish_prompt_control(action)
                 return result
             finally:
+                if prompt_controls is not None:
+                    prompt_controls.close_prompt()
+                    if control_action is not None:
+                        action, control_action = control_action, None
+                        prompt_controls.finish_prompt_control(action, False, "prompt_interrupted")
                 self.screen = previous_screen
 
         event.waitKeys = observed_wait

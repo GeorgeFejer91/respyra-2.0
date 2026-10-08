@@ -118,7 +118,7 @@ const assert = require('node:assert/strict');
     await page.screenshot({path:'.for-ai-local/native-qr-popup.png'});
     await page.locator('#viewer-qr img').screenshot({path:'.for-ai-local/native-qr.png'});
     const {execFileSync}=require('node:child_process');
-    execFileSync('.venv/Scripts/python.exe',['-c',
+    execFileSync(process.env.RESPYRA_TEST_QR_PYTHON || '.venv/Scripts/python.exe',['-c',
       // Decode the rendered pixels. OpenCV sometimes needs nearest-neighbor
       // magnification at fractional Windows display scales; no QR data is added.
       'import cv2,sys; image=cv2.imread(".for-ai-local/native-qr.png"); image=cv2.copyMakeBorder(image,16,16,16,16,cv2.BORDER_CONSTANT,value=(255,255,255)); detector=cv2.QRCodeDetector(); decoded=[detector.detectAndDecode(cv2.resize(image,None,fx=scale,fy=scale,interpolation=cv2.INTER_NEAREST))[0] for scale in (1,2)]; assert sys.stdin.read() in decoded, "Displayed QR did not decode to the invitation"'],
@@ -247,6 +247,36 @@ const assert = require('node:assert/strict');
       }
     }
     if(mode==='remote') assert.equal(await ui.locator('#battery').textContent(),'Not reported');
+    if(mode==='remote' && process.env.RESPYRA_TEST_PROMPT_CONTROLS) {
+      const waitPrompt = (screen, previous='') => ui.waitForFunction(({screen,previous}) => {
+        const root=document.getElementById('controller'), button=document.getElementById('prompt-continue');
+        return root.dataset.prompt===screen && root.dataset.promptId!==previous && !button.hidden && !button.disabled;
+      }, {screen,previous}, {timeout:90000});
+      await waitPrompt('instructions');
+      const first=await ui.locator('#controller').getAttribute('data-prompt-id');
+      await ui.locator('#prompt-continue').click();
+      await waitPrompt('calibration_ready');
+      assert.notEqual(await ui.locator('#controller').getAttribute('data-prompt-id'),first);
+      assert(await ui.locator('#prompt-retry').isHidden());
+      await ui.locator('#prompt-continue').click();
+      await waitPrompt('calibration_result');
+      await page.waitForFunction(() => !document.getElementById('prompt-retry').hidden);
+      const controlsFit=await page.evaluate(() => ({shown:!!document.getElementById('shell').getClientRects().length,
+        width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,
+        clipped:[...document.querySelectorAll('.hub-foot [data-measure]')].filter(e=>e.getClientRects().length &&
+          (e.scrollWidth>e.clientWidth+1 || e.scrollHeight>e.clientHeight+1)).map(e=>e.textContent)}));
+      assert(controlsFit.shown && controlsFit.width<=821 && controlsFit.height<=901 && !controlsFit.clipped.length,JSON.stringify(controlsFit));
+      const result=await ui.locator('#controller').getAttribute('data-prompt-id');
+      await ui.locator('#prompt-retry').click();
+      await waitPrompt('calibration_ready');
+      await ui.locator('#prompt-continue').click();
+      await waitPrompt('calibration_result',result);
+      await ui.locator('#prompt-continue').click();
+      await waitPrompt('trial_ready');
+      await ui.locator('#prompt-continue').click();
+      await ui.waitForFunction(() => document.getElementById('controller').dataset.prompt === '');
+      await ui.screenshot({path:'.for-ai-local/native-remote-prompt-controls.png',fullPage:true});
+    }
     if(mode==='remote' && !process.env.RESPYRA_PRIVATE_READY_PATH) {
       await ui.waitForFunction(() => document.getElementById('monitor-value').textContent.includes('Live') && document.getElementById('trace-line').getAttribute('d')?.includes('L'));
       if(process.env.RESPYRA_TEST_SOURCE_ID) {

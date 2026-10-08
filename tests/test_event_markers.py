@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from mpi.event_markers import CATALOG, MarkerOutlet, NullSampleLogger, prompt_name
-from mpi.desktop_bridge import DesktopCancelled
+from mpi.desktop_bridge import DesktopBridge, DesktopCancelled, PREFIX, validate_action
 
 
 class Window:
@@ -24,6 +24,70 @@ class Window:
         callbacks, self.callbacks = self.callbacks, []
         for callback, args, kwargs in callbacks:
             callback(*args, **kwargs)
+
+
+@pytest.mark.parametrize("control, interrupted", [("continue", False), ("retry", False), ("continue", True)])
+def test_semantic_prompt_control_keeps_flip_and_dismissal_markers(marker, control, interrupted):
+    import io
+    bridge = DesktopBridge(io.StringIO(""), io.StringIO())
+    assert bridge.closed.wait(1)
+    bridge.closed.clear()
+    bridge.experiment = True
+    bridge.markers = marker
+    event = types.ModuleType("psychopy.event")
+    event.clearEvents = lambda *_args, **_kwargs: None
+    event.getKeys = lambda **_kwargs: []
+    def unexpected_wait(**_kwargs):
+        pytest.fail("A semantic control must not inject or depend on physical keyboard input")
+    event.waitKeys = unexpected_wait
+    display = types.ModuleType("respyra.core.display")
+    events = types.ModuleType("respyra.core.events")
+    events.check_keys = lambda *_args: []
+    def show(win, text, key_list=None):
+        event.clearEvents()
+        assert bridge.prompt is None
+        win.flip()
+        key = event.waitKeys(keyList=key_list)[0]
+        if interrupted:
+            raise RuntimeError("interrupted")
+        return key
+    display.show_text_and_wait = show
+    psychopy = types.ModuleType("psychopy")
+    psychopy.event = event
+    core = types.ModuleType("respyra.core")
+    core.display, core.events = display, events
+    queued = False
+    def checkpoint():
+        nonlocal queued
+        if bridge.prompt is not None and not queued:
+            bridge.actions.put(validate_action({"action":"prompt_control", "ui_seq":1,
+                "ui_time_ms":42.0, "ui_origin":"remote", "ui_client_seq":7,
+                "prompt_id":bridge.prompt["id"], "control":control}))
+            queued = True
+        bridge.check_cancel()
+    with patch.dict(sys.modules, {"psychopy":psychopy, "psychopy.event":event,
+        "respyra.core":core, "respyra.core.display":display, "respyra.core.events":events}):
+        with marker.observe_inputs_and_screens(cancel_check=checkpoint, prompt_controls=bridge) as observed_show:
+            if interrupted:
+                with pytest.raises(RuntimeError, match="interrupted"):
+                    observed_show(Window(), "Calibration Complete", key_list=["space", "r", "escape"])
+            else:
+                result = observed_show(Window(), "Calibration Complete", key_list=["space", "r", "escape"])
+                assert result == {"continue":"space", "retry":"r"}[control]
+    samples = [row[0] for row in marker._outlet.samples]
+    names = [row["event"] for row in samples]
+    assert names[0] == "ui.calibration_result.shown"
+    assert samples[1]["source"] == "remote_control" and samples[1]["accepted"]
+    assert samples[1]["psychopy_time"] is None
+    outcome = samples[-1]
+    assert outcome["event"] == "ui.prompt_control" and outcome["accepted"] is not interrupted
+    assert outcome["ui_origin"] == "remote" and outcome["ui_client_seq"] == 7
+    assert outcome["prompt_id"] == f"{marker.run_id}:1"
+    if not interrupted:
+        assert names == ["ui.calibration_result.shown", "input.key", "ui.calibration_result.dismissed",
+                         "calibration.retry" if control == "retry" else "calibration.accepted", "ui.prompt_control"]
+    assert json.loads(bridge.writer.getvalue().removeprefix(PREFIX))["ok"] is not interrupted
+    assert bridge.prompt is None and marker.screen is None
 
 
 @pytest.fixture

@@ -53,10 +53,10 @@ export function mountDesktop() {
   const observation = document.querySelector('#observation');
   settings.append(observation.querySelector('.diagnostics'));
   const actions = document.createElement('div'); actions.className = 'actions';
-  actions.append(...document.querySelector('.final-actions').children, ...observation.querySelector('.actions').children);
+  actions.append(...document.querySelector('.final-actions').children, ...document.querySelector('#run-controls .actions').children);
   actions.querySelector('#start').setAttribute('form', 'setup');
   document.querySelector('.final-actions').remove();
-  observation.querySelector('.actions').remove();
+  document.querySelector('#run-controls').remove();
   const footer = document.createElement('footer'); footer.id = 'action-bar';
   footer.append(document.querySelector('#recording-panel'), observation, actions);
   root.append(footer);

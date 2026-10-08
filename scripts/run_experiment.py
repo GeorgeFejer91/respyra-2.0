@@ -308,7 +308,8 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         )
         markers.state = state
         observer = (markers.observe_inputs_and_screens(cancel_check=bridge.check_cancel,
-                                                       idle_check=belt.get_all)
+                                                       idle_check=belt.get_all,
+                                                       prompt_controls=bridge if hasattr(bridge, "open_prompt") else None)
                     if bridge is not None else markers.observe_inputs_and_screens())
         show_text_and_wait = hooks.enter_context(observer)
 

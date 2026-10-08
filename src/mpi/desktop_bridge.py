@@ -23,6 +23,7 @@ ACTION_FIELDS = {
     "option": {"field", "enabled"},
     "record_stream": {"uid", "enabled"},
     "recording_folder": {"path"},
+    "prompt_control": {"prompt_id", "control"},
 }
 
 
@@ -79,6 +80,12 @@ def validate_action(action):
         raise ValueError("Invalid recording folder")
     if "row" in action and (type(action["row"]) is not int or action["row"] < 0):
         raise ValueError("Invalid stream row")
+    if action["action"] == "prompt_control" and (
+        not isinstance(action["control"], str) or action["control"] not in {"continue", "retry"}
+        or not isinstance(action["prompt_id"], str)
+        or re.fullmatch(r"[A-Za-z0-9:-]{1,96}", action["prompt_id"]) is None
+    ):
+        raise ValueError("Invalid prompt control")
     return action
 
 
@@ -102,6 +109,8 @@ class DesktopBridge:
         self.recorder = None
         self.viewer = None
         self.input_capture = None
+        self.prompt = None
+        self._prompt_action = None
         threading.Thread(target=self._read, args=(reader,), daemon=True,
                          name="respyra-desktop-control").start()
 
@@ -146,7 +155,58 @@ class DesktopBridge:
                 self.stop_action = action
                 self.stopped = True
                 raise ExperimentStopped("Stopped by experimenter")
+            if action["action"] == "prompt_control":
+                if self.prompt is None or action["prompt_id"] != self.prompt["id"]:
+                    self.finish_prompt_control(action, False, "stale_prompt")
+                elif action["control"] not in self.prompt["controls"]:
+                    self.finish_prompt_control(action, False, "unavailable_control")
+                elif self._prompt_action is not None:
+                    self.finish_prompt_control(action, False, "prompt_busy")
+                else:
+                    self._prompt_action = action
+                return
             self.reply(action, False, "Setup is no longer available")
+
+    def open_prompt(self, screen, keys):
+        """Called at the actual prompt flip; publish metadata without pipe I/O."""
+        controls = [name for name, key in (("continue", "space"), ("retry", "r"))
+                    if key in (keys or []) and (
+                        name != "retry" or screen == "calibration_result")]
+        if screen not in {"instructions", "calibration_ready", "calibration_result",
+                          "trial_ready", "trial_feedback", "end"}:
+            controls = []
+        self.prompt = ({"id": f"{self.markers.run_id}:{self.markers.sequence}",
+                        "screen": screen, "controls": controls} if controls else None)
+
+    def take_prompt_control(self, allowed):
+        action, self._prompt_action = self._prompt_action, None
+        if action is None:
+            return None
+        key = {"continue": "space", "retry": "r"}[action["control"]]
+        if (self.prompt is None or action["prompt_id"] != self.prompt["id"]
+                or (allowed is not None and key not in allowed)):
+            self.finish_prompt_control(action, False, "stale_prompt")
+            return None
+        return key, action
+
+    def finish_prompt_control(self, action, accepted=True, reason=None):
+        self.markers.emit("ui.prompt_control", control=action["control"],
+                          prompt_id=action["prompt_id"], accepted=accepted, reason=reason,
+                          **{key: action[key] for key in
+                             ("ui_seq", "ui_time_ms", "ui_origin", "ui_client_seq")
+                             if key in action})
+        message = {"stale_prompt": "Prompt is no longer available. Review the current screen.",
+                   "unavailable_control": "Control is unavailable for this prompt.",
+                   "prompt_busy": "A prompt command is already pending.",
+                   "prompt_interrupted": "Prompt was interrupted. Review the current screen."}.get(reason)
+        if not self.closed.is_set():
+            self.reply(action, accepted, message)
+
+    def close_prompt(self):
+        self.prompt = None
+        if self._prompt_action is not None:
+            action, self._prompt_action = self._prompt_action, None
+            self.finish_prompt_control(action, False, "stale_prompt")
 
     def _accept_sequence(self, action):
         if action["ui_seq"] != self.sequence + 1:
@@ -162,6 +222,9 @@ class DesktopBridge:
             self.check_cancel()
             return None
         self._accept_sequence(action)
+        if action["action"] == "prompt_control":
+            self.finish_prompt_control(action, False, "stale_prompt")
+            return None
         return action
 
     def reply(self, action, ok=True, message=None):
@@ -196,6 +259,7 @@ class DesktopBridge:
         def publish():
             while not self.closed.wait(0.1):
                 latest = dict(self._progress or {"phase": "progress"})
+                latest["prompt"] = self.prompt
                 if self.markers is not None:
                     latest["markers"] = self.markers.health_snapshot()
                 if self.recorder is not None:

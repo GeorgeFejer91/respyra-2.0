@@ -5,6 +5,43 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Typed prompt controls — 2026-10-08
+
+- Added current-prompt Continue/Retry in the local hub and shared phone panel.
+  Python fences commands to the run UUID/shown sequence and publishes accepted
+  or rejected `ui.prompt_control` plus normal key/dismiss/calibration markers;
+  replies follow dismissal, and closed/finished controls fail closed. Questionnaire
+  responses remain local. Source base `e5ee803`; exact changed-input hashes and
+  logs are retained in ignored `.for-ai-local/remote-controls-*`.
+- VERIFIED: bridge/marker/short-study focused tests (38 initially, final bridge
+  19 after the added late/closed-pipe case), real pipe tests (2), Node tests (7),
+  Rust tests (13), fmt/clippy, and release no-bundle build. Packaged Python
+  3.10.11, PsychoPy 2026.2.4, respyra 0.4.0; pinned JS dependencies unchanged.
+  The first Rust run lacked the checkout test interpreter; the stdlib test venv
+  was supplied before the passing lifecycle checks.
+- VERIFIED headless: `pnpm check:ui`, including both prompt buttons at 820×760,
+  1440×900 and doubled-text no-fit/recovery; `pnpm check:remote` exercised actual
+  shared controls in Recorder's opaque iframe, approval/acks and 12 layouts.
+- VERIFIED private Win32 desktop: `check_control_center.py --full-study
+  --remote-controls` completed 48 shortened trials, one Retry, native questionnaire
+  keys, original CSV and independent closed XDF decoding (1,578 marker samples).
+  The first attempt during concurrent build/staging failed late-stream/recorder
+  finalization; the uncontended rerun passed. This is not a load/endurance claim.
+- VERIFIED two cold candidate native runs with installed Vernier Mini mock,
+  real VDO, QR pixel decoding, six distinct remote prompt commands, calibration
+  retry/readiness/acceptance, trial entry, Stop/Close and closed XDF with finite
+  derived data. `RespyraProbef9c9e238ed6846d4b42957c0ba408c9d/remote.log` retains
+  61 live markers/run and 48 recorded markers/run, plus embedded startup history.
+  Test fixes followed actual Retry→readiness flow and accounted for source
+  connection preceding the test subscription; no production timing changed.
+- Native executable SHA-256:
+  `0a9e7ab6878fe273c89df5251cdbb638842e7c7cd6b9d7c5288fb5d5a66cda5b`.
+  Five installed files were updated reversibly with prior bytes in ignored
+  `remote-controls-backup/`. This is a local update, not a new public installer.
+  Physical phone, physical belt, participant focus, full-duration study and
+  hostile-network endurance are not established by these checks. Installed/public
+  qualification is recorded separately after the matching hosted assets deploy.
+
 ## Execution modes
 
 Apply the background requirement in `VERIFICATION.md` before every run.

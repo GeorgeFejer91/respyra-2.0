@@ -84,6 +84,11 @@ const path = require('node:path');
         snapshot.revision++;snapshot.monitorRevision++;
         if(command.action==='start') {snapshot.phase='experiment';snapshot.setup=null;}
         if(command.action==='abort') {snapshot.phase='finished';snapshot.setup=null;}
+        if(command.action==='prompt_control') {
+          assert.equal(a.prompt_id,snapshot.progress.prompt.id);
+          assert(snapshot.progress.prompt.controls.includes(a.control));
+          snapshot.progress.prompt=null;
+        }
         return {ok:true,revision:snapshot.revision,result:null,error:null};
       }
       if(!validateControllerState(snapshot)) errors.push('Invalid synthetic controller projection: '+JSON.stringify(snapshot));
@@ -128,6 +133,7 @@ const path = require('node:path');
     assert.equal(await restored.locator('#controller').isVisible(),false);
     assert(!started.has('viewer'),'Restoring a base page must not connect');
     await restored.close();
+    assert.equal(await target.locator('#viewer-open').count(),1, 'Target HTML: ' + await target.locator('body').innerText());
     await target.locator('#viewer-open').click();
     await target.locator('#viewer-qr img').waitFor();
     await target.screenshot({ path:path.join(root, '.for-ai-local/remote-viewer-qr.png') });
@@ -202,8 +208,20 @@ const path = require('node:path');
     assert.equal(await child.locator('#battery').textContent(),'Not reported');
     await child.locator('#start').click();
     await child.locator('#phase').getByText('Running', {exact:true}).waitFor();
+    snapshot.progress={phase:'progress',prompt:{id:'run:10',screen:'calibration_result',controls:['continue','retry']},
+      recording:{phase:'recording',error:null,bytes_written:1024}};
+    await child.locator('#prompt-retry').waitFor({state:'visible'});
+    await child.locator('#prompt-retry').click();
+    await child.locator('#prompt-retry').waitFor({state:'hidden'});
+    snapshot.progress={...snapshot.progress,prompt:{id:'run:20',screen:'instructions',controls:['continue']}};
+    await child.locator('#prompt-continue').waitFor({state:'visible'});
+    await child.locator('#prompt-continue').click();
+    await child.locator('#prompt-continue').waitFor({state:'hidden'});
+    snapshot.progress={...snapshot.progress,prompt:{id:'run:30',screen:'calibration_result',controls:['continue','retry']}};
+    await child.locator('#prompt-retry').waitFor({state:'visible'});
     snapshot = { ...snapshot, progress:{phase:'progress',trial:3,seq:19,lsl_time:321.5,event:'tracking.started',
-      experiment_phase:'tracking',condition:'normal',screen:null,health:{signal:'live',sample_age_ms:100,battery_percent:null}} };
+      experiment_phase:'tracking',condition:'normal',screen:null,health:{signal:'live',sample_age_ms:100,battery_percent:null},
+      prompt:snapshot.progress.prompt,recording:snapshot.progress.recording} };
     await child.locator('#trial-summary').getByText(' · Trial 3 · normal', { exact: true }).waitFor();
     assert.equal(await child.locator('.diagnostics').getAttribute('open'), null);
     assert.equal(await child.locator('#invitation-field').isVisible(), false);
@@ -266,6 +284,7 @@ const path = require('node:path');
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ result:'passed',transport:process.env.RESPYRA_REAL_VDO ? 'public VDO' : 'deterministic BRSP bridge',route,iframe:'opaque',layouts:12,native:'mocked ownership and backend',mutationCalls:mutations }));
   } catch (error) {
+    console.error('Remote viewer failure:', error);
     console.error({ started: [...started], targetStatus: await target.locator('#viewer-status').textContent(), viewerStatus: await child?.locator('#connection-status').textContent(), errors,
       layout:await target.evaluate(()=>({view:document.body.dataset.view,mainHidden:document.querySelector('main')?.hidden,
         height:document.querySelector('main')?.getBoundingClientRect().height,viewport:innerHeight,notice:document.getElementById('viewport-notice')?.hidden})),

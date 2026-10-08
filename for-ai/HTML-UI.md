@@ -27,6 +27,11 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
 - Keep the Experiment hub and LSL streams on the same page. The compact hub has
   a participant-number dropdown (0–100), up to six remembered custom label/value
   pairs, and Start. Previously recorded numbers are red but remain selectable.
+  While running, the hub offers Continue (Space) only for the current eligible
+  prompt and Retry calibration (R) only for its result, alongside Stop. The
+  phone places these controls above the monitor. Disable pending/consumed
+  prompts and stale/disconnected transport; Python's prompt identity is the
+  final applicability check. Questionnaire answers stay in PsychoPy.
   The streams segment has one grouped Vernier/Polar breathing-input dropdown
   populated by validated LSL discovery. Selecting one makes it the sole study
   feedback input; Polar offers the two exact signed waveforms.

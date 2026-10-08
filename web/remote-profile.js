@@ -25,7 +25,7 @@ export function parseInvitation(value) {
 
 export function scopeForAction(action) {
   if (['field_key','field_edit','option','scan','select','use','cancel'].includes(action)) return SETUP_SCOPE;
-  if (['start','abort','close'].includes(action)) return RUN_SCOPE;
+  if (['start','abort','close','prompt_control'].includes(action)) return RUN_SCOPE;
   return null;
 }
 
@@ -41,12 +41,14 @@ export function validCommand(command) {
   if (command.action === 'field_edit') keys.push('field','value');
   if (command.action === 'select') keys.push('row');
   if (command.action === 'option') keys.push('field','enabled');
+  if (command.action === 'prompt_control') keys.push('prompt_id','control');
   const args = command.args;
   if (!exact(args, keys) || !integer(args.ui_seq, 1) || !Number.isFinite(args.ui_time_ms) || args.ui_time_ms < 0) return false;
   if (keys.includes('field') && !(command.action === 'option' ? ['save_csv'] : ['participant','session','marker_name','variables']).includes(args.field)) return false;
   if (keys.includes('enabled') && typeof args.enabled !== 'boolean') return false;
   if (keys.includes('key') && !text(args.key,128)) return false;
   if (keys.includes('value') && !text(args.value,args.field === 'variables' ? 2048 : 128)) return false;
+  if (command.action === 'prompt_control' && (!promptId(args.prompt_id) || !['continue','retry'].includes(args.control))) return false;
   return !keys.includes('row') || integer(args.row);
 }
 
@@ -60,6 +62,7 @@ function exact(value, keys) {
 }
 const integer = (v,min=0) => Number.isSafeInteger(v) && v >= min;
 const text = (v,max=4096) => typeof v === 'string' && v.length <= max;
+const promptId = v => typeof v === 'string' && /^[A-Za-z0-9:-]{1,96}$/u.test(v);
 export function validateControllerState(value) {
   if (!exact(value, ['profile','revision','monitorRevision','phase','message','setup','progress'])
     || value.profile !== 'respyra.controller/1' || !integer(value.revision) || !integer(value.monitorRevision)
@@ -82,11 +85,17 @@ export function validateControllerState(value) {
       || typeof row.compatible !== 'boolean' || (row.force_channel_index !== null && !integer(row.force_channel_index))) return false;
   }
   if (value.progress !== null) {
-    const p = value.progress, keys = ['phase','event','seq','lsl_time','trial','condition','screen','experiment_phase','health','markers','recent','recording'];
+    const p = value.progress, keys = ['phase','event','seq','lsl_time','trial','condition','screen','experiment_phase','health','markers','recent','recording','prompt'];
     if (typeof p !== 'object' || Array.isArray(p) || p.phase !== 'progress' || Object.keys(p).some(key=>!keys.includes(key))) return false;
     for (const key of ['event','condition','screen','experiment_phase']) if (p[key] != null && !text(p[key],80)) return false;
     for (const key of ['seq','trial']) if (p[key] != null && !integer(p[key])) return false;
     if (p.lsl_time != null && (!Number.isFinite(p.lsl_time) || p.lsl_time < 0)) return false;
+    if (p.prompt != null && (!exact(p.prompt,['id','screen','controls']) || !promptId(p.prompt.id)
+      || !['instructions','calibration_ready','calibration_result','trial_ready','trial_feedback','end'].includes(p.prompt.screen)
+      || !Array.isArray(p.prompt.controls) || !p.prompt.controls.length || p.prompt.controls.length > 2
+      || new Set(p.prompt.controls).size !== p.prompt.controls.length
+      || p.prompt.controls.some(control => !['continue','retry'].includes(control))
+      || (p.prompt.controls.includes('retry') && p.prompt.screen !== 'calibration_result'))) return false;
     if (p.markers != null && (!exact(p.markers,['name','source_id','online','emitted'])
       || !text(p.markers.name,128) || !text(p.markers.source_id,128)
       || typeof p.markers.online !== 'boolean' || !integer(p.markers.emitted))) return false;

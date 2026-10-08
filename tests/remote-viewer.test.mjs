@@ -53,6 +53,22 @@ test('invitation, state and commands have closed bounded contracts', () => {
     { ...start,args:{ ...start.args,path:'x' } }, { ...start,expectedRevision:null }]) assert(!validCommand(command));
 });
 
+test('prompt controls have a closed run scope and bounded current-prompt projection', () => {
+  const command = {scope:RUN_SCOPE, action:'prompt_control', expectedRevision:2,
+    args:{ui_seq:1,ui_time_ms:1,prompt_id:'run-uuid:30',control:'continue'}};
+  assert(validCommand(command));
+  assert(validCommand({...command,args:{...command.args,control:'retry'}}));
+  for (const bad of [{scope:SCOPES[1]}, {scope:OBSERVE_SCOPE},
+    {args:{...command.args,control:'escape'}}, {args:{...command.args,key:'space'}},
+    {args:{...command.args,prompt_id:'a'.repeat(97)}}, {args:{...command.args,prompt_id:''}}])
+    assert(!validCommand({...command,...bad}));
+  const prompt = {id:'run-uuid:30',screen:'calibration_result',controls:['continue','retry']};
+  assert(validateControllerState({...snapshot,progress:{...snapshot.progress,prompt}}));
+  for (const bad of [{...prompt,screen:'accuracy'}, {...prompt,controls:['continue','continue']},
+    {...prompt,controls:['shell']}, {...prompt,screen:'instructions'}, {...prompt,text:'private'}])
+    assert(!validateControllerState({...snapshot,progress:{...snapshot.progress,prompt:bad}}));
+});
+
 class Lane extends EventTarget {
   sendControl(peerKey,data) { queueMicrotask(() => this.other.dispatchEvent(event('controlmessage',{peerKey,data}))); return true; }
   sendState(peerKey,data) { queueMicrotask(() => this.other.dispatchEvent(event('statemessage',{peerKey,data}))); return true; }

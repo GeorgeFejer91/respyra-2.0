@@ -2,7 +2,7 @@
 
 The HTML window is the experimenter controller: participant/session setup,
 LSL discovery and selection, automatic CSV saving, marker stream naming,
-Start/Cancel, live monitoring, Stop experiment,
+Start/Cancel, live monitoring, Continue (Space), Retry calibration (R), Stop experiment,
 and the final Close. PsychoPy still owns participant instructions, calibration,
 stimuli, keyboard responses, assessments and display-flip markers.
 
@@ -23,9 +23,15 @@ stimuli, keyboard responses, assessments and display-flip markers.
 4. **Stop experiment** ends the study and cleans up its source/display, while
    the native recorder finalizes XDF after cleanup; the controller and marker
    outlet stay open. Wait for **Saved**, then **Close**.
-5. **Disconnect remote controller**, app closure, phone disconnect or ownership expiry
+5. During a run, **Continue (Space)** dismisses the current instruction, ready,
+   calibration result, feedback or final screen. **Retry calibration (R)** is
+   available only on the calibration result. These buttons appear above the
+   phone's monitor and in the desktop Experiment hub. Questionnaire answers
+   remain local. Each command targets one visible prompt; delayed or duplicate
+   taps cannot advance a later screen.
+6. **Disconnect remote controller**, app closure, phone disconnect or ownership expiry
    revokes remote control. Open the button again for a fresh link. Phone loss leaves an
-   ongoing study running; participant inputs remain local to PsychoPy.
+   ongoing study running; PsychoPy retains response and display authority.
 
 A second display or the phone lets the experimenter monitor without moving
 focus away from the participant window. On a single display the control
@@ -61,7 +67,7 @@ BRSP/1 negotiates:
 - experiment.observe: bounded latest state and lease renewal.
 - experiment.setup: participant/session key/edit, marker name,
   scan/select/use, Cancel.
-- experiment.run: Start, Stop, final Close.
+- experiment.run: Start, prompt Continue/Retry, Stop, final Close.
 
 Python remains the sole study/source/LSL-clock authority. Rust serializes local
 and remote commands onto the same bounded private pipe, assigning global
@@ -76,6 +82,19 @@ acknowledges source/display cleanup. Close acknowledges the accepted shutdown
 request; it cannot establish XDF persistence. An uncertain command outcome
 pauses control and requires checking the local controller; there is no automatic
 new-ID retry.
+
+Continue/Retry use a closed `prompt_control` action, never arbitrary keyboard
+injection. Python exposes an opaque run UUID + shown-marker sequence only at
+the actual display flip, plus the currently allowed controls. It checks that
+identity again when consuming the response and clears it on dismissal or
+interruption. The viewer permits only one pending control and disables the
+consumed prompt until a fresh prompt arrives. Python acknowledges success
+after the normal dismissal and calibration retry/accept markers.
+`ui.prompt_control` records control, prompt identity, accepted/rejected outcome,
+reason, and controller sequence/origin/time on the study LSL outlet. The normal
+`input.key` uses `remote_control` or `local_control` as its source and has no
+physical key timestamp. Authentication, schema and revision denials before the
+Python pipe are protocol outcomes; they do not emit study markers.
 
 Rust owns the invitation, single pending approval request, peer/epoch-bound owner, six-second monotonic lease,
 scopes, ordered dispatch sequence, mutation-ID/body deduplication and separate

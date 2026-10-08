@@ -101,7 +101,7 @@ try:
             inlet=StreamInlet(streams[0],recover=False)
             inlet.open_stream(timeout=5)
             ui=subprocess.Popen(['node',str(root/'tests/check_native_ui.cjs'),mode],cwd=root,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
-            deadline=time.monotonic()+120+48*max(0,float(os.environ.get('RESPYRA_TEST_TRACKING_SECONDS','.15'))-.15)
+            deadline=time.monotonic()+120+(45 if os.environ.get('RESPYRA_TEST_PROMPT_CONTROLS') else 0)+48*max(0,float(os.environ.get('RESPYRA_TEST_TRACKING_SECONDS','.15'))-.15)
             while process.poll() is None and time.monotonic()<deadline:
                 try: sample,ts=inlet.pull_sample(timeout=.1)
                 except LostError: sample=None;time.sleep(.05)
@@ -128,10 +128,18 @@ try:
                 if not sample:break
                 markers.append(json.loads(sample[0]))
             names=[m['event'] for m in markers]
+            # Automatic source connection can precede this test inlet. The native
+            # recording retains those startup events inside recording.started.
+            startup = next((m.get('pre_recording_events', []) for m in markers
+                            if m['event']=='recording.started'), [])
+            startup_names = [m['event'] for m in startup]
             (root/f'.for-ai-local/native-{mode}-markers.json').write_text(json.dumps(markers,indent=2),encoding='utf-8')
             assert ('run.failed' in names) == disconnect_probe,names
             for expected in ['participant.field.edited','participant.field.key','source.connected','source.connection.accepted','source.disconnected',
-                             'run.failed' if disconnect_probe else 'run.completed' if full_mock else 'run.aborted']:assert expected in names,(expected,names)
+                             'run.failed' if disconnect_probe else 'run.completed' if full_mock else 'run.aborted']:
+                assert expected in names or (expected in {'source.connected','source.connection.accepted'} and expected in startup_names),(expected,names)
+            connected = next(m for m in markers + startup if m['event']=='source.connected')
+            assert connected['source_id'] == identity
             if not external: assert 'participant.dialog.shown' in names
             assert [m['seq'] for m in markers]==list(range(markers[0]['seq'],markers[0]['seq']+len(markers)))
             if mode=='select':
@@ -172,6 +180,17 @@ try:
                 summaries=inspect_xdf(file,[identity,marker_id,derived_id])
                 recorded_events=[json.loads(row[0]) for row in by_id[marker_id]['time_series']]
                 recorded_names=[m['event'] for m in recorded_events]
+                if mode == 'remote' and os.environ.get('RESPYRA_TEST_PROMPT_CONTROLS'):
+                    commands = [m for m in recorded_events if m['event'] == 'ui.prompt_control']
+                    assert [m['control'] for m in commands] == ['continue','continue','retry','continue','continue','continue'], commands
+                    assert all(m['accepted'] and m['ui_origin'] == 'remote' for m in commands), commands
+                    assert len({m['prompt_id'] for m in commands}) == 6
+                    for command in commands:
+                        dismissed = next(m for m in recorded_events if
+                            m['event'] == f"ui.{command['screen']}.dismissed" and m['seq'] > int(command['prompt_id'].split(':')[-1]))
+                        assert dismissed['seq'] < command['seq']
+                    assert sum(m['event']=='ui.calibration_result.shown' for m in recorded_events) == 2
+                    assert 'calibration.retry' in recorded_names
                 if keyboard_probe:
                     recorded_key=next(m for m in recorded_events if m['event']=='input.key' and
                                       m['screen']=='instructions' and m['key']=='space')
@@ -199,7 +218,10 @@ try:
                         from scripts.audit_mock_xdf import audit
                     print(json.dumps(audit(file)),flush=True)
                 else:
-                    assert all(math.isnan(float(row[0])) for row in by_id[derived_id]['time_series'])
+                    if os.environ.get('RESPYRA_TEST_PROMPT_CONTROLS'):
+                        assert any(math.isfinite(float(row[0])) for row in by_id[derived_id]['time_series'])
+                    else:
+                        assert all(math.isnan(float(row[0])) for row in by_id[derived_id]['time_series'])
                     if polar_metric:
                         from scripts.audit_polar_mock_xdf import audit
                         print(json.dumps(audit(file, expect_abort=True)),flush=True)

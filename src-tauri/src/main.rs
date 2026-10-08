@@ -88,6 +88,13 @@ enum CloseReason {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum PromptControl {
+    Continue,
+    Retry,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 enum Action {
     Shown {
@@ -147,6 +154,12 @@ enum Action {
         ui_seq: u64,
         ui_time_ms: f64,
     },
+    PromptControl {
+        ui_seq: u64,
+        ui_time_ms: f64,
+        prompt_id: String,
+        control: PromptControl,
+    },
 }
 
 fn encode_action(action: &Action) -> Result<Vec<u8>, String> {
@@ -177,6 +190,15 @@ fn encode_action(action: &Action) -> Result<Vec<u8>, String> {
                 .all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c)))
     {
         return Err("Invalid LSL stream identity".into());
+    }
+    if let Some(id) = value["prompt_id"].as_str()
+        && (id.is_empty()
+            || id.len() > 96
+            || !id
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || b":-".contains(&c)))
+    {
+        return Err("Invalid prompt identity".into());
     }
     let mut bytes = serde_json::to_vec(action).map_err(|e| e.to_string())?;
     bytes.push(b'\n');
@@ -407,7 +429,7 @@ fn queue_action(
         }
         state.local_sequence = client_sequence;
     }
-    let permitted = if value["action"] == "abort" {
+    let permitted = if matches!(value["action"].as_str(), Some("abort" | "prompt_control")) {
         state.snapshot["phase"] == "experiment"
     } else {
         state.snapshot["phase"] == "setup"
@@ -628,7 +650,10 @@ fn remote_action(command: &viewer::RemoteCommand) -> Result<Action, String> {
                 | "use"
                 | "cancel"
         ),
-        "experiment.run" => matches!(command.action.as_str(), "start" | "abort"),
+        "experiment.run" => matches!(
+            command.action.as_str(),
+            "start" | "abort" | "prompt_control"
+        ),
         _ => false,
     };
     if !permitted {
@@ -931,6 +956,8 @@ mod tests {
             r#"{"action":"shown","ui_seq":1,"ui_time_ms":1,"path":"x"}"#,
             r#"{"action":"recording_folder","ui_seq":1,"ui_time_ms":1,"path":"C:/untrusted"}"#,
             r#"{"action":"field_edit","ui_seq":1,"ui_time_ms":1,"field":"other","value":"x"}"#,
+            r#"{"action":"prompt_control","ui_seq":1,"ui_time_ms":1,"prompt_id":"run:1","control":"shell"}"#,
+            r#"{"action":"prompt_control","ui_seq":1,"ui_time_ms":1,"prompt_id":"run:1","control":"continue","key":"space"}"#,
         ] {
             assert!(serde_json::from_str::<Action>(invalid).is_err());
         }
@@ -966,6 +993,32 @@ mod tests {
             })
             .is_err()
         );
+    }
+
+    #[test]
+    fn prompt_control_requires_run_scope_and_bounded_identity() {
+        let command = viewer::RemoteCommand {
+            command_id: "prompt-test".into(),
+            scope: "experiment.run".into(),
+            action: "prompt_control".into(),
+            expected_revision: Some(1),
+            args: json!({"ui_seq":1,"ui_time_ms":1,"prompt_id":"run:20","control":"retry"}),
+        };
+        assert!(remote_action(&command).is_ok());
+        let mut denied = command;
+        denied.scope = "experiment.observe".into();
+        assert!(remote_action(&denied).is_err());
+        for id in ["".to_string(), "x".repeat(97), "bad/path".to_string()] {
+            assert!(
+                encode_action(&Action::PromptControl {
+                    ui_seq: 1,
+                    ui_time_ms: 1.0,
+                    prompt_id: id,
+                    control: PromptControl::Continue,
+                })
+                .is_err()
+            );
+        }
     }
 
     #[test]

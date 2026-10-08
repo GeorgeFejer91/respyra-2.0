@@ -14,6 +14,10 @@ def action(seq=1, **fields):
     {"action": "shell"}, {"ui_seq": True}, {"ui_time_ms": float("nan")},
     {"path": "anything"}, {"action": "field_edit", "field": "other", "value": "v"},
     {"action": "field_edit", "field": "participant", "value": "v" * 129},
+    {"action": "prompt_control", "prompt_id": "run:1", "control": "shell"},
+    {"action": "prompt_control", "prompt_id": "bad/path", "control": "continue"},
+    {"action": "prompt_control", "prompt_id": "x" * 97, "control": "continue"},
+    {"action": "prompt_control", "prompt_id": "run:1", "control": []},
 ])
 def test_closed_action_contract_rejects_malformed_input(fields):
     with pytest.raises(ValueError): validate_action(action(**fields))
@@ -87,3 +91,85 @@ def test_stop_waits_for_cleanup_receipt_without_closing_control_pipe():
     reply = json.loads(writer.getvalue().removeprefix(PREFIX))
     assert reply["ok"] and reply["ui_seq"] == 1
     assert not bridge.closed.is_set() and not bridge.experiment
+
+
+def test_prompt_commands_are_fenced_to_visible_instance_and_ack_after_consumption():
+    from types import SimpleNamespace
+    events = []
+    bridge = DesktopBridge(io.StringIO(""), io.StringIO())
+    assert bridge.closed.wait(1)
+    bridge.closed.clear()
+    bridge.experiment = True
+    bridge.markers = SimpleNamespace(run_id="run", sequence=1,
+                                    emit=lambda name, **fields: events.append((name, fields)))
+    def command(seq, prompt_id="run:1", control="continue"):
+        return validate_action(action(seq, action="prompt_control", prompt_id=prompt_id,
+                                      control=control, ui_origin="remote", ui_client_seq=seq))
+    # Nothing can advance before the actual visible flip.
+    bridge.actions.put(command(1))
+    bridge.check_cancel()
+    assert events[-1][1]["reason"] == "stale_prompt"
+    bridge.open_prompt("instructions", ["space", "escape"])
+    bridge.actions.put(command(2))
+    bridge.check_cancel()
+    assert len(events) == 1  # Admission is neither an effect nor an acknowledgement.
+    bridge.actions.put(command(3))
+    bridge.check_cancel()
+    assert events[-1][1]["reason"] == "prompt_busy"
+    key, accepted = bridge.take_prompt_control(["space", "escape"])
+    assert key == "space" and accepted["ui_seq"] == 2
+    bridge.finish_prompt_control(accepted)
+    assert events[-1][1]["accepted"] is True
+    assert events[-1][1]["ui_origin"] == "remote"
+    bridge.close_prompt()
+    bridge.markers.sequence = 20
+    bridge.open_prompt("calibration_ready", ["space", "escape"])
+    bridge.actions.put(command(4))  # Delayed double tap on the previous screen.
+    bridge.check_cancel()
+    assert bridge.take_prompt_control(["space"]) is None
+    assert events[-1][1]["reason"] == "stale_prompt"
+    bridge.actions.put(command(5, "run:20", "retry"))
+    bridge.check_cancel()
+    assert events[-1][1]["reason"] == "unavailable_control"
+    bridge.open_prompt("accuracy", ["1", "2", "space"])
+    assert bridge.prompt is None  # Questionnaire responses remain local.
+    replies = [json.loads(line.removeprefix(PREFIX)) for line in bridge.writer.getvalue().splitlines()]
+    assert [(r["ui_seq"], r["ok"]) for r in replies] == [(1, False), (3, False), (2, True), (4, False), (5, False)]
+
+
+def test_pending_prompt_is_rejected_on_local_dismissal_or_stop():
+    from types import SimpleNamespace
+    events = []
+    bridge = DesktopBridge(io.StringIO(""), io.StringIO())
+    assert bridge.closed.wait(1)
+    bridge.closed.clear()
+    bridge.experiment = True
+    bridge.markers = SimpleNamespace(run_id="run", sequence=1,
+                                    emit=lambda name, **fields: events.append(fields))
+    bridge.open_prompt("calibration_result", ["space", "r", "escape"])
+    bridge.actions.put(action(action="prompt_control", prompt_id="run:1", control="retry"))
+    bridge.check_cancel()
+    bridge.actions.put(action(2, action="abort"))
+    with pytest.raises(ExperimentStopped): bridge.check_cancel()
+    bridge.close_prompt()
+    assert bridge.take_prompt_control(["r"]) is None
+    assert events[-1]["accepted"] is False and events[-1]["reason"] == "stale_prompt"
+    bridge.finish_stop()
+    assert not bridge.closed.is_set()
+
+
+def test_late_prompt_after_stop_is_marked_and_closed_pipe_needs_no_reply():
+    from types import SimpleNamespace
+    events = []
+    bridge = DesktopBridge(io.StringIO(''), io.StringIO())
+    assert bridge.closed.wait(1)
+    bridge.closed.clear()
+    bridge.markers = SimpleNamespace(emit=lambda name, **fields: events.append(fields))
+    request = action(action='prompt_control', prompt_id='old-run:1', control='continue')
+    bridge.actions.put(request)
+    assert bridge.receive() is None
+    assert events[-1]['reason'] == 'stale_prompt' and not events[-1]['accepted']
+    bridge.closed.set()
+    bridge.writer.close()
+    bridge.finish_prompt_control(request, False, 'prompt_interrupted')
+    assert events[-1]['reason'] == 'prompt_interrupted'

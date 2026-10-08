@@ -193,6 +193,12 @@ calibration; unselected Polar polarity stays native +1 pending analysis.
   Continuous
   waveform/animation frames are represented by the Vernier stream plus phase,
   condition, and target-parameter markers.
+- Continue (Space) and calibration Retry (R) are typed controller intents in
+  `experiment.run`, bound to the current run UUID and prompt shown sequence.
+  Python admits them only at the visible prompt and acknowledges after its
+  dismissal markers. Stale, unavailable and interrupted commands fail closed;
+  `ui.prompt_control` records their outcome and controller origin. Questionnaire
+  answers remain local and no generic keyboard injection is exposed.
 - Monitoring reports actual finite accepted-sample reception age, not physical
   belt contact or physiological quality. Blocking instruction/assessment waits
   drain the accepted inlet; active study phases keep their existing reads.

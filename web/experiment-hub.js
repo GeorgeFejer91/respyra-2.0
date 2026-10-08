@@ -29,6 +29,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     };
     const send = native ? actionQueue((command, args) => native.core.invoke(command, args), fail) : null;
     let nativeState = { phase:'starting' }, nativeProgress = {}, operation = 0, shownSent = false;
+    let consumedPrompt = null;
     async function request(action, fields = {}) {
       if (!send) return;
       const discrete = !['shown', 'field_key', 'field_edit'].includes(action);
@@ -36,6 +37,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       try {
         const result = await send(action, fields);
         if (result?.ok === false) $('stream-status').textContent = result.message || 'Action rejected.';
+        else if (action === 'prompt_control' && result?.ok === true) consumedPrompt = fields.prompt_id;
         return result;
       } finally {
         if (discrete) { operation--; updateNativeControls(); }
@@ -98,6 +100,11 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       $('start').disabled = !setup || !nativeState.can_start || operation > 0;
       $('stop').hidden = !running;
       $('stop').disabled = !running || operation > 0 || nativeProgress.recording?.phase === 'finalizing';
+      for (const control of ['continue','retry']) {
+        const button = $('prompt-' + control);
+        button.hidden = !running || !nativeProgress.prompt?.controls.includes(control);
+        button.disabled = operation > 0 || consumedPrompt === nativeProgress.prompt?.id || nativeProgress.recording?.phase !== 'recording';
+      }
       $('close').hidden = !['finished', 'error'].includes(nativeState.phase);
       $('close').disabled = operation > 0 || ['preparing', 'recording', 'finalizing'].includes(nativeProgress.recording?.phase);
       $('participant').disabled = !setup || operation > 0;
@@ -407,6 +414,10 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       if (event.key === 'Enter') { event.preventDefault(); void applyRecordingPath(); }
     });
     $('stop').addEventListener('click', () => { void request('abort'); });
+    for (const control of ['continue','retry']) $('prompt-' + control).addEventListener('click', () => {
+      if (!$('prompt-' + control).disabled && nativeProgress.prompt?.controls.includes(control))
+        void request('prompt_control', {prompt_id:nativeProgress.prompt.id, control});
+    });
     $('close').addEventListener('click', () => { void native?.core.invoke('close_app', { reason:'close_button' }); });
 
 

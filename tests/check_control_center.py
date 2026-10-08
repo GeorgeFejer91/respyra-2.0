@@ -63,7 +63,8 @@ try:
         import copy
         import importlib.util
         from types import SimpleNamespace
-        native_keys = '--native-keys' in sys.argv
+        remote_controls = '--remote-controls' in sys.argv
+        native_keys = '--native-keys' in sys.argv or remote_controls
         if native_keys:
             sys.path.insert(0, str(root / 'tests'))
             from check_native_keyboard import post_key, require_private_desktop
@@ -82,10 +83,34 @@ try:
         cfg.timing.tracking_duration_sec = .15
         bridge = SimpleNamespace(recorder=recorder, check_cancel=recorder.check_health,
                                  send=lambda _: None, finish_stop=lambda _: None)
+        if remote_controls:
+            import io
+            from mpi.desktop_bridge import DesktopBridge, validate_action
+            bridge = DesktopBridge(io.StringIO(''), io.StringIO())
+            assert bridge.closed.wait(1)
+            bridge.closed.clear()
+            bridge.recorder, bridge.markers, bridge.experiment = recorder, markers, True
+            checkpoint = bridge.check_cancel
+            visited = set()
+            retried = set()
+            def drive_controls():
+                prompt = bridge.prompt
+                if prompt and prompt['id'] not in visited:
+                    visited.add(prompt['id'])
+                    retry = prompt['screen'] == 'calibration_result' and not retried
+                    if retry: retried.add(prompt['id'])
+                    bridge.actions.put(validate_action({'action':'prompt_control',
+                        'ui_seq':len(visited), 'ui_time_ms':time.monotonic() * 1000,
+                        'ui_origin':'remote', 'ui_client_seq':len(visited),
+                        'prompt_id':prompt['id'], 'control':'retry' if retry else 'continue'}))
+                checkpoint()
+            bridge.check_cancel = drive_controls
         study.run_source_setup = lambda *args: (dict(participant='2', session='001'), source)
         if native_keys:
             def respond(payload):
                 if payload['event'].startswith('ui.') and payload['event'].endswith('.shown'):
+                    if remote_controls and payload['screen'] not in {'accuracy','confidence','breathing_judgment'}:
+                        return
                     key = ('1' if payload['screen'] in {'accuracy', 'confidence'}
                            else 'n' if payload['screen'] == 'breathing_judgment' else 'space')
                     post_key(os.getpid(), key)
@@ -161,6 +186,13 @@ try:
             for screen in ['instructions', 'calibration_ready', 'calibration_result',
                            'trial_ready', 'trial_feedback', 'accuracy', 'breathing_judgment', 'confidence', 'end']:
                 assert any(event['screen']==screen for event in accepted), screen
+        if remote_controls:
+            commands = [event for event in events if event['event'] == 'ui.prompt_control']
+            assert commands and all(event['accepted'] and event['ui_origin'] == 'remote' for event in commands)
+            assert len({event['prompt_id'] for event in commands}) == len(commands)
+            assert sum(event['control'] == 'retry' for event in commands) == 1
+            for screen in ['instructions','calibration_ready','calibration_result','trial_ready','trial_feedback','end']:
+                assert any(event['screen'] == screen for event in commands), screen
     print(json.dumps({"result": "passed", "full_study": '--full-study' in sys.argv, "trials": len(ended) if '--full-study' in sys.argv else 0,
                       "file": str(recorder.path), "preview_channels": sum(len(row["channels"]) for row in rows.values()), "streams": summary}))
 finally:
