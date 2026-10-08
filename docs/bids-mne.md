@@ -45,6 +45,14 @@ channel labels, units, nominal rate and processing metadata. Every table keeps
 recorded sample timestamps relative to the first selected raw breathing sample.
 The XDF is the complete original recording, including empty outlets.
 
+For one combined recording, use the run's `.xdf` file in the parent recording
+folder. BIDS is a dataset directory containing data tables and JSON metadata,
+so several dozen files can be expected when many LSL outlets are recorded.
+These files describe the same run, rather than separate participant sessions.
+Keep the `bids/` folder structure together when transferring a BIDS dataset;
+the original study CSV and self-assessment CSV beside the XDF are separate
+exports and do not use BIDS naming.
+
 Regular numeric outlets whose timestamps agree with their advertised rate use
 headerless `_physio.tsv.gz` plus `_physio.json` and declare `SamplingFrequency`,
 `StartTime`, and `Columns`. Irregular, sparse, and unverified-rate outlets use

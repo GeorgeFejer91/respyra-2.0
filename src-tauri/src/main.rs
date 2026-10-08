@@ -751,7 +751,7 @@ fn open_recordings_folder(app: tauri::AppHandle) -> Result<(), String> {
     #[cfg(windows)]
     {
         Command::new("explorer.exe")
-            .arg(directory)
+            .arg(explorer_folder_path(&directory)?)
             .spawn()
             .map_err(|e| format!("Cannot open recordings folder: {e}"))?;
         Ok(())
@@ -761,6 +761,23 @@ fn open_recordings_folder(app: tauri::AppHandle) -> Result<(), String> {
         let _ = directory;
         Err("Opening the recordings folder is supported on Windows".into())
     }
+}
+
+#[cfg(windows)]
+fn explorer_folder_path(directory: &Path) -> Result<PathBuf, String> {
+    // Canonical Windows paths are valid for recording, but Explorer needs shell syntax.
+    let path = directory
+        .to_str()
+        .ok_or("The recording folder path cannot be opened in Explorer")?;
+    let path = if let Some(unc) = path.strip_prefix(r"\\?\UNC\") {
+        PathBuf::from(format!(r"\\{unc}"))
+    } else {
+        PathBuf::from(path.strip_prefix(r"\\?\").unwrap_or(path))
+    };
+    if !path.is_absolute() {
+        return Err("The recording folder path cannot be opened in Explorer".into());
+    }
+    Ok(path)
 }
 
 #[tauri::command]
@@ -959,6 +976,31 @@ mod tests {
             validate_recording_folder(&current).unwrap(),
             current.canonicalize().unwrap()
         );
+    }
+    #[test]
+    #[cfg(windows)]
+    fn explorer_accepts_selected_canonical_paths() {
+        for (input, expected) in [
+            (r"C:\Respyra Ü with spaces", r"C:\Respyra Ü with spaces"),
+            (r"\\?\C:\Respyra Ü with spaces", r"C:\Respyra Ü with spaces"),
+            (r"\\server\share\Respyra Ü", r"\\server\share\Respyra Ü"),
+            (
+                r"\\?\UNC\server\share\Respyra Ü",
+                r"\\server\share\Respyra Ü",
+            ),
+        ] {
+            assert_eq!(
+                explorer_folder_path(Path::new(input)).unwrap(),
+                Path::new(expected)
+            );
+        }
+        assert!(explorer_folder_path(Path::new("relative-folder")).is_err());
+        let current = std::env::current_dir().unwrap();
+        let selected = validate_recording_folder(&current).unwrap();
+        assert!(selected.to_str().unwrap().starts_with(r"\\?\"));
+        let opened = explorer_folder_path(&selected).unwrap();
+        assert!(!opened.to_str().unwrap().starts_with(r"\\?\"));
+        assert_eq!(opened.canonicalize().unwrap(), selected);
     }
     #[test]
     fn framed_state_only() {
