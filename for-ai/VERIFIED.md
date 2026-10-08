@@ -11,8 +11,9 @@ suites to initialize this ledger.
   Python fences commands to the run UUID/shown sequence and publishes accepted
   or rejected `ui.prompt_control` plus normal key/dismiss/calibration markers;
   replies follow dismissal, and closed/finished controls fail closed. Questionnaire
-  responses remain local. Source base `e5ee803`; exact changed-input hashes and
-  logs are retained in ignored `.for-ai-local/remote-controls-*`.
+  responses remain local. Implementation `99d2167b70f7cecf9d6d02f14436db2348fbb802`;
+  exact changed-input hashes and logs are retained in ignored
+  `.for-ai-local/remote-controls-*`.
 - VERIFIED: bridge/marker/short-study focused tests (38 initially, final bridge
   19 after the added late/closed-pipe case), real pipe tests (2), Node tests (7),
   Rust tests (13), fmt/clippy, and release no-bundle build. Packaged Python
@@ -34,13 +35,29 @@ suites to initialize this ledger.
   61 live markers/run and 48 recorded markers/run, plus embedded startup history.
   Test fixes followed actual Retry→readiness flow and accounted for source
   connection preceding the test subscription; no production timing changed.
+- VERIFIED final installed/public run: the updated installed executable and
+  packaged engine exercised the actual published viewer without asset routing,
+  real VDO and installed Vernier Mini mock on a private Win32 desktop. Six unique
+  remote prompt commands (five Continue, one Retry), QR decoding, trial entry,
+  Stop/Close and independent closed XDF decoding passed: 58 live markers, 48
+  recorded markers, 908 finite derived samples and complete stream footers.
+  `remote-controls-installed-public.log` retains the run. Exact owned P099
+  synthetic XDF/CSV/history files were archived under ignored
+  `remote-controls-installed-public-evidence/` with hashes and a receipt;
+  the normal data folder and existing `bids/` were restored. Test processes
+  ended and the debugging port was closed.
+- VERIFIED deployment: Pages commit `5661f4b1bd99eaf8c7853df74be3bf07c72be981`
+  reported built; public provenance points to implementation `99d2167`, and
+  controller/profile/entry/app bytes match the published Git blobs. Parity is
+  recorded in `remote-controls-public-hashes.json`. The source branch was
+  pushed at `99d2167`; no applicable branch CI run was listed.
 - Native executable SHA-256:
   `0a9e7ab6878fe273c89df5251cdbb638842e7c7cd6b9d7c5288fb5d5a66cda5b`.
   Five installed files were updated reversibly with prior bytes in ignored
   `remote-controls-backup/`. This is a local update, not a new public installer.
   Physical phone, physical belt, participant focus, full-duration study and
-  hostile-network endurance are not established by these checks. Installed/public
-  qualification is recorded separately after the matching hosted assets deploy.
+  hostile-network endurance are not established by these checks. Older installed
+  builds omit prompt controls unless the engine advertises a current prompt.
 
 ## Execution modes
 
@@ -98,12 +115,12 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | verified for recorded-number setup projection; see 2026-10-01 receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
 | Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for participant dropdown and red recorded choice; see 2026-10-01 receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
-| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for locally routed phone picker; published site remains older; see 2026-10-01 receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
+| Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for current prompt controls in the opaque Recorder iframe and published viewer; see typed prompt controls receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
 | Project landing, installer/Mini links, logo and legacy QR routing: `companion/index.html`, `remote.html`, `site.*`, publication inputs | `node tests/check_project_site.cjs`, published asset parity and private-desktop published phone check | verified for current source and deployment; see project site receipt | Site/route/assets, source attribution, linked release assets or published endpoint changes. |
-| Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | 0.3.4 fmt, test and clippy passed with portable MSVC; see 2026-10-01 receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
+| Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | current fmt, 13 tests and clippy passed; see typed prompt controls receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | verified for current inputs; see Mini pipeline receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility change. |
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/run_private_mock.py` after a matching native build | verified for installed Mini mock, early Stop and complete phone controlled study; see Mini pipeline receipt | Native/pipe/lifecycle/remote contracts or consuming runtime change. |
-| Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | current published route, native early-Stop run and ten-asset byte parity verified; see project site receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
+| Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | current prompt-control deployment, exact changed-asset parity and installed native run verified; see typed prompt controls receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
 | Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | public 0.3.2 verified; see release receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
 | Windows shortcut icon transparency and circle tint: `assets/icon.svg`, packaging generator, PNG/ICO | Direct SVG icon generation, alpha/color assertions and 48 px preview | reusable; see shortcut icon receipt | SVG, icon generation, generated PNG/ICO or icon tooling changes. A new installer has its own packaging gate. |
 | Physical belt/phone, scientific timing and other operating systems | Separate named hardware/platform qualification | NOT RUN / unverified in `PROJECT.md` | Those surfaces are requested or claimed; synthetic/browser evidence does not qualify them. |

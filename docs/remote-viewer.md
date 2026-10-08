@@ -29,6 +29,8 @@ stimuli, keyboard responses, assessments and display-flip markers.
    phone's monitor and in the desktop Experiment hub. Questionnaire answers
    remain local. Each command targets one visible prompt; delayed or duplicate
    taps cannot advance a later screen.
+   These controls require a desktop build that advertises the current prompt;
+   older builds show only their existing Start, Stop and Close controls.
 6. **Disconnect remote controller**, app closure, phone disconnect or ownership expiry
    revokes remote control. Open the button again for a fresh link. Phone loss leaves an
    ongoing study running; PsychoPy retains response and display authority.
