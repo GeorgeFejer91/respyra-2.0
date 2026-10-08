@@ -124,9 +124,10 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
         first_tick = start // 2 + round((stamps[0] - tick_times[0]) / .01)
         ticks = first_tick + np.arange(len(stamps))
         in_raw = (ticks >= start // 2) & (ticks < start // 2 + len(tick_times))
-        # An abort closes the recorder while the Mini keeps publishing. Streams
-        # may capture different tails, but all must cover the finalization marker.
-        relevant = stamps <= finalizing[0] if expect_abort else np.ones(len(stamps), dtype=bool)
+        # Native subscriptions can capture different prefixes before Start and
+        # tails after Stop. Require ACC overlap throughout the recorded run.
+        relevant = ((stamps >= recorded[0]["lsl_time"]) & (stamps <= finalizing[0])
+                    if expect_abort else np.ones(len(stamps), dtype=bool))
         assert np.count_nonzero(~in_raw & relevant) <= 2, f"{metric} extends beyond recorded ACC boundary"
         if expect_abort:
             assert stamps[-1] >= finalizing[0], f"{metric} ended before recording finalization"

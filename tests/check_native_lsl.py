@@ -189,19 +189,22 @@ try:
         # Only inspect/remove this test's unique IDs.
         output=installed_output
         files=sorted(set(output.glob('sub-99_ses-001_*.csv')) - previous_csv)
-        assert len(files)==2*sum(mode in modes for mode in ('memory','remote')),files
+        assert len(files)==2*sum(mode in {'memory','remote'} for mode in modes),files
         from mpi.validation_study_jenny import CONFIG
+        sample_columns = ([{'force_n':'signal_g','target_force':'target_signal_g',
+                            'error':'error_g','compensated_error':'compensated_error_g'}.get(name,name)
+                           for name in CONFIG.data_columns] if polar_metric else list(CONFIG.data_columns))
         for file in files:
             with file.open(newline='',encoding='utf-8') as handle:
                 header=next(csv.reader(handle))
             expected=(['trial_num','condition','self_condition','confidence','self_accuracy']
-                      if file.name.endswith('-self-assessment.csv') else list(CONFIG.data_columns))
+                      if file.name.endswith('-self-assessment.csv') else sample_columns)
             assert header==expected,(file.name,header,expected)
             evidence=root/'.for-ai-local/packaging/csv'
             evidence.mkdir(parents=True,exist_ok=True)
             (evidence/file.name).write_bytes(file.read_bytes())
             file.unlink()  # proves logger handles are closed; never touch other IDs
-        print(json.dumps({'installed_csv':'passed','files':2,'original_headers':True}),flush=True)
+        print(json.dumps({'installed_csv':'passed','files':len(files),'original_headers':True}),flush=True)
     print(json.dumps({'result':'passed','runs':results}),flush=True)
 finally:
     stop.set();thread.join()
