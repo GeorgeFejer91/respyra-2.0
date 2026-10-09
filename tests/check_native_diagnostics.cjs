@@ -27,6 +27,8 @@ const path = require('node:path');
     assert(!await page.locator('#troubleshooting').isChecked(), 'Troubleshooting opt-out was forgotten');
   } else {
     await page.locator('#troubleshooting').setChecked(mode!=='off');
+    await page.waitForFunction(enabled => document.getElementById('troubleshooting').checked===enabled &&
+      !document.getElementById('troubleshooting').disabled, mode!=='off');
     if (mode==='native-exit') {
       fs.writeFileSync(process.env.RESPYRA_DIAGNOSTIC_DROP_FILE, 'kill');
     } else {
