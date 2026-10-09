@@ -2,16 +2,16 @@
 
 See the [default recorded-variable reference](https://georgefejer91.github.io/respyra-2.0/variables.html) for signal sources, units and interpretation, and the [study procedure](https://georgefejer91.github.io/respyra-2.0/study.html) for calibration and outputs.
 
-**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.9/00-Respyra-Suite_0.3.9_x64-setup.exe) for Windows 10/11 x64. Its filename is
-`00-Respyra-Suite_0.3.9_x64-setup.exe`; the `00-` prefix places it first in the
-[v0.3.9 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.9).
+**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/00-Respyra-Suite_0.3.10_x64-setup.exe) for Windows 10/11 x64. Its filename is
+`00-Respyra-Suite_0.3.10_x64-setup.exe`; the `00-` prefix places it first in the
+[v0.3.10 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.10).
 It installs Respyra 2.0, Polar Stream Mini, and Vernier Stream Mini, and adds four
 Start menu and desktop shortcuts: one for each program and **Launch Respyra Suite**.
 The latter starts the two sensor publishers and Respyra together.
 
-Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.9/Respyra-2.0_0.3.9_x64-setup.exe),
-[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.9/Polar-Stream-Mini_0.6.7_x64-setup.exe),
-and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.9/Vernier-Stream-Mini_0.6.7_x64-setup.exe).
+Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/Respyra-2.0_0.3.10_x64-setup.exe),
+[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/Polar-Stream-Mini_0.6.8_x64-setup.exe),
+and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/Vernier-Stream-Mini_0.6.8_x64-setup.exe).
 The [project wiki](https://github.com/GeorgeFejer91/respyra-2.0/wiki) diagrams
 the three-app data flow and explains each Mini's streams.
 The installer lets you choose a destination folder, creates
@@ -19,6 +19,14 @@ a Respyra 2.0 Start menu shortcut and provides
 an uninstaller. The default is a per-user installation; no administrator account
 is needed for a folder your account can write. Choose another writable program
 folder on the destination page if desired.
+
+To update an existing suite, close Respyra and both Mini apps, download the newer
+suite installer and run it under the same Windows account. Setup recognizes
+the existing installation and reuses its program folder; it handles replacement
+of the installed applications without a separate manual uninstall. Recordings,
+the chosen recording folder, device preferences and stream selections are kept.
+Running the same installer again also supports reinstallation. This is a full
+installer update, so it downloads the complete package rather than a file-difference patch.
 
 Python 3.10.11, the locked PsychoPy/Respyra/LSL study dependencies, app-local
 MSVC runtime DLLs, fonts, **respyrecorder** native LSL/XDF recorder and HTML
@@ -35,13 +43,17 @@ when installed as a suite. The same release also offers separate Polar and
 Vernier installers. Each Mini remembers the last successfully connected device
 and, with Automatic reconnect enabled, retries that device on the next launch.
 Fresh Polar settings publish the available raw ECG, ACC, heart rate and RR
-outputs plus **PCA breathing**, **Phan breathing** and **Flowborne** phase,
+outputs plus **Chest Motion**, **Chest Motion DT** and **Flowborne** phase,
 with required quality/validity companions. All-in-one and other derived
 metrics start off. **Use study defaults** restores this set explicitly on
 an existing profile. Fresh Vernier settings publish its raw device row, raw Force, breath
 wave, signal events, steps, step rate, respiration rate and All-in-one.
 Every Mini outlet can be unchecked; saved choices take precedence over the defaults. Respyra 2.0
 owns recording; a separate LSL recorder is unnecessary.
+**DT** means detrended: Chest Motion DT removes a rolling acceleration baseline,
+whereas Chest Motion keeps the fixed baseline learned during calibration. Their
+metric IDs, waveform contracts and saved LSL source identities are unchanged;
+Respyra accepts old and new display names using the data format and metadata.
 
 Open Respyra 2.0 to use **Experiment control**. Select a participant number from
 0 to 100 and enter any custom variable labels and values. These fields save

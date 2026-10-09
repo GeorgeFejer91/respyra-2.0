@@ -38,6 +38,9 @@ class Info:
 
 
 @pytest.mark.parametrize("metric,contract,suffix,flags", [
+    ("adr_pca_waveform", "respyra-polar-pca/1", "ChestMotion", ("PCA-Valid",)),
+    ("adr_axis_mean_difference", "respyra-polar-phan-signed/1", "ChestMotion-DT",
+     ("PCA-Valid", "Phan-Valid")),
     ("adr_pca_waveform", "respyra-polar-pca/1", "PCA-Breathing", ("PCA-Valid",)),
     ("adr_axis_mean_difference", "respyra-polar-phan-signed/1", "Phan-Breathing",
      ("PCA-Valid", "Phan-Valid")),

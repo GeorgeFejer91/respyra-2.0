@@ -9,8 +9,8 @@ or lowers its waveform. Start remains disabled until that direction is set.
 
 | Contract | Polar metric ID and outlet suffix | Required validity outlets |
 | --- | --- | --- |
-| `respyra-polar-pca/1` | PCA breathing: `adr_pca_waveform`, `_PCA-Breathing` | `_PCA-Valid` |
-| `respyra-polar-phan-signed/1` | Phan breathing: `adr_axis_mean_difference`, `_Phan-Breathing` | `_PCA-Valid`, `_Phan-Valid` |
+| `respyra-polar-pca/1` | Chest Motion: `adr_pca_waveform`, `_ChestMotion` | `_PCA-Valid` |
+| `respyra-polar-phan-signed/1` | Chest Motion DT: `adr_axis_mean_difference`, `_ChestMotion-DT` | `_PCA-Valid`, `_Phan-Valid` |
 
 These are default display names, never discovery rules. Respyra identifies a
 compatible waveform from one floating-point (`Float32` or `Double64`) channel
@@ -26,6 +26,10 @@ Earlier Mini metadata declares companion metric IDs and stream references and
 remains supported. Respyra checks `SignalQuality`, one floating-point channel,
 and `0/1` units on readiness inputs. It
 consumes finite waveform values only while the required validity flags are live.
+Chest Motion was previously displayed as PCA breathing, and Chest Motion DT
+as Phan breathing. DT means detrended; both use the same learned PCA axis.
+The internal metric IDs, contracts and LSL source IDs retain their previous
+values, so saved input identities and earlier publishers remain compatible.
 Flowborne's unitless phase classes and the rectified Phan magnitude are excluded:
 they do not declare the supported continuous signed waveform role. A curve's
 visual appearance alone does not establish respiratory meaning; ECG and

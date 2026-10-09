@@ -118,7 +118,7 @@ try:
     from pylsl import StreamInlet, resolve_streams
     deadline = time.monotonic() + 30
     source_id = None
-    suffix = {"pca": "_PCA-Breathing", "phan": "_Phan-Breathing"}.get(args.polar_metric)
+    suffix = {"pca": "_ChestMotion", "phan": "_ChestMotion-DT"}.get(args.polar_metric)
     while time.monotonic() < deadline:
         streams = [stream for stream in resolve_streams(wait_time=1)
                    if (stream.name().endswith(suffix) if suffix else "Vernier" in stream.name())]
@@ -145,9 +145,9 @@ try:
     os.environ["RESPYRA_TEST_SOURCE_ID"] = source_id
     if args.mode == "startup":
         from pylsl import resolve_byprop
-        base = source_id.removeprefix("polar-h10-").removesuffix(suffix)
-        names = {"pca": base + "_PCA-Breathing",
-                 "phan": base + "_Phan-Breathing",
+        base = info.name().removesuffix(suffix)
+        names = {"pca": base + "_ChestMotion",
+                 "phan": base + "_ChestMotion-DT",
                  "pca_valid": base + "_PCA-Valid",
                  "axis_valid": base + "_Phan-Valid",
                  "quality": base + "_PCA-Quality"}

@@ -24,7 +24,7 @@ METRICS = {
 CONTRACTS = {"pca": ("adr_pca_waveform", "respyra-polar-pca/1"),
              "phan": ("adr_axis_mean_difference", "respyra-polar-phan-signed/1")}
 CURRENT_SUFFIXES = {
-    "adr_pca_waveform": "PCA-Breathing", "adr_axis_mean_difference": "Phan-Breathing",
+    "adr_pca_waveform": "ChestMotion", "adr_axis_mean_difference": "ChestMotion-DT",
     "adr_pca_valid": "PCA-Valid", "adr_axis_difference_valid": "Phan-Valid",
     "adr_pca_quality": "PCA-Quality",
 }
@@ -85,6 +85,9 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     base = raw["info"]["name"][0].removesuffix(raw_suffix)
     assert raw["info"]["name"] == [base + raw_suffix]
     metric_names = CURRENT_SUFFIXES if raw_suffix == "_Accelerometer" else METRICS
+    if base + "_PCA-Breathing" in by_name:
+        metric_names = {**CURRENT_SUFFIXES, "adr_pca_waveform": "PCA-Breathing",
+                        "adr_axis_mean_difference": "Phan-Breathing"}
     assert raw["info"]["channel_format"] == ["float32"]
     channels = raw["info"]["desc"][0]["channels"][0]["channel"]
     assert [(item["label"][0], item["unit"][0]) for item in channels] == [

@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 // Static HTML keeps the complete reference readable without JavaScript.
 const catalog = JSON.parse(await readFile(new URL('../src/mpi/event_markers/catalog.json', import.meta.url), 'utf8'));
+const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const escape = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 const current = Object.entries(catalog.events).filter(([, event]) => event.active !== false).sort(([a], [b]) => a.localeCompare(b));
 const retired = Object.entries(catalog.events).filter(([, event]) => event.active === false);
@@ -48,7 +49,7 @@ const html = `<!doctype html>
         <h1 data-measure>Experiment marker library</h1>
         <p data-measure>Every current event type that Respyra can send to its LSL marker outlet and the bundled RespiRecorder: ${current.length} marker types covering setup, input, calibration, trial phases, assessments, control actions and cleanup. Which events occur depends on the run, its options and any errors.</p>
         <div class="link-list"><a href="#inventory" data-measure>Browse all marker types</a><a href="#fields" data-measure>Payload dictionary</a><a href="./marker-catalog.json" download data-measure>Download the complete JSON catalog</a></div>
-        <p class="qualification" data-measure>Reference for the v0.3.9 event contract (${escape(catalog.schema)}), generated from the experiment's Python catalog. Field descriptions include documentation clarifications. This public page contains event definitions; actual sent markers and counts belong to each local recording.</p>
+        <p class="qualification" data-measure>Reference for the v${escape(version)} event contract (${escape(catalog.schema)}), generated from the experiment's Python catalog. Field descriptions include documentation clarifications. This public page contains event definitions; actual sent markers and counts belong to each local recording.</p>
       </section>
       <section class="app-reference respyra" aria-labelledby="stream-title">
         <header class="reference-heading"><img class="app-icon" src="./logo.svg" width="32" height="32" alt=""><h2 id="stream-title" data-measure>Respyra — event stream and recording</h2></header>
@@ -80,7 +81,7 @@ const html = `<!doctype html>
       </section>
       <section id="retired"><h2 data-measure>Retired marker names</h2><p data-measure>Retained for interpreting older recordings. These are excluded from the current inventory and are no longer emitted.</p><ul class="variable-list marker-list">${retired.map(event => row(event, true)).join('')}</ul></section>
     </main>
-    <footer><p data-measure>Respyra 2.0 by George Fejer · Definitions follow the experiment's event catalog.</p><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v0.3.9/src/mpi/event_markers/catalog.json" data-measure>Shipped v0.3.9 catalog source</a></footer>
+    <footer><p data-measure>Respyra 2.0 by George Fejer · Definitions follow the experiment's event catalog.</p><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v${escape(version)}/src/mpi/event_markers/catalog.json" data-measure>Shipped v${escape(version)} catalog source</a></footer>
   </div>
 </body>
 </html>
