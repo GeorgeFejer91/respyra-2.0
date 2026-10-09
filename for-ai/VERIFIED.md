@@ -931,3 +931,14 @@ the respective scope needs current evidence; panel styling does not need it.
   MNE/BIDS interfaces reuse their earlier scoped evidence. These short successful
   recordings do not identify the earlier 0.3.8 timestamp-tail failure's cause;
   the baseline Mini battery no-fit limitation also remains.
+- Publication: public [v0.3.10 prerelease](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.10)
+  contains all eight qualified assets; draft and published API digests/sizes
+  matched local files. Remote tag resolves to artifact source `396c540a730abd8e359ce6fe26f3d43507064ef9`.
+  Anonymous suite HEAD returned 200 and 118,850,778 bytes. Pages build
+  `e899a6ee48f3c5d41e644d5bb5fb1621c7e941f1` is `built`; eleven fresh HTTPS
+  assets matched it byte for byte, with website source
+  `f8bd892072952b26979015df484c53fd3cf8e415`. Both implementation branches were
+  verified at their pushed SHAs. Evidence: ignored `chest-draft-parity.json`,
+  `chest-public-receipt.json`, `chest-public-download.json`, `chest-pages-build.json`
+  and corresponding upload/publication/parity logs. This subsequent publication
+  receipt does not change the deployed site or the qualified installer inputs.
