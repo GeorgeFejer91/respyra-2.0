@@ -863,3 +863,71 @@ the respective scope needs current evidence; panel styling does not need it.
   `minimal-public-receipt.json`, `minimal-public-download.log`,
   `minimal-pages-publish.log` and `minimal-site-release.log`. This subsequent
   receipt-only commit does not change the published site or installer inputs.
+
+### Chest Motion names and 0.3.10 exact suite qualification
+
+- Result/date: `VERIFIED` for the named software checks, `PARTIAL` for physical
+  acquisition, 2026-10-09. Clean artifact source `396c540a730abd8e359ce6fe26f3d43507064ef9`,
+  Mini `cf0b8b8fc3cb79f1effcb281a045e79c5d4fe817` (0.6.8). Chest Motion and
+  Chest Motion DT use `ChestMotion`/`ChestMotion-DT` display suffixes while retaining
+  the earlier PCA/Phan source IDs, calculations, metric IDs and waveform contracts.
+  Seven primary Polar signals and three required companions remain the fresh
+  defaults; existing saved selections remain authoritative.
+- Source: focused metrics/output/runtime Cargo tests passed 120 cases; locked
+  affected-crate Clippy, Rustfmt, 61-entry catalog/docs checks and 48 Python
+  input/setup/recording tests passed. Official LSL readback passed separate,
+  combined and simultaneous output modes with renamed outlets and retained IDs.
+  The focused Mini UI check passed affected defaults, reset, optional selections,
+  required companions and resize; it excludes the documented unchanged battery
+  enlargement no-fit case. The site check passed five pages/40 layouts, enlarged
+  text, current variable definitions, markers, installer links and credits.
+- Artifact: all four NSIS builds and embedded import/native three-stream XDF
+  checks passed. Suite SHA-256
+  `ddb73a05cdfdbed73c3eacae8110aecd1072561219e287322403f37aa3c3c5e1`
+  (118,850,778 bytes); matching source ZIP
+  `0ca1fbc3b36470c3a523b5db79c44230c116d7477de7a0efe99c23cad98eb074`
+  (704,600,604 bytes). Source archive creation verified the pinned Python,
+  native and 430 Cargo source inputs against manifests/locks.
+- Upgrade: exact 0.3.9 installed privately, followed by 0.3.10 maintenance
+  install with no destination argument and same-version reinstall. Both found
+  the registered existing folder automatically, retained two data sentinels and
+  saved Respyra preferences, and matched all 18,449 engine files, two Mini
+  payloads/25 resources and eight shortcut targets. Installed main SHA-256
+  `61f9841eeed3b96373491209190d8b3962e77f360e6c97fa65b5c7d95e3ba849`
+  matched extraction from the exact final installer. Existing user installation,
+  registration, shortcuts and preferences were restored/verified unchanged.
+- Native: the unified launcher opened three private-desktop processes/windows;
+  missing-input Start remained disabled and backend-forced Start was rejected.
+  Fresh installed Polar settings selected the minimal set; a four-signal opt-out
+  survived restart and Use study defaults restored ten selected IDs. These normal
+  Mini checks used an inactive-app guard and exact known-folder preference
+  backup/restore, because environment overrides alone do not isolate that storage.
+  Both installed Polar candidates accepted native Space, reached calibration
+  readiness and stopped with closed 14-stream XDFs; all seven primary signals
+  were nonempty. Both waveform-reference errors were below `5e-10`, with raw ACC
+  covering finalization. Installed Vernier decoded the actual QR and used the
+  hosted phone page for edits/Start/Stop/Close, saving a closed ten-stream XDF.
+  All six CSV files retained the original source-specific headers. Private
+  uninstall retained all 84 recording/metadata files with identical hashes.
+- Harness: the final auditor checks retained PCA/Phan source identities
+  explicitly rather than deriving them from renamed display labels. Nine
+  regression cases and both retained Polar recordings passed; changing a recorded
+  source ID to the new display name was independently rejected. The earlier
+  false assertion and a phone-check attempt using a QR Python without OpenCV are
+  retained as failed harness attempts. The final phone check uses the existing
+  QR Python override. This later auditor/test/receipt change does not alter the
+  installers or their pinned source companion.
+- Evidence: ignored `chest-rust-checks.log`, `chest-python-tests.log`,
+  `chest-live-adr.log`, `chest-mini-docs.log`, `chest-mini-ui.log`, `chest-site.log`,
+  `chest-suite-build.log`, `chest-installed-upgrade.log`, `chest-install-evidence/`,
+  `chest-installed-engine.log`, `chest-installed-mini-ui.log`, `chest-suite-launch.log`,
+  `chest-installed-pca.log`, `chest-installed-phan.log`, `chest-canonical-audits.json`,
+  `chest-auditor-final-tests.log`, `chest-installed-vernier-final.log`,
+  `chest-recordings-receipt.json`, `chest-installed-uninstall.log`,
+  `chest-uninstall-evidence/` and `chest-source-bundle.log`.
+- Limits: unsigned preview; physical sensors/BLE, real phone/keyboard routing,
+  clean-machine install and full-duration scientific timing remain unqualified.
+  Unchanged study progression, calibration algorithms, recording/export code and
+  MNE/BIDS interfaces reuse their earlier scoped evidence. These short successful
+  recordings do not identify the earlier 0.3.8 timestamp-tail failure's cause;
+  the baseline Mini battery no-fit limitation also remains.

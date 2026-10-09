@@ -36,6 +36,13 @@ build helpers, browser checks, native integration, study and installer checks.
   separate from the user's interactive desktop. Confirm that the chosen
   environment supports the claimed graphics/WebView/input behavior before
   launching. Do not use the user's currently running study/app as a test target.
+- A private desktop isolates windows, not Windows known-folder preferences.
+  Mini app configuration resolves the real Roaming known folder; overriding
+  `LOCALAPPDATA`/`APPDATA` alone does not provide a fresh profile. Use an isolated
+  Windows user profile or a guarded backup/restore of the exact preference files
+  for normal Mini checks. The guard must reject running Mini apps, restore bytes
+  or original absence in `finally`, and verify restoration. Mock mode does not
+  persist its output selections.
 - Minimized/offscreen windows, a second monitor, Windows virtual desktops and
   hiding after launch are not proof of isolation; they may flash or take focus.
   Do not move/minimize existing user windows, change display settings, bring a

@@ -30,6 +30,12 @@ CURRENT_SUFFIXES = {
 }
 
 
+def _metric_source_id(base, suffix):
+    # Display renames retain the identities saved by earlier Mini versions.
+    identity_suffix = {"ChestMotion": "PCA-Breathing", "ChestMotion-DT": "Phan-Breathing"}.get(suffix, suffix)
+    return f"polar-h10-{base}_{identity_suffix}"
+
+
 def _round_rust(values):
     return np.copysign(np.floor(np.abs(values) + .5), values)
 
@@ -118,7 +124,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     for metric, suffix in metric_names.items():
         stream = by_name[base + "_" + suffix]
         info, description = stream["info"], stream["info"]["desc"][0]
-        assert info["source_id"] == ["polar-h10-" + info["name"][0]]
+        assert info["source_id"] == [_metric_source_id(base, suffix)]
         assert info["channel_format"] == ["float32"] and int(info["channel_count"][0]) == 1
         assert float(info["nominal_srate"][0]) == 0
         if metric in {"adr_pca_waveform", "adr_axis_mean_difference"}:

@@ -1,7 +1,19 @@
 """A plateau must not conceal a shifted or altered mock recording."""
 import numpy as np
 import pytest
-from scripts.audit_polar_mock_xdf import _mock_acc, _mock_sequence_start
+from scripts.audit_polar_mock_xdf import _metric_source_id, _mock_acc, _mock_sequence_start
+
+
+@pytest.mark.parametrize("suffix,identity_suffix", [
+    ("ChestMotion", "PCA-Breathing"),
+    ("ChestMotion-DT", "Phan-Breathing"),
+    ("PCA-Breathing", "PCA-Breathing"),
+    ("Phan-Breathing", "Phan-Breathing"),
+    ("Accelerometer", "Accelerometer"),
+    ("adrPcaWaveform", "adrPcaWaveform"),
+])
+def test_renamed_and_legacy_outlets_retain_saved_identity(suffix, identity_suffix):
+    assert _metric_source_id("Custom_Polar", suffix) == "polar-h10-Custom_Polar_" + identity_suffix
 
 
 def test_complete_sequence_resolves_ambiguous_flat_prefix():
