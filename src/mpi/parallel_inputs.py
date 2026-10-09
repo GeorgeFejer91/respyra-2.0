@@ -56,7 +56,7 @@ class ParallelInputs:
             except LSLForceError as exc:
                 self.active.remove(source)
                 source.stop()
-                self.markers.emit("source.comparison.lost", source_id=source.source_id(), reason=str(exc))
+                self.markers.emit("source.comparison.lost", source_id=source.source_id, reason=str(exc))
                 continue
             if self.capturing:
                 self.range_samples[source].extend(value for _, value in rows)
@@ -74,7 +74,7 @@ class ParallelInputs:
         for source in self.sources:
             values = sorted(self.range_samples[source])
             if source not in self.active or len(values) < 6:
-                self.markers.emit("source.comparison.skipped", source_id=source.source_id(),
+                self.markers.emit("source.comparison.skipped", source_id=source.source_id,
                                   reason="Too few valid samples during range calibration")
                 continue
             n = len(values)
@@ -82,7 +82,7 @@ class ParallelInputs:
             hi = values[max(0, min(int(n * range_cal.percentile_hi / 100) - 1, n - 1))]
             half_range = (hi - lo) / 2
             if half_range <= (1e-5 if hasattr(source, "contract_id") else 0):
-                self.markers.emit("source.comparison.skipped", source_id=source.source_id(),
+                self.markers.emit("source.comparison.skipped", source_id=source.source_id,
                                   reason="Insufficient calibration range")
                 continue
             center = (hi + lo) / 2

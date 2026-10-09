@@ -100,6 +100,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Signal stitching and rise/fall waveforms: `src/mpi/signal.py` | `tests/test_signal.py` | unrecorded | Signal functions, input assumptions or numeric dependencies change. |
 | Raw Force metadata/units, finite samples, duplicate identities and saved selection: `src/mpi/lsl_force.py` | `tests/test_lsl_force.py` | verified for current inputs; see hub/recorder receipt | Force validation, source identity/storage, freshness or producer metadata contract changes. |
 | Polar PCA/signed Phan contracts, validity, direction, calibration and native XDF: `src/mpi/lsl_polar.py`, `polar_calibration.py` | `tests/test_lsl_polar.py`, `tests/check_polar_lsl.py`, `tests/check_polar_recording.py` | verified for unchanged synthetic signal/recording inputs; UI has newer selector receipt | Producer metadata, companion timing, source selection, study calibration, recorder or derived formula changes. |
+| Optional comparison loss and unavailable calibration: `src/mpi/parallel_inputs.py` | `tests/test_parallel_inputs.py`, `tests/check_parallel_recording.py` | verified for loss, too few samples, flat Force/Polar ranges and continued selected-input XDF; see comparison-failure receipt | Comparison lifecycle, source identity access, calibration skip handling or consuming inlet/recorder contract changes. |
 | Automatic discovery, exact reconnect, loss/retry, saved fields and cancelled selection: `src/mpi/lsl_setup.py` (`SourceSetup`) | `tests/test_lsl_setup.py` | verified for participant parity and recorded-number projection; see 2026-10-01 receipt | Setup state transitions, source selection, remembered identity or Start prerequisites change. |
 | Marker payload/catalog, renaming, key timing and flip alignment: `src/mpi/event_markers/` | `tests/test_event_markers.py` | verified for current inputs; see hub/recorder and marker inventory receipts | Event owner/catalog, timing, phase wrappers or payload consumers change. |
 | Short study completion/abort/error, no-data calibration and original CSV modes: `scripts/run_experiment.py`, `src/mpi/validation_study_jenny.py` | `tests/test_experiment_flow.py` | verified for participant parity; private-desktop full synthetic study passed; see 2026-10-01 receipt | Study flow, calibrated input, marker contract, logging schema or installed `respyra` APIs change. |
@@ -158,6 +159,30 @@ work. A different HEAD alone does not discard a pass. `REUSED` cites the origina
 entry; it never updates the execution date or pretends the check ran again.
 
 ## Retained baseline evidence
+
+### Comparison-stream failure handling
+
+- Result/date: `VERIFIED` for the reproduced `'str' object is not callable`
+  exception and its three corrected identity accesses, 2026-10-09; base `3925110`.
+  Optional-source loss, too few calibration samples and flat Force/Polar ranges
+  all failed before the patch (four cases), then passed without interrupting
+  the selected input. This does not identify which trigger occurred on the reported PC.
+- Captured CLI: embedded Python with current `src` and existing test dependencies
+  ran `pytest tests/test_parallel_inputs.py tests/test_lsl_force.py
+  tests/test_lsl_polar.py tests/test_experiment_flow.py -q`: 26 passed, one existing
+  Pyglet deprecation warning. Python 3.10.11, respyra 0.4.0, PsychoPy 2026.2.4,
+  pylsl 1.18.5, PyXDF 1.17.5; `uv.lock` unchanged.
+- Headless `python -B tests/check_parallel_recording.py` used a private LSL
+  SessionID, invalidated the Phan companion after calibration and observed its
+  loss through the real inlet timeout. Independent PyXDF import verified all
+  nine streams, three calibration formulas/paired timestamps, the loss marker,
+  continued finite selected/healthy comparison samples and matching XDF footers.
+  One nonfatal PyXDF clock-segment warning was retained.
+- Exact tested hashes and logs: ignored `comparison-crash-evidence.json`,
+  `comparison-crash-{red,green,xdf}.log` and the recorded synthetic XDF.
+  Unchanged study progression, recorder/export, native shell and web inputs
+  reuse scoped earlier evidence. No GUI, installed app, new installer, physical
+  sensors or full-duration participant run was exercised for this patch.
 
 ### Participant parity and recorded-number picker
 

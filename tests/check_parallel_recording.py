@@ -1,4 +1,4 @@
-"""Headless three-input, six-waveform native XDF round trip."""
+"""Headless three-input XDF round trip, including comparison signal loss."""
 
 import json
 import math
@@ -69,6 +69,7 @@ for metric, suffix, contract, companions in (
     waveforms[suffix] = StreamOutlet(info)
 
 stop = threading.Event()
+lose_phan = threading.Event()
 
 
 def produce():
@@ -76,8 +77,9 @@ def produce():
     while not stop.wait(0.05):
         timestamp = local_clock()
         value = math.sin(index * 0.16)
-        for outlet in validity.values():
-            outlet.push_sample([1.0], timestamp)
+        for suffix, outlet in validity.items():
+            valid = not (suffix == "adrAxisDifferenceValid" and lose_phan.is_set())
+            outlet.push_sample([float(valid)], timestamp)
         force.push_sample([5 + value], timestamp)
         waveforms["adrPcaWaveform"].push_sample([0.02 * value], timestamp)
         waveforms["adrAxisMeanDifference"].push_sample([0.01 * value], timestamp)
@@ -110,6 +112,20 @@ try:
     while time.monotonic() < until:
         source.get_all()
         time.sleep(0.02)
+    # An optional candidate can lose validity while the feedback input stays live.
+    lost_source = next(s for s in source.comparisons.sources
+                       if s.contract_id == "respyra-polar-phan-signed/1")
+    lose_phan.set()
+    deadline = time.monotonic() + 6
+    while lost_source in source.comparisons.active:
+        assert time.monotonic() < deadline, "Invalid comparison did not report signal loss"
+        source.get_all()
+        time.sleep(0.02)
+    assert lost_source.stopped and len(source.comparisons.active) == 1
+    until = time.monotonic() + 0.3
+    while time.monotonic() < until:
+        source.get_all()
+        time.sleep(0.02)
     markers.emit("recording.finalizing")
     recorder.stop()
     summary = inspect_xdf(recorder.path, recorder.required)
@@ -134,8 +150,16 @@ try:
         role = derived["info"]["desc"][0]["role"][0]
         assert role == ("feedback" if item is source else "comparison")
     assert all(item["sample_count"] > 0 for item in summary if item["source_id"] in recorder.required)
+    events = [json.loads(row[0]) for row in by_id[recorder.required[1]]["time_series"]]
+    losses = [event for event in events if event["event"] == "source.comparison.lost"]
+    assert len(losses) == 1 and losses[0]["source_id"] == lost_source.source_id
+    for item in (source, *source.comparisons.active):
+        assert any(timestamp > losses[0]["lsl_time"] and math.isfinite(row[0])
+                   for timestamp, row in zip(by_id[item.calibrated_id]["time_stamps"],
+                                             by_id[item.calibrated_id]["time_series"]))
     print(json.dumps({"result": "passed", "xdf": str(recorder.path),
-                      "required": list(recorder.required), "streams": len(summary)}))
+                      "required": list(recorder.required), "streams": len(summary),
+                      "lost_comparison": lost_source.source_id}))
 finally:
     if recorder is not None and recorder.process is not None:
         recorder.stop()
