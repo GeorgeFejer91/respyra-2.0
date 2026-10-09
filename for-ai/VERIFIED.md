@@ -15,10 +15,52 @@ suites to initialize this ledger.
   option acknowledgments, report layouts at 360×400/720×560/1440×900, exact Copy
   text, clipboard-denied fallback and popup Close handler. Evidence:
   `troubleshooting-ui.log` and `troubleshooting-popup.png`.
-- Inputs: diagnostics, setup/bridge, wrapper failure handling, native supervision,
-  command capabilities, hub/report HTML/CSS/JS and their focused tests. The
-  separate native popup and exact 0.3.11 installer still need qualification;
-  headless mocked IPC does not establish those surfaces.
+- Final artifact source: `2e6d6ab34172063065daf7171d933514804d19e2`; final Rust
+  projection regression, all 14 tests, fmt and clippy passed. Local troubleshooting
+  flags/report bodies are omitted from both hosted phone snapshot projections.
+- VERIFIED private Win32 desktop, exact installed 0.3.11: controlled source loss
+  during actual PsychoPy instructions opened a separate native `error-report`
+  window with the original traceback, matching saved text and Copy result.
+  Popup Close retained the main window. Disabled reports, remembered opt-out
+  and unexpected native engine exit passed independently. Clipboard writes were
+  mocked to preserve the user's clipboard; denied-copy fallback passed headless.
+  Native startup failure popup evidence from the unchanged startup path is reused.
+- VERIFIED exact suite upgrade from 0.3.10 and same-version reinstall: automatic
+  existing-folder selection, all 18,450 engine files, two Minis/25 resources and
+  eight shortcuts matched. Both preference output selections reset with exact
+  backups while other fields remained intact; 67 existing recording/metadata
+  files retained identical hashes. The actual user installation, registration,
+  shortcuts and settings were restored/verified unchanged.
+- VERIFIED installed embedded imports/app-local CRT and native three-stream XDF
+  round trip; normal installed Polar fresh defaults, saved opt-out and explicit
+  restoration of ten essential outputs; unified launcher opened three private
+  windows and rejected Start without an input. Actual published phone page,
+  QR pixel decoding, remote edits/Start/Stop/Close and closed ten-stream XDF
+  passed (19 live markers). Private uninstall retained all 102 recording/report/
+  metadata files with unchanged hashes.
+- Reused Python/recorder/locked dependencies from the prior staged runtime after
+  verifying every one of its 18,450 file hashes and unchanged source inputs.
+  Both installers were bundled from the same newly compiled main executable.
+  Installed executable SHA-256 matched extraction from the final suite:
+  `31afa89d62b59ff8ce6d440c58d2cf1c1254fd3229707de84957d3b19c10c411`.
+- Suite SHA-256 (118,843,545 bytes):
+  `9217320f28fddbcb63b02791cab19ad3688681ee8479e430e2987d3d1f48499f`.
+  Matching source ZIP SHA-256 (704,620,194 bytes):
+  `cc47763e58abaaf3fced783f9e394ad6b1ad5b9769a91a22db155cd610708243`.
+  Source bundling verified pinned Python/native archives and 430 Cargo crates.
+- Evidence: ignored `troubleshooting-source-evidence.json`,
+  `troubleshooting-suite-final.log`, `troubleshooting-runtime-reuse.json`,
+  `troubleshooting-final-chain.log`, `troubleshooting-install-evidence/`,
+  `diagnostics-native-80c7978ad58143feaf2af27cf900258c/`,
+  `troubleshooting-installed-mini-ui.log` and `troubleshooting-uninstall-evidence/`.
+  Preliminary failures are retained: async test acknowledgment/CRLF comparisons,
+  Windows PowerShell's empty-string null backup argument, a mutable Cargo output
+  used as an installer reference, and phone projection/QR interpreter mismatches.
+  Corrected final checks passed without changing scientific study timing.
+- Limits: unsigned local candidate; no public release promotion. Physical sensors,
+  real phone, clean-machine install and full-duration timing remain unqualified.
+  Unchanged calibration/CSV/BIDS/scientific algorithms reuse earlier scoped
+  evidence; this mechanism does not identify an unobserved lab crash's cause.
 
 ## Typed prompt controls — 2026-10-08
 
