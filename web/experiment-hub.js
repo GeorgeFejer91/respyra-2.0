@@ -25,7 +25,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     selectParticipant($('participant'), saved?.participant || '');
     const fail = error => {
       $('stream-status').textContent = 'Experiment control failed: ' + String(error);
-      native?.core.invoke('close_app', { reason:'protocol_failure' }).catch(() => {});
+      native?.core.invoke('report_control_failure', { message:String(error).slice(0, 1024) }).catch(() => {});
     };
     const send = native ? actionQueue((command, args) => native.core.invoke(command, args), fail) : null;
     let nativeState = { phase:'starting' }, nativeProgress = {}, operation = 0, shownSent = false;
@@ -65,6 +65,11 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     let selectionShare = Number.isFinite(savedLayout?.selection) ? savedLayout.selection : .30;
     let preferredSelectionShare = selectionShare;
     let scheduleTextMeasurement = () => {};
+    $('troubleshooting').addEventListener('change', () => {
+      if (native) void request('option', { field:'troubleshooting', enabled:$('troubleshooting').checked });
+      else localStorage.setItem('respyra-preview-troubleshooting', String($('troubleshooting').checked));
+    });
+    if (!native) $('troubleshooting').checked = localStorage.getItem('respyra-preview-troubleshooting') !== 'false';
     function renderMarkerInventory() {
       const query = $('marker-inventory-search').value.trim().toLowerCase();
       const matches = EVENT_MARKERS.filter(({ name, when }) => `${name} ${when || ''}`.toLowerCase().includes(query));
@@ -94,6 +99,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     const saveLayout = () => { preferredSelectionShare = selectionShare; localStorage.setItem('respyra-preview-layout', JSON.stringify({ hub: hubShare, selection: selectionShare })); };
 
     function updateNativeControls() {
+      if (native) $('troubleshooting').disabled = nativeState.phase !== 'setup' || operation > 0;
       if (!native) return;
       const setup = nativeState.phase === 'setup', running = nativeState.phase === 'experiment';
       $('start').hidden = !setup;
@@ -732,6 +738,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     let requestPending = false;
     function applyNativeState(snapshot) {
       nativeState = snapshot;
+      if (typeof snapshot.troubleshooting === 'boolean') $('troubleshooting').checked = snapshot.troubleshooting;
       nativeProgress = snapshot.progress || nativeProgress;
       if (snapshot.phase === 'setup') {
         nativeCandidates = snapshot.streams || [];

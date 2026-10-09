@@ -1,0 +1,6 @@
+.error-window { height: 100dvh; min-width: 0; min-height: 0; padding: clamp(12px, min(2vw, 2.5vh), 24px); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: clamp(6px, min(1.5vw, 1.5vh), 14px); }
+.error-window h1 { margin: 0; font-size: 20px; }
+.error-window p { margin: 6px 0; }
+.error-window textarea { width: 100%; min-width: 0; min-height: 0; resize: none; padding: 10px; border: 1px solid #455d6c; border-radius: 4px; color: #e9f1f4; background: #101e27; font: 14px/1.5 monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+#error-saved { overflow-wrap: anywhere; }
+.error-actions { display: flex; flex-wrap: wrap; gap: 8px; }

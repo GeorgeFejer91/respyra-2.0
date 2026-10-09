@@ -24,7 +24,11 @@ To update an existing suite, close Respyra and both Mini apps, download the newe
 suite installer and run it under the same Windows account. Setup recognizes
 the existing installation and reuses its program folder; it handles replacement
 of the installed applications without a separate manual uninstall. Recordings,
-the chosen recording folder, device preferences and stream selections are kept.
+the chosen recording folder and device preferences are kept. Starting with
+suite **0.3.11**, each suite installation resets stream-output selections to
+the documented study defaults, including on upgrade or reinstallation. The old
+Mini preferences are backed up as `preferences.json.before-respyra-0.3.11`
+beside the original file in each Mini's Windows application-data folder.
 Running the same installer again also supports reinstallation. This is a full
 installer update, so it downloads the complete package rather than a file-difference patch.
 
@@ -48,7 +52,8 @@ with required quality/validity companions. All-in-one and other derived
 metrics start off. **Use study defaults** restores this set explicitly on
 an existing profile. Fresh Vernier settings publish its raw device row, raw Force, breath
 wave, signal events, steps, step rate, respiration rate and All-in-one.
-Every Mini outlet can be unchecked; saved choices take precedence over the defaults. Respyra 2.0
+Every Mini outlet can be unchecked; choices persist between launches until the
+next suite installation resets the outputs. Respyra 2.0
 owns recording; a separate LSL recorder is unnecessary.
 **DT** means detrended: Chest Motion DT removes a rolling acceleration baseline,
 whereas Chest Motion keeps the fixed baseline learned during calibration. Their
@@ -71,6 +76,19 @@ recording readiness before opening PsychoPy, records raw input and markers throu
 calibration/cleanup, and discovers additional streams during the run. **XDF recording**
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
+
+In **0.3.11**, **Troubleshooting mode** is checked by default in the Experiment
+hub. Uncheck it to disable detailed reports; that choice is remembered on restart
+and survives a suite upgrade. A failed experiment opens a separate **Error report**
+window with the original traceback, source identity, latest trial/phase, runtime
+versions and recording/finalization status. **Copy report** copies the full text;
+if clipboard access fails, select the report and press Ctrl+C. **Close report**
+closes only the popup. Reports are also saved in `diagnostics` inside the active
+recording folder; early startup failures use the app's local diagnostics folder.
+Report text excludes signal samples, questionnaire answers and frame locals.
+It can contain technical source names and recording paths, so review it before
+sharing. Normal Stop/Close does not create an error report. Engine exits without
+a Python traceback include the exit status and available engine log tail instead.
 
 By default, Respyra records every visible and later LSL outlet, including Mini
 raw ECG, ACC, heart rate, RR, belt Force and breathing metrics when published.

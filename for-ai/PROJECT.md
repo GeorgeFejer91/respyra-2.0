@@ -67,7 +67,8 @@ feedback. See `RECORDING.md`.
   irregular data. The XDF retains exact source data and empty outlets.
 - `web/` is plain HTML/CSS/JS with locally bundled Pretext/fonts. `src-tauri/`
   supervises one Python child through closed commands (`launch_backend`,
-  `setup_action`, `close_app`, `viewer_action`) and private bounded JSON pipes. Python is the
+  `setup_action`, `close_app`, `viewer_action`, `error_report`,
+  `report_control_failure`) and private bounded JSON pipes. Python is the
   sole LSL source/experiment/marker authority; Rust validates the native command
   surface and process lifecycle. There is no web server. The opt-in phone
   controller is defined in `docs/remote-viewer.md`. Rust owns expiring grants,
@@ -92,6 +93,11 @@ feedback. See `RECORDING.md`.
   The experiment control window remains available during PsychoPy, without
   taking participant focus. A second display or phone avoids focus changes.
   Stop cleans up the study; phone loss revokes control but leaves a run active.
+  `mpi.diagnostics` remembers local troubleshooting mode (default on), retains
+  bounded tracebacks and failure/recording context, and omits frame locals and
+  signal samples. Rust covers startup/protocol/unexpected-child exits and opens
+  the separate `error-report` WebView window with read/copy/close controls.
+  Reports and paths remain local; the phone projection excludes diagnostics.
   Debug workspace builds use the checkout's `.venv`. The Respyra 2.0
   Windows installer bundles the locked engine with isolated CPython; release
   builds never fall back to a checkout. Installed XDF and CSV files use the remembered

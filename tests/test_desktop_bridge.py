@@ -53,7 +53,7 @@ def test_snapshots_are_framed_and_no_generic_commands_are_accepted():
     assert bridge.closed.wait(1)
     with pytest.raises(DesktopCancelled): bridge.check_cancel()
     bridge.send({"phase": "setup", "message": "Ready"})
-    assert json.loads(writer.getvalue().removeprefix(PREFIX)) == {"phase": "setup", "message": "Ready"}
+    assert json.loads(writer.getvalue().removeprefix(PREFIX)) == {"phase": "setup", "message": "Ready", "troubleshooting": bridge.troubleshooting}
 
 
 def test_progress_retains_only_latest_public_metadata_without_flip_io():

@@ -382,3 +382,22 @@ decision and link both entries.
   candidate outlets in XDF, plus markers and other Mini outputs. Missing or
   invalid comparisons remain NaN and emit a marker. Unselected Polar
   orientation stays native +1 and needs analytical review.
+
+## D-0020 — Local failure popup and explicit suite output reset
+
+- Date: 2026-10-09
+- Status: Accepted
+- Context: Experimenters reported unexplained failures and retained broad stream
+  selections after upgrading to the smaller documented default set.
+- Decision: Remember a default-on local troubleshooting checkbox. Failure opens
+  a separate native report window with Copy, retained tracebacks and recording
+  context; native supervision covers failures without a Python frame. Keep the
+  reports local and omit sample data and frame locals. Suite 0.3.11 installations
+  explicitly reset Mini output selections after backing up the preferences,
+  while preserving devices, recording folders, recordings and troubleshooting
+  opt-out. Standard same-identity installer maintenance replaces program files.
+- Consequences: Post-install output choices persist until the next suite install.
+  Closing the report leaves the main window available. Detailed logging cannot
+  survive a crash of the entire native host.
+- Supersedes: D-0019's requirement to preserve output choices during suite upgrades;
+  its one-feedback/all-published-recording behavior remains unchanged.

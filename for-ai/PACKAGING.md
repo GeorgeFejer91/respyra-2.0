@@ -4,8 +4,12 @@ Fresh suite preferences must retain the Mini defaults: Vernier raw Force and
 Polar direct ECG, ACC, native heart rate/RR, Chest Motion, Chest Motion DT
 and Flowborne phase, with required PCA quality/validity and Phan validity.
 Polar All-in-one and other derived metrics start off. Respyra defaults all visible/later LSL streams and
-parallel comparison waveforms to recording. User changes take precedence;
-install/upgrade must not overwrite saved Mini selections or Respyra settings.
+parallel comparison waveforms to recording. Starting with suite 0.3.11, installation,
+upgrade and reinstallation explicitly reset Mini output selections to these defaults.
+Back up the old preferences and remove only outputMode/polarOutputs/vernierOutputs;
+retain device memory, source identity, experiment fields, recording-folder settings,
+troubleshooting opt-out and recordings. Close both Mini apps before reset. Choices
+made after installation persist until the next suite installation.
 Verify the default and opt-out behavior in the exact packaged candidate.
 
 Current consumer: build/verify the downloadable Respyra 2.0 installer. Read this
@@ -28,7 +32,8 @@ launch them on the user's active desktop; missing isolation leaves those gates
   Vernier, and full-suite Start menu shortcuts beside the normal Respyra shortcut,
   plus four desktop shortcuts (Respyra, Polar, Vernier, suite); the
   launcher starts both Minis before Respyra. Do not bundle loose pre-installer
-  Mini executables or silently replace saved Mini preferences.
+  Mini executables. Apply the documented output reset through the suite hook;
+  standalone Respyra installation does not reset Mini preferences.
 - The suite and standalone Mini installers are separate release assets. Record
   each exact installer, extracted Mini executable, resource hash, submodule
   revision, and suite installer in `dist/suite-manifest.json` and the release

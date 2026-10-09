@@ -25,7 +25,7 @@ const path = require('node:path');
     const polarId = 'polar-h10-StudyPolar_adrPcaWaveform';
     const state = { phase:'setup', ui_seq:0, values:{ participant:'', session:'001' }, recorded_participants:[24,100], variables:[], marker_name:'Respyra-Events', save_csv:true, output_folder:'C:\\Recordings',
       message:'Choose a raw Force stream', can_start:false, busy:false, record_keyboard:false, record_mouse:false,
-      excluded_streams:[],
+      excluded_streams:[], troubleshooting:true,
       streams:[{ source_id:rawId, stream_name:'Vernier Stream Mini', stream_type:'VernierRaw', compatible:true,
         reason:'Compatible: raw Force (N)', force_channel_index:0 },
         { source_id:polarId, stream_name:'StudyPolar_adrPcaWaveform', stream_type:'Respiration', compatible:true,
@@ -101,6 +101,11 @@ const path = require('node:path');
     assert.deepEqual(await page.locator('#feedback-source optgroup').evaluateAll(groups => groups.map(group => group.label)),
       ['Vernier Mini', 'Polar Mini']);
     assert.equal(await page.title(), 'Respyra 2.0 — Experiment control');
+    assert(await page.locator('#troubleshooting').isChecked());
+    await page.locator('#troubleshooting').uncheck();
+    await page.waitForFunction(() => window.testSnapshot().troubleshooting === false);
+    await page.locator('#troubleshooting').check();
+    await page.waitForFunction(() => window.testSnapshot().troubleshooting === true);
     assert(await page.locator('#viewer-open').isVisible());
     await page.locator('#recordings-open').click();
     assert.deepEqual(await page.evaluate(() => window.testCommands), ['open_recordings_folder']);
@@ -324,6 +329,37 @@ const path = require('node:path');
     assert.deepEqual(actions.map(action => action.ui_seq), actions.map((_, index) => index + 1));
     assert.equal(actions.filter(action => action.action === 'start').length, 1);
     assert.equal(actions.filter(action => action.action === 'abort').length, 1);
+    const reportPage = await browser.newPage({viewport:{width:720,height:560}});
+    reportPage.on('pageerror', error => errors.push(String(error)));
+    await reportPage.addInitScript(() => {
+      const report = {text:"TypeError: 'str' object is not callable\nFile: synthetic.py, line 42\n".repeat(300), saved_path:'C:\\Recordings\\diagnostics\\error-synthetic.txt'};
+      window.__TAURI__ = { core:{invoke:async command => {
+        if (command !== 'error_report') throw new Error('Unexpected report command');
+        return report;
+      }}, event:{listen:async () => () => {}}, window:{getCurrentWindow:() => ({close:async () => {window.reportClosed=true;}})} };
+      Object.defineProperty(navigator, 'clipboard', {value:{writeText:async text => {window.copiedReport=text;}}});
+    });
+    await reportPage.goto(`http://127.0.0.1:${server.address().port}/error-report.html`);
+    await reportPage.waitForFunction(() => document.getElementById('error-report').value.includes('TypeError'));
+    for (const [width,height] of [[720,560],[360,400],[1440,900]]) {
+      await reportPage.setViewportSize({width,height});
+      await reportPage.waitForTimeout(120);
+      const fit = await reportPage.evaluate(() => ({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,
+        reportHeight:document.getElementById('error-report').clientHeight,
+        clipped:[...document.querySelectorAll('[data-measure]')].filter(e=>e.scrollWidth>e.clientWidth+1 || e.scrollHeight>e.clientHeight+1).map(e=>e.textContent)}));
+      assert(fit.width<=width+1 && fit.height<=height+1 && fit.reportHeight>50 && !fit.clipped.length, JSON.stringify({width,height,fit}));
+    }
+    await reportPage.setViewportSize({width:720,height:560});
+    await reportPage.locator('#error-copy').click();
+    assert.equal(await reportPage.evaluate(() => window.copiedReport), await reportPage.locator('#error-report').inputValue());
+    assert.equal(await reportPage.locator('#error-copy-status').textContent(), 'Report copied.');
+    await reportPage.evaluate(() => { navigator.clipboard.writeText=async()=>{throw new Error('denied');}; document.execCommand=()=>false; });
+    await reportPage.locator('#error-copy').click();
+    assert.match(await reportPage.locator('#error-copy-status').textContent(), /Ctrl\+C/);
+    await reportPage.screenshot({path:'.for-ai-local/troubleshooting-popup.png'});
+    await reportPage.locator('#error-dismiss').click();
+    assert(await reportPage.evaluate(() => window.reportClosed));
+    await reportPage.close();
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ result:'passed', layouts:8, actions:actions.length, start:1, stop:1, pageErrors:0 }));
   } finally {

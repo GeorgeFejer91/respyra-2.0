@@ -74,6 +74,20 @@ def test_experiment_fields_save_without_a_button_and_restore_on_restart(setup):
         send(setup, "field_edit", field="variables", value="not json")
 
 
+def test_troubleshooting_defaults_on_and_remembers_opt_out(setup):
+    assert setup.snapshot()["troubleshooting"]
+    send(setup, "shown")
+    send(setup, "option", field="troubleshooting", enabled=False)
+    restored = lsl_setup.SourceSetup(SimpleNamespace(name="Test Study"), Collector())
+    try:
+        assert not restored.snapshot()["troubleshooting"]
+        send(restored, "shown")
+        send(restored, "option", field="troubleshooting", enabled=True)
+        assert lsl_setup.diagnostics.enabled()
+    finally:
+        restored.close()
+
+
 def test_participant_choice_uses_verified_recording_history(setup, tmp_path):
     (tmp_path / "participant-list.jsonl").write_text(
         json.dumps({"participant_number": "P000"}) + "\n" +

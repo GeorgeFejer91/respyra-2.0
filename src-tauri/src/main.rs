@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
     collections::HashMap,
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     process::{Child, ChildStdin, Command, Stdio},
     sync::{
@@ -13,7 +13,7 @@ use std::{
         mpsc,
     },
     thread,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{Emitter, Manager};
 
@@ -78,6 +78,8 @@ enum RecordingOption {
     RecordKeyboard,
     RecordMouse,
     PolarInverted,
+    CompareInputs,
+    Troubleshooting,
 }
 
 #[derive(Deserialize)]
@@ -218,6 +220,9 @@ struct Engine {
     pending: HashMap<u64, mpsc::Sender<Value>>,
     chosen_folder: Option<PathBuf>,
     viewer: Option<viewer::ViewerSession>,
+    troubleshooting: bool,
+    exit_status: Option<String>,
+    presented_report: Option<String>,
 }
 
 struct Desktop {
@@ -241,15 +246,79 @@ impl Default for Desktop {
                 pending: HashMap::new(),
                 chosen_folder: None,
                 viewer: None,
+                troubleshooting: native_troubleshooting_enabled(),
+                exit_status: None,
+                presented_report: None,
             })),
             closing: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
+fn native_troubleshooting_enabled() -> bool {
+    std::env::var_os("LOCALAPPDATA")
+        .and_then(|base| std::fs::read(Path::new(&base).join("Respyra/troubleshooting.json")).ok())
+        .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+        .is_none_or(|value| value["enabled"] != false)
+}
+
+fn engine_failure(engine: &Arc<Mutex<Engine>>, message: &str, log: &Path, folder: &Path) -> Value {
+    let mut result = json!({"phase":"error", "message":message});
+    let Ok(state) = engine.lock() else {
+        return result;
+    };
+    result["troubleshooting"] = json!(state.troubleshooting);
+    if !state.troubleshooting {
+        return result;
+    }
+    let mut text = format!(
+        "Respyra troubleshooting report\nApp: {}\nFailure: {message}\nEngine exit: {:?}\n",
+        env!("CARGO_PKG_VERSION"),
+        state.exit_status
+    );
+    for key in [
+        "event",
+        "seq",
+        "trial",
+        "condition",
+        "experiment_phase",
+        "screen",
+    ] {
+        text.push_str(&format!("{key}: {}\n", state.progress[key]));
+    }
+    text.push_str(&format!(
+        "Recording phase: {}\nRecording file: {}\n",
+        state.progress["recording"]["phase"], state.progress["recording"]["output_file"]
+    ));
+    drop(state);
+    // Native exits cannot supply a Python report; retain only the bounded stderr tail.
+    if let Ok(mut file) = std::fs::File::open(log) {
+        let mut tail = Vec::new();
+        if let Ok(metadata) = file.metadata() {
+            let _ = file.seek(SeekFrom::Start(metadata.len().saturating_sub(32768)));
+            let _ = file.take(32768).read_to_end(&mut tail);
+        }
+        text.push_str("\nEngine log tail:\n");
+        text.push_str(&String::from_utf8_lossy(&tail));
+    }
+    let id = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .to_string();
+    let path = folder.join(format!("error-native-{id}.txt"));
+    let saved = std::fs::create_dir_all(folder).and_then(|_| std::fs::write(&path, &text));
+    result["diagnostic"] = json!({"id":id,"text":text,"saved_path":saved.ok().map(|_| path)});
+    result
+}
+
 fn publish(app: &tauri::AppHandle, engine: &Arc<Mutex<Engine>>, snapshot: Value) {
     let mut display = snapshot.clone();
+    let mut open_report = false;
     if let Ok(mut state) = engine.lock() {
+        if let Some(enabled) = snapshot["troubleshooting"].as_bool() {
+            state.troubleshooting = enabled;
+        }
         if snapshot["phase"] == "action_result" {
             if let Some(sequence) = snapshot["ui_seq"].as_u64()
                 && let Some(reply) = state.pending.remove(&sequence)
@@ -273,6 +342,15 @@ fn publish(app: &tauri::AppHandle, engine: &Arc<Mutex<Engine>>, snapshot: Value)
         }
         display["progress"] = state.progress.clone();
         display["revision"] = json!(state.control_revision);
+        display["troubleshooting"] = json!(state.troubleshooting);
+        if snapshot["phase"] == "error"
+            && state.troubleshooting
+            && let Some(id) = snapshot["diagnostic"]["id"].as_str()
+            && state.presented_report.as_deref() != Some(id)
+        {
+            state.presented_report = Some(id.to_owned());
+            open_report = true;
+        }
     }
     if let Some(window) = app.get_webview_window("main")
         && (snapshot["phase"] == "finished" || snapshot["phase"] == "error")
@@ -281,6 +359,70 @@ fn publish(app: &tauri::AppHandle, engine: &Arc<Mutex<Engine>>, snapshot: Value)
         let _ = window.set_focus();
     }
     let _ = app.emit("setup-state", display);
+    if open_report {
+        if let Some(window) = app.get_webview_window("error-report") {
+            let _ = app.emit_to("error-report", "error-report-updated", ());
+            let _ = window.show();
+            let _ = window.set_focus();
+        } else if let Err(error) = tauri::WebviewWindowBuilder::new(
+            app,
+            "error-report",
+            tauri::WebviewUrl::App("error-report.html".into()),
+        )
+        .title("Respyra — Error report")
+        .inner_size(720.0, 560.0)
+        .min_inner_size(360.0, 400.0)
+        .center()
+        .build()
+        {
+            eprintln!("Cannot open error report window: {error}");
+        }
+    }
+}
+
+#[tauri::command]
+fn error_report(
+    window: tauri::WebviewWindow,
+    desktop: tauri::State<'_, Desktop>,
+) -> Result<Value, String> {
+    if window.label() != "error-report" {
+        return Err("Error report is local only".into());
+    }
+    let state = desktop
+        .engine
+        .lock()
+        .map_err(|_| "Desktop state lock failed")?;
+    Ok(state.snapshot["diagnostic"].clone())
+}
+
+#[tauri::command]
+async fn report_control_failure(
+    app: tauri::AppHandle,
+    desktop: tauri::State<'_, Desktop>,
+    message: String,
+) -> Result<(), String> {
+    if message.len() > 4096 {
+        return Err("Control error is too long".into());
+    }
+    shutdown(&desktop.engine, "protocol_failure");
+    let folder = data_directory(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .ok_or("Missing workspace root")?,
+        !cfg!(debug_assertions),
+    )?;
+    let log = folder
+        .parent()
+        .ok_or("Missing recording folder parent")?
+        .join("engine.log");
+    let snapshot = engine_failure(
+        &desktop.engine,
+        &format!("Experiment control failed: {message}"),
+        &log,
+        &folder.join("diagnostics"),
+    );
+    publish(&app, &desktop.engine, snapshot);
+    Ok(())
 }
 
 fn decode_frame(line: &str) -> Result<Option<Value>, String> {
@@ -306,10 +448,27 @@ fn decode_frame(line: &str) -> Result<Option<Value>, String> {
 }
 
 #[tauri::command]
-fn launch_backend(
+async fn launch_backend(
     app: tauri::AppHandle,
     desktop: tauri::State<'_, Desktop>,
 ) -> Result<Value, String> {
+    match launch_engine(app.clone(), &desktop) {
+        Ok(snapshot) => Ok(snapshot),
+        Err(error) => {
+            let folder = app
+                .path()
+                .app_local_data_dir()
+                .map_err(|e| e.to_string())?
+                .join("diagnostics");
+            let snapshot =
+                engine_failure(&desktop.engine, &error, &folder.join("engine.log"), &folder);
+            publish(&app, &desktop.engine, snapshot.clone());
+            Ok(snapshot)
+        }
+    }
+}
+
+fn launch_engine(app: tauri::AppHandle, desktop: &Desktop) -> Result<Value, String> {
     let mut state = desktop
         .engine
         .lock()
@@ -329,7 +488,17 @@ fn launch_backend(
     let data_dir = data_directory(root, packaged)?;
     let working_dir = data_dir.parent().ok_or("Missing recording folder parent")?;
     let mut command = Command::new(python);
+    command.env("RESPYRA_APP_VERSION", env!("CARGO_PKG_VERSION"));
+    command.env(
+        "RESPYRA_ENGINE_MANIFEST",
+        resources.join("engine/manifest.json"),
+    );
     if packaged {
+        let previous = working_dir.join("engine.previous.log");
+        if working_dir.join("engine.log").exists() {
+            let _ = std::fs::remove_file(&previous);
+            let _ = std::fs::rename(working_dir.join("engine.log"), &previous);
+        }
         command.args(["-I", "-B", "-X", "utf8"]); // Isolate imports; keep JSON pipes UTF-8.
     }
     command
@@ -372,6 +541,8 @@ fn launch_backend(
     drop(state);
     let engine = Arc::clone(&desktop.engine);
     let closing = Arc::clone(&desktop.closing);
+    let diagnostic_folder = data_dir.join("diagnostics");
+    let engine_log = working_dir.join("engine.log");
     thread::spawn(move || {
         let mut reader = BufReader::new(output);
         let failure = loop {
@@ -390,7 +561,8 @@ fn launch_backend(
             }
         };
         if let Some(error) = failure {
-            publish(&app, &engine, json!({"phase":"error", "message":error}));
+            let report = engine_failure(&engine, &error, &engine_log, &diagnostic_folder);
+            publish(&app, &engine, report);
             shutdown(&engine, "engine_failed");
         } else if !closing.load(Ordering::Acquire) {
             // Never treat a crashed engine as a completed experiment.
@@ -406,7 +578,12 @@ fn launch_backend(
                     publish(
                         &app,
                         &engine,
-                        json!({"phase":"error", "message":"Experiment engine exited unexpectedly. Check the LSL recording."}),
+                        engine_failure(
+                            &engine,
+                            "Experiment engine exited unexpectedly. Check the LSL recording.",
+                            &engine_log,
+                            &diagnostic_folder,
+                        ),
                     );
                 }
             }
@@ -638,6 +815,9 @@ fn handle_viewer(
 }
 
 fn remote_action(command: &viewer::RemoteCommand) -> Result<Action, String> {
+    if command.action == "option" && command.args["field"] == "troubleshooting" {
+        return Err("Troubleshooting mode is a local preference".into());
+    }
     let permitted = match command.scope.as_str() {
         "experiment.setup" => matches!(
             command.action.as_str(),
@@ -690,6 +870,7 @@ fn shutdown(engine: &Arc<Mutex<Engine>>, reason: &str) -> bool {
             };
             match child.try_wait() {
                 Ok(Some(status)) => {
+                    state.exit_status = Some(status.to_string());
                     state.child.take();
                     return status.success();
                 }
@@ -870,10 +1051,15 @@ fn main() {
             open_recordings_folder,
             choose_recordings_folder,
             set_recordings_folder,
-            viewer_action
+            viewer_action,
+            error_report,
+            report_control_failure
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "error-report" {
+                    return;
+                }
                 api.prevent_close();
                 request_close(window.app_handle().clone(), "window_closed");
             }
@@ -910,6 +1096,43 @@ mod tests {
         );
         std::fs::remove_dir_all(scratch).unwrap();
     }
+    #[test]
+    fn native_failure_report_is_bounded_saved_and_respects_opt_out() {
+        let desktop = Desktop::default();
+        let folder = std::env::temp_dir().join(format!(
+            "respyra-diagnostic-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&folder).unwrap();
+        let log = folder.join("engine.log");
+        std::fs::write(&log, format!("{}native crash tail", "x".repeat(40000))).unwrap();
+        {
+            let mut state = desktop.engine.lock().unwrap();
+            state.troubleshooting = true;
+            state.exit_status = Some("exit code: 7".into());
+            state.progress = json!({"trial":2,"experiment_phase":"tracking"});
+        }
+        let result = engine_failure(&desktop.engine, "unexpected exit", &log, &folder);
+        let text = result["diagnostic"]["text"].as_str().unwrap();
+        assert!(text.contains("native crash tail") && text.contains("exit code: 7"));
+        assert!(text.len() < 34000);
+        let saved = result["diagnostic"]["saved_path"].as_str().unwrap();
+        assert_eq!(std::fs::read_to_string(saved).unwrap(), text);
+        desktop.engine.lock().unwrap().troubleshooting = false;
+        assert!(engine_failure(&desktop.engine, "disabled", &log, &folder)["diagnostic"].is_null());
+        std::fs::remove_file(saved).unwrap();
+        std::fs::remove_file(log).unwrap();
+        std::fs::remove_dir(folder).unwrap();
+        for field in ["troubleshooting", "compare_inputs"] {
+            let value =
+                json!({"action":"option","field":field,"enabled":false,"ui_seq":1,"ui_time_ms":0});
+            assert!(serde_json::from_value::<Action>(value).is_ok());
+        }
+    }
+
     #[test]
     fn shutdown_reaps_normal_failed_and_hung_engines() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();

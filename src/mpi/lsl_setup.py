@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from mpi.desktop_bridge import DesktopCancelled, validate_action
+from mpi import diagnostics
 from mpi.recording import RecordingError, participant_number, recorded_participant_numbers
 from mpi.lsl_force import (
     LSLForceError, LSLForceSource, connect_force_source, load_force_selection,
@@ -107,6 +108,7 @@ class SourceSetup:
         self.save_csv = True
         self.record_keyboard = self.record_mouse = False
         self.compare_inputs = True
+        self.troubleshooting = diagnostics.enabled()
         self.polar_inverted = self.polar_direction_set = False
         self.excluded_streams = set()
         self.automatic = False
@@ -173,6 +175,7 @@ class SourceSetup:
                 "output_folder": str(getattr(self.recorder, "output", "")),
                 "record_keyboard": self.record_keyboard, "record_mouse": self.record_mouse,
                 "compare_inputs": self.compare_inputs,
+                "troubleshooting": self.troubleshooting,
                 "polar_inverted": self.polar_inverted,
                 "polar_direction_set": self.polar_direction_set,
                 "excluded_streams": sorted(self.excluded_streams),
@@ -236,6 +239,13 @@ class SourceSetup:
                     self.values = values
             emit("participant.field.edited", field=action["field"], value=action["value"], **ui)
         elif kind == "option":
+            if action["field"] == "troubleshooting":
+                if action.get("ui_origin") == "remote":
+                    raise SetupRejected("Troubleshooting mode is a local preference")
+                try:
+                    diagnostics.save_enabled(action["enabled"])
+                except OSError as exc:
+                    raise SetupRejected("Troubleshooting preference could not be saved") from exc
             if action["field"] == "save_csv":
                 raise SetupRejected("CSV is saved automatically with every recording")
             if action["field"] == "polar_inverted":
@@ -451,6 +461,7 @@ def run_source_setup(cfg, markers, bridge=None):
             setup.poll()
             bridge.source = setup.source
             snapshot = setup.snapshot()
+            bridge.troubleshooting = setup.troubleshooting
             if snapshot != previous:
                 bridge.send(snapshot)
                 previous = snapshot
@@ -464,6 +475,7 @@ def run_source_setup(cfg, markers, bridge=None):
                     bridge.send(setup.snapshot())
                     bridge.reply(action, False, str(exc))
                 else:
+                    bridge.troubleshooting = setup.troubleshooting
                     bridge.send(setup.snapshot())
                     bridge.reply(action)
         return ({**setup.values, "variables": setup.variables, "save_csv": setup.save_csv,

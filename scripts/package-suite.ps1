@@ -46,6 +46,7 @@ if (-not $absoluteStage.StartsWith($absoluteRoot, [StringComparison]::OrdinalIgn
 if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'launch-suite.ps1') -Destination (Join-Path $stage 'launch-suite.ps1')
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'reset-suite-outputs.ps1') -Destination (Join-Path $stage 'reset-suite-outputs.ps1')
 Copy-Item -LiteralPath (Join-Path $repoRoot 'assets/suite-icon.ico') -Destination (Join-Path $stage 'suite.ico')
 Copy-Item -LiteralPath (Join-Path $miniRoot 'LICENSE') -Destination (Join-Path $stage 'MINI-STREAMS-LICENSE')
 $dist = Join-Path $repoRoot 'dist'

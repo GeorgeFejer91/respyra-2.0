@@ -127,6 +127,8 @@
     #hub .text-input { min-height: 36px; padding-block: 5px; }
     .hub-foot { display: flex; align-items: stretch; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid #2a414e; }
     .hub-foot p { margin: 0; }
+    .troubleshooting-check { display: flex; align-items: center; gap: 6px; }
+    .troubleshooting-check span { min-width: 0; }
     .output-section { min-width: 0; }
     .output-section .section-head { margin-bottom: 5px; }
     .output-section .text-input { width: 100%; min-width: 0; font-size: .84em; }

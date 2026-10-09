@@ -65,7 +65,7 @@ def validate_action(action):
     timestamp = action["ui_time_ms"]
     if type(timestamp) not in (int, float) or not math.isfinite(timestamp) or timestamp < 0:
         raise ValueError("Invalid UI timestamp")
-    if "field" in action and action["field"] not in ({"save_csv", "record_keyboard", "record_mouse", "polar_inverted", "compare_inputs"} if action["action"] == "option" else FIELDS):
+    if "field" in action and action["field"] not in ({"save_csv", "record_keyboard", "record_mouse", "polar_inverted", "compare_inputs", "troubleshooting"} if action["action"] == "option" else FIELDS):
         raise ValueError("Unknown participant field")
     if "enabled" in action and type(action["enabled"]) is not bool:
         raise ValueError("Invalid recording option")
@@ -110,6 +110,9 @@ class DesktopBridge:
         self.viewer = None
         self.input_capture = None
         self.prompt = None
+        from mpi.diagnostics import enabled
+        self.troubleshooting = enabled()
+        self.failure_context = None
         self._prompt_action = None
         threading.Thread(target=self._read, args=(reader,), daemon=True,
                          name="respyra-desktop-control").start()
@@ -238,6 +241,7 @@ class DesktopBridge:
             self.reply(action, error is None, str(error) if error else None)
 
     def send(self, snapshot):
+        snapshot = {"troubleshooting": self.troubleshooting, **snapshot}
         line = json.dumps(snapshot, separators=(",", ":"), allow_nan=False)
         if len(line.encode("utf-8")) > 1_000_000:
             raise ValueError("Oversized desktop state")

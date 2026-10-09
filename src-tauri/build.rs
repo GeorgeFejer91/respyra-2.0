@@ -5,6 +5,8 @@ fn main() {
             "setup_action",
             "close_app",
             "viewer_action",
+            "error_report",
+            "report_control_failure",
         ]),
     ))
     .expect("failed to generate desktop command permissions");

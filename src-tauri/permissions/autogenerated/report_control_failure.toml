@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-report-control-failure"
+description = "Enables the report_control_failure command without any pre-configured scope."
+commands.allow = ["report_control_failure"]
+
+[[permission]]
+identifier = "deny-report-control-failure"
+description = "Denies the report_control_failure command without any pre-configured scope."
+commands.deny = ["report_control_failure"]

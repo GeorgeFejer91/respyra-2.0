@@ -1,0 +1,6 @@
+{
+  "identifier": "error-report",
+  "description": "Local failure popup: read and close its own report only.",
+  "windows": ["error-report"],
+  "permissions": ["allow-error-report", "core:event:allow-listen", "core:event:allow-unlisten", "core:window:allow-close"]
+}

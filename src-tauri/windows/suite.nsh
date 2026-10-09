@@ -1,4 +1,10 @@
 !macro NSIS_HOOK_PREINSTALL
+  nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -WindowStyle Hidden -Command "if (Get-Process -Name polar-stream-mini,vernier-stream-mini -ErrorAction SilentlyContinue) { exit 1 }"'
+  Pop $0
+  Pop $1
+  ${If} $0 != 0
+    Abort "Close Polar Stream Mini and Vernier Stream Mini before installing the suite."
+  ${EndIf}
   ClearErrors
   CreateDirectory "$INSTDIR\data"
   IfErrors 0 +2
@@ -6,6 +12,12 @@
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
+  nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "$INSTDIR\suite\reset-suite-outputs.ps1"'
+  Pop $0
+  Pop $1
+  ${If} $0 != 0
+    Abort "The suite was installed, but stream defaults could not be reset. Close the Mini apps and run this installer again."
+  ${EndIf}
   CreateDirectory "$SMPROGRAMS\Respyra 2.0"
   SetOutPath "$INSTDIR\suite\polar"
   CreateShortCut "$SMPROGRAMS\Respyra 2.0\Polar Stream Mini.lnk" "$INSTDIR\suite\polar\polar-stream-mini.exe"

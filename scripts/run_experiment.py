@@ -41,6 +41,7 @@ def main():
                      "message": "Finding LSL streams…"})
         bridge.start_progress()
         failure = None
+        finalization_error = None
         phase = "finished"
         message = "Experiment ended."
         try:
@@ -65,7 +66,10 @@ def main():
             try:
                 bridge.recorder.stop()
             except RecordingError as exc:
-                phase, message, failure = "error", str(exc), exc
+                finalization_error = exc
+                phase = "error"
+                message = f"{message}\nRecording finalization failed: {exc}" if failure else str(exc)
+                failure = failure or exc
             else:
                 message = "XDF saved. Experiment ended." if failure is None else f"{message}\nXDF saved."
         if not bridge.closed.is_set():
@@ -75,7 +79,9 @@ def main():
                 message = "XDF saved. Experiment stopped."
             if markers.sequence:
                 markers.emit("ui.wrapper.result.requested", outcome=phase, message=message)
-            bridge.send({"phase": phase, "message": message})
+            from mpi.diagnostics import report
+            diagnostic = report(failure, bridge, markers, finalization_error) if failure is not None else None
+            bridge.send({"phase": phase, "message": message, "diagnostic": diagnostic})
             bridge.closed.wait()
         if markers.sequence:
             bridge.mark_close(markers)
@@ -637,6 +643,9 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
         bridge.mark_close(markers)
     except Exception as exc:
         error_occurred = True
+        if bridge is not None:
+            from mpi.diagnostics import context
+            bridge.failure_context = context(bridge, markers)
         if isinstance(exc, LSLForceError) and belt is not None:
             markers.emit("source.lost", message=str(exc))
         markers.emit("run.failed", error_type=type(exc).__name__, message=str(exc))

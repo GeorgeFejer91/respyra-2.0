@@ -5,6 +5,21 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Troubleshooting reports — 2026-10-09
+
+- VERIFIED captured CLI: 47 focused diagnostics/setup/bridge/process/short-study
+  Python tests; 14 Rust tests, fmt and clippy; 7 Node web tests. Runtime Python
+  3.10.11 and existing frozen dependencies. Evidence: ignored
+  `troubleshooting-python.log`, `troubleshooting-rust.log`, `troubleshooting-web.log`.
+- VERIFIED headless Chrome: `pnpm check:ui`, eight hub layouts, default-on checkbox
+  option acknowledgments, report layouts at 360×400/720×560/1440×900, exact Copy
+  text, clipboard-denied fallback and popup Close handler. Evidence:
+  `troubleshooting-ui.log` and `troubleshooting-popup.png`.
+- Inputs: diagnostics, setup/bridge, wrapper failure handling, native supervision,
+  command capabilities, hub/report HTML/CSS/JS and their focused tests. The
+  separate native popup and exact 0.3.11 installer still need qualification;
+  headless mocked IPC does not establish those surfaces.
+
 ## Typed prompt controls — 2026-10-08
 
 - Added current-prompt Continue/Retry in the local hub and shared phone panel.

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Respyra — Error report</title>
+  <link rel="stylesheet" href="./experiment-hub.css">
+  <link rel="stylesheet" href="./error-report.css">
+  <script type="module" src="./error-report.js"></script>
+</head>
+<body>
+  <main class="error-window" aria-labelledby="error-title">
+    <header>
+      <h1 id="error-title" data-measure>Experiment error</h1>
+      <p data-measure>Copy this report to help identify the failure. It includes technical details and recording paths.</p>
+    </header>
+    <label for="error-report" data-measure>Error report</label>
+    <textarea id="error-report" readonly spellcheck="false" aria-label="Detailed error report"></textarea>
+    <footer>
+      <p id="error-saved" data-measure></p>
+      <p id="error-copy-status" role="status" aria-live="polite" data-measure></p>
+      <div class="error-actions"><button id="error-copy" type="button" data-measure>Copy report</button><button id="error-dismiss" type="button" data-measure>Close report</button></div>
+    </footer>
+  </main>
+</body>
+</html>
