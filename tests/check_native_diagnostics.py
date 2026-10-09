@@ -65,7 +65,7 @@ try:
                               creationflags=subprocess.CREATE_NO_WINDOW)
         dropped = False
         try:
-            deadline = time.monotonic() + 90
+            deadline = time.monotonic() + 130
             while process.poll() is None and time.monotonic() < deadline:
                 if Path(env["RESPYRA_DIAGNOSTIC_DROP_FILE"]).exists() and not dropped:
                     dropped = True

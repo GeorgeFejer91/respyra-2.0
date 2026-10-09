@@ -114,7 +114,7 @@ foreach ($app in @(
 
 pnpm package:windows
 Require-Success 'Standalone Respyra installer build'
-pnpm tauri build --config src-tauri/installer.conf.json --config src-tauri/suite.conf.json --bundles nsis -- --locked
+pnpm tauri bundle --config src-tauri/installer.conf.json --config src-tauri/suite.conf.json --bundles nsis --ci
 Require-Success 'Suite installer build'
 $tauriInstaller = Join-Path $repoRoot "src-tauri/target/release/bundle/nsis/Respyra 2.0_${respyraVersion}_x64-setup.exe"
 if (-not (Test-Path -LiteralPath $tauriInstaller -PathType Leaf)) { throw 'Finalized suite installer is missing.' }

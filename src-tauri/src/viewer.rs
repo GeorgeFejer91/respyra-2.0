@@ -290,6 +290,8 @@ pub fn projection(
     if let Some(progress) = result["progress"].as_object_mut() {
         progress.remove("streams");
         progress.remove("viewer_error");
+        progress.remove("troubleshooting");
+        progress.remove("diagnostic");
     }
     // File paths stay on the experiment computer, including observe-only grants.
     if let Some(recording) = result["progress"]["recording"].as_object_mut() {
@@ -314,6 +316,8 @@ pub fn projection(
             setup.remove("polar_direction_set");
             setup.remove("polar_inverted");
             setup.remove("output_folder");
+            setup.remove("troubleshooting");
+            setup.remove("diagnostic");
         }
         if let Some(source) = setup["source"].as_object_mut() {
             source.remove("contract_id");
@@ -572,16 +576,21 @@ mod tests {
     #[test]
     fn phone_projection_omits_local_only_fields() {
         let snapshot = json!({"phase":"setup","message":"Ready","streams":[],
+            "troubleshooting":true,"diagnostic":{"text":"private report"},
             "source":{"source_id":"raw","stream_name":"Vernier","contract_id":"vernier-force/1"},
             "excluded_streams":[],"polar_direction_set":false,"polar_inverted":false,
             "output_folder":"C:/private/recordings"});
-        let progress = json!({"recording":{"phase":"idle","bytes_written":0,
+        let progress = json!({"troubleshooting":true,"diagnostic":{"text":"private report"},"recording":{"phase":"idle","bytes_written":0,
             "error":null,"finite_sources":[]}});
         let view = projection(&snapshot, &progress, 1, 2, true);
         assert!(view["setup"].get("excluded_streams").is_none());
         assert!(view["setup"].get("polar_direction_set").is_none());
         assert!(view["setup"].get("polar_inverted").is_none());
         assert!(view["setup"].get("output_folder").is_none());
+        assert!(view["setup"].get("troubleshooting").is_none());
+        assert!(view["setup"].get("diagnostic").is_none());
+        assert!(view["progress"].get("troubleshooting").is_none());
+        assert!(view["progress"].get("diagnostic").is_none());
         assert!(view["setup"]["source"].get("contract_id").is_none());
         assert!(
             view["progress"]["recording"]

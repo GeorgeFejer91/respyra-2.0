@@ -27,7 +27,12 @@ launch them on the user's active desktop; missing isolation leaves those gates
 - `pnpm package:windows` remains the independent Respyra installer. `pnpm
   package:suite` builds it plus the two Mini installers from the pinned,
   clean `mini-streams` submodule, extracts each finalized Mini executable and
-  resources, and adds them through `src-tauri/suite.conf.json`. The suite keeps
+  resources, and adds them through `src-tauri/suite.conf.json`. Both variants use the same
+  compiled main executable: build the standalone once, then use `tauri bundle`
+  with the suite resources/hooks. Runtime code must not depend on the bundle's
+  resource inventory. Compare installed executables with extraction from the
+  final installer, rather than the mutable Cargo build-directory executable.
+  The suite keeps
   Respyra's app identity and install folder. Its NSIS hook creates Polar,
   Vernier, and full-suite Start menu shortcuts beside the normal Respyra shortcut,
   plus four desktop shortcuts (Respyra, Polar, Vernier, suite); the
