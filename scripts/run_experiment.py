@@ -54,7 +54,7 @@ def main():
         except SystemExit as exc:
             if exc.code not in (None, 0):
                 phase, message = "error", f"Experiment exited with code {exc.code}"
-                failure = RuntimeError(message)
+                failure = exc
         except Exception as exc:
             phase, message = "error", str(exc)
             failure = exc
