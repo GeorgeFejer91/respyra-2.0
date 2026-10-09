@@ -17,7 +17,7 @@ foreach ($app in @('dev.georgefejer.polarstreammini', 'dev.georgefejer.vernierst
     $temporary = "$path.respyra-reset.tmp"
     try {
         [IO.File]::WriteAllText($temporary, ($saved | ConvertTo-Json -Depth 12), [Text.UTF8Encoding]::new($false))
-        [IO.File]::Replace($temporary, $path, $null)
+        [IO.File]::Replace($temporary, $path, [NullString]::Value)
     } finally {
         if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }
     }
