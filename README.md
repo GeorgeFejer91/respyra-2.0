@@ -73,8 +73,8 @@ block order. Numbers with a previously verified XDF are red and remain selectabl
 the legacy session metadata defaults to 001.
 
 Respyra automatically discovers and connects a unique compatible breathing
-input. The adjacent Vernier and Polar dropdowns show compatible streams found
-by the LSL scan; choosing one makes it the study input. Discovery lists visible
+input. The **Main feedback input** dropdown shows compatible Vernier and Polar
+streams found by the LSL scan; choosing one makes it the study input. Discovery lists visible
 streams and reasons for rejecting incompatible study inputs. It
 requires Vernier's metadata-identified Force channel in **N**, or one of the
 two exact Polar contracts with its live validity flags. All require floating-point
@@ -135,7 +135,8 @@ each row and may add disk latency. The one-channel
 Marker output is independent of recorder connection. Setup events sent before
 recording may be absent from the file. The final HTML result and Close markers
 follow XDF finalization. A complete `.xdf` requires matching chunk counts and
-closed footers, with data from both required streams. Failed files retain
+closed footers, with data from the required input, calibrated output and study
+events. Failed files retain
 `.xdf.partial`; inspect them before analysis.
 The marker outlet's default name is **Respyra-Events**; change it in **Marker name**
 before any recorder subscribes or the experiment starts.
