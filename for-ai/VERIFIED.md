@@ -299,7 +299,7 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | verified for recorded-number setup projection; see 2026-10-01 receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
 | Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for participant dropdown and red recorded choice; see 2026-10-01 receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
 | Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for current prompt controls in the opaque Recorder iframe and published viewer; see typed prompt controls receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
-| Project landing, installer/Mini links, logo and legacy QR routing: `companion/index.html`, `remote.html`, `site.*`, publication inputs | `node tests/check_project_site.cjs`, published asset parity and private-desktop published phone check | verified for current source and deployment; see project site receipt | Site/route/assets, source attribution, linked release assets or published endpoint changes. |
+| Project landing, installer/Mini links, logo and legacy QR routing: `companion/index.html`, `remote.html`, `site.*`, publication inputs | `node tests/check_project_site.cjs`, published asset parity and private-desktop published phone check | verified for 2.3.12 site/wiki deployment; see project website receipt | Site/route/assets, source attribution, linked release assets or published endpoint changes. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | current fmt, 13 tests and clippy passed; see typed prompt controls receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | verified for current inputs; see Mini pipeline receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility change. |
 | Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/run_private_mock.py` after a matching native build | verified for installed Mini mock, early Stop and complete phone controlled study; see Mini pipeline receipt | Native/pipe/lifecycle/remote contracts or consuming runtime change. |
@@ -760,39 +760,36 @@ the respective scope needs current evidence; panel styling does not need it.
   Silent uninstall, clean-machine WebView2 download, physical hardware,
   full-duration timing and signing remain unverified.
 
-### Project website, live phone route and release links
+### Project website, wiki, documentation and release links
 
-- Marker reference and app styling, 2026-10-09: `VERIFIED` with `node scripts/prepare-web.mjs` and `node tests/check_project_site.cjs` in headless Chrome 154.0.8037.99, Playwright 1.62.1 and Node 24.19.0. All 94 current events, one retired event, exact emission timing, event fields, shared/optional field dictionary and downloadable JSON matched Python's catalog. Search, every family filter, reset, empty results, direct event links, keyboard order and no-JavaScript readability passed. Five public pages passed 40 viewport cases (320–1920 px, breakpoint sides and wide/short layouts), 200% text with spacing overrides, local links/images, light/dark app colors and legacy invitation redirect. Compact app headers/rows and inventory screenshots were inspected. Parent source `64a8a7e`; final tested input hashes and versions are in ignored `markers-site-evidence.json`, with log `markers-site-check.log`. Source event names/payload contracts, runtime, shared desktop/phone assets and installer remain unchanged; catalog edits supply six missing field descriptions only. Prior native/recording/remote/installer receipts remain reusable; this check qualifies public browser documentation only. Source `871daa5cc991f99bab961935db974d0759c812a5` was pushed to `codex/installed-startup-tests`; Pages `9f8d9ab72f8f8526f1a137a425fc3a5bf5342d07` reported `built`. All 26 checked HTTPS assets matched the exact Pages blobs and source provenance; the live page passed 94-event inventory, search/reset and 320 px reflow with no page errors (`markers-site-public-parity.json`). No source-branch Actions run was listed. The context checker passed with the existing size/branch/dirty-tree warnings.
-
-- Study documentation, 2026-10-08: `VERIFIED` locally with `node tests/check_project_site.cjs` in headless Chrome 154.0.8037.99, Node 24.19.0 and Playwright 1.62.1. Four public pages passed 24 viewport cases (320–1920 px, including phone landscape), 200% text plus spacing overrides, local links/images, exact v0.3.8 installer links, Scholar/ORCID credits and legacy invitation redirect/scrubbing. Completeness checks cover 37 fresh Polar metric IDs (ACC split into three axes), continuity/combined-row diagnostics, 13 Vernier variables, three Respyra channel definitions and 13 distinct automatic CSV fields. Definitions are pinned to shipped Respyra `f179fe4` and Mini `887e4b1`, including phase-zero, entropy-placeholder and combined-outlet behavior read from implementation. Parent source `1140894`; final input hashes are in ignored `study-site-evidence.json`. Page/interface screenshots were inspected; all app states are simulated and contain no participant recordings. Runtime, hardware, installer and remote transport behavior are unchanged and their prior receipts are reused; no new runtime qualification or installer is claimed. Source `737b98ffafef1e4e6d74f01d73a098e7eb6559a7` was pushed to `codex/installed-startup-tests`; Pages `bc2a0f0e48c14cfc61cdd70677deaaf459745d39` reported built, and 21 HTTPS assets matched its exact Git blobs, including all changed pages/images, source provenance, controller assets and local measurement/fonts (`study-site-public-parity.json`). No source-branch Actions run was listed. The context checker passed with existing size/branch/dirty-tree warnings.
-
-- Suite download update, 2026-10-04: source `55694548cf738ed63fa0e10e6562c8ef58c26f66` was pushed to `main`, and Pages commit `3e458760707d95cec56bbda88f4093d84eac5ede` was reported `built`. The six changed public assets matched that commit's Git blobs over HTTPS, including the new first-position suite download and same-release Mini links. `pnpm check:ui` passed 8 layouts and 15 actions; `node tests/check_project_site.cjs` passed link assertions, 320–1440 px fit, enlarged-text reflow, and invitation redirect. Headless 320 and 960 px site screenshots were inspected. This changed download copy and links only; native/Mini behavior and physical sensors were not retested.
-- Result/date: `VERIFIED`, 2026-09-30. Source commit
-  `7d0c2b5cf7dbaa96ecbc30f00966ff9986b0dcc5` was pushed to `main`;
-  Pages commit `3bc62fc56d8c40862dfc87278323aab346296afe` was reported
-  `built`. Ten public HTML, CSS, JS, logo and attribution assets matched that
-  commit's Git blobs byte for byte, and published `source.json` named the
-  source commit. The GitHub repository homepage and 0.3.2 release notes now
-  link the site, both Stream Mini installers and the original Micah Allen work.
-  Existing release asset digests were unchanged.
-- Checks: `pnpm test:web` (6 pass), `node tests/check_project_site.cjs`
-  (project links, logo, 320–1440 px fit, enlarged text and private-link
-  redirect), configured `pnpm check:remote` (12 layouts and 12 mocked
-  mutations), `pnpm check:ui` (8 layouts, 15 actions, no page errors),
-  `python .for-ai-local/check_published_site.py` (10 public assets matched).
-  Headless site screenshots at 320 and 960 px were inspected.
-- Live route: `tests/run_private_mock.py remote --published-phone` used the
-  installed 0.3.2 executable, Vernier Mini mock outlet and a private Win32
-  desktop. The QR decoded to the public root invitation; the phone browser
-  reached `/remote.html`, requested access and completed Start/Stop/Close.
-  The independently checked XDF had four nonempty streams with matching
-  footers and 27 ordered markers; Chrome reported zero page errors. The
-  QR-check test source had SHA-256
-  `23f2c51a0a5fa85e8b9a0b4ea133558eb30eb523b5acc63d1c3f5beb0b82baed`.
-  Captured log: `.for-ai-local/RespyraProbeb81a10c7fc62414398a3afc60b828ddc/remote.log`.
-- Limits: local desktop plus headless Chrome and synthetic breathing, with
-  early Stop. A physical phone or belt and full-duration scientific timing
-  were not checked. The release EXE itself was not rebuilt for this site edit.
+- Result/date: `VERIFIED`, 2026-10-10. Documentation/site source
+  `737029a63b4a7d21cb9570d476addbed79ee11b7`; artifact source remains `5602f9b` as
+  qualified in the automatic-XDF suite receipt above. Public guides now cover
+  two Vernier default outlets, optional metrics, installer resets/backups,
+  remembered troubleshooting mode, the separate Copy report window, automatic
+  XDF summaries and installed manual regeneration. Wiki formulas/units match
+  pinned Mini `32f9083`; its six pages and navigation were refreshed.
+- Captured CLI: `pnpm prepare:web` and `node tests/check_project_site.cjs`
+  passed in headless Chrome 154.0.8037.99, Node 24.19.0 and Playwright 1.62.1.
+  Five pages/40 layouts, enlarged text/spacing, 94 markers and their fields,
+  filtering/reset/deep links/keyboard/no-JS behavior, exact defaults, local and
+  versioned installer links, app colors, attribution and invitation redirect
+  passed. Inspected changed landing/study/variable screenshots; the Vernier
+  image is the qualified installed 2/8 window with no participant recordings.
+- Pages `d9e6d201233e4e58986e996a03759d0e500f1080` reported `built`; anonymous HTTPS
+  reads of all 67 public files matched exact Pages blobs and source provenance,
+  including generated controller assets, fonts and screenshots. Wiki
+  `ae4c4b2edeb5079683c32c773aa10a43ebfbc880` was pushed and six fresh raw pages matched
+  its exact blobs. Three default-branch guides matched the tested Git source;
+  `main` was brought forward without rewriting history.
+- Evidence: ignored `release-docs-evidence/markers-site-evidence.json`,
+  `release-docs-site-final.log`, screenshots, `release-docs-public-check.log`
+  and `release-docs-public-parity.json`. Generated assets were checked against
+  prepared local outputs; tracked text used canonical Git blobs.
+- Scope: public documentation/browser rendering and deployment. No native,
+  signal, recording, transport or dependency owner changed. Installed/runtime
+  and hosted-phone behavior reuse the exact 2.3.12 qualification above; no new
+  physical sensor, phone, scientific timing or installer claim is added.
 
 ### Windows 0.3.3 full-rate ECG preview and public installer
 
