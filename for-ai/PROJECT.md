@@ -103,12 +103,15 @@ feedback. See `RECORDING.md`.
   builds never fall back to a checkout. Installed XDF and CSV files use the remembered
   recording folder; the default is `data/` inside the program folder. Packaging/release gates are in `PACKAGING.md`. App identity is
   `dev.georgefejer.respyra2`.
-- `scripts/plot_session.py` owns manual six-panel summaries from original sample
+- `mpi.session_summary` owns six-panel summaries from original sample
   CSVs and native Respyra XDFs, including Vernier N and Polar PCA/signed Phan g.
   XDF binds the selected raw/derived source identities, reconstructs targets/errors
   at synchronized accepted sample times and reads baseline diagnostic markers.
-  It needs no CSV sidecar; CSV display-frame statistics can differ. No automatic
-  end-of-run plotting hook is implemented.
+  It needs no CSV sidecar; CSV display-frame statistics can differ.
+  `NativeRecording.stop()` saves the PNG headlessly from the verified, promoted
+  XDF after participant/BIDS export. Pre-study stops skip it; plot failures keep
+  the verified XDF and report an error. `scripts/plot_session.py` is the thin
+  manual CLI included in the installed engine, with CSV compatibility retained.
   `scripts/xdf_to_csv.py` is a separate, user-invoked offline export of an
   existing XDF to one timestamped CSV per stream; it is separate from the
   study's automatic original-schema CSV logger. `notebooks/xdf_to_csv_tutorial.ipynb` explains

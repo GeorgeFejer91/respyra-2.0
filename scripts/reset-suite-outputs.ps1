@@ -5,7 +5,7 @@ foreach ($app in @('dev.georgefejer.polarstreammini', 'dev.georgefejer.vernierst
     $path = Join-Path $preferenceRoot "$app/preferences.json"
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
     $original = [IO.File]::ReadAllText($path)
-    $backup = "$path.before-respyra-0.3.12"
+    $backup = "$path.before-respyra-2.3.12"
     if (-not (Test-Path -LiteralPath $backup)) { [IO.File]::Copy($path, $backup) }
     try { $saved = $original | ConvertFrom-Json }
     catch { $saved = [PSCustomObject]@{} }

@@ -50,7 +50,8 @@ def push():
 thread = threading.Thread(target=push)
 thread.start()
 source = None
-recorder = NativeRecording(root / ".for-ai-local/recorder/runtime", output)
+engine = Path(os.environ['RESPYRA_TEST_ENGINE_DIR']) if os.environ.get('RESPYRA_TEST_ENGINE_DIR') else None
+recorder = NativeRecording(engine / 'recorder' if engine else root / ".for-ai-local/recorder/runtime", output)
 try:
     source = open_force_source(resolve_byprop('source_id', identity, timeout=5)[0])
     source.start_derived(markers.run_id)
@@ -71,7 +72,8 @@ try:
             require_private_desktop()
         from psychopy import core, event
         from mpi.validation_study_jenny import CONFIG
-        spec = importlib.util.spec_from_file_location('checked_study', root / 'scripts/run_experiment.py')
+        spec = importlib.util.spec_from_file_location('checked_study',
+            engine / 'scripts/run_experiment.py' if engine else root / 'scripts/run_experiment.py')
         study = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(study)
         cfg = copy.deepcopy(CONFIG)
@@ -157,6 +159,9 @@ try:
     # Compare independent recorded streams at shared original sample timestamps.
     markers.emit("recording.finalizing")
     recorder.stop()
+    if '--full-study' in sys.argv:
+        assert recorder.summary_plot == recorder.path.with_name(recorder.path.stem + "_summary.png")
+        assert recorder.summary_plot.is_file() and recorder.summary_plot.stat().st_size > 10000
     summary = inspect_xdf(recorder.path, [identity, source.calibrated_id, markers.health_snapshot()["source_id"], "late-control-markers"])
     streams, _ = pyxdf.load_xdf(str(recorder.path), synchronize_clocks=False, dejitter_timestamps=False)
     by_id = {stream["info"]["source_id"][0]: stream for stream in streams}

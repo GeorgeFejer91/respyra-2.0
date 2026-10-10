@@ -49,6 +49,8 @@ launch them on the user's active desktop; missing isolation leaves those gates
 
 - Product display name: **Respyra 2.0**. Retain app ID `dev.georgefejer.respyra2`,
   Python names `mpi`/`respyra`, raw Force units and existing study semantics.
+  Respyra installer/app versions start with `2.`; the first release on this
+  numbering scheme is `2.3.12`. Mini apps retain their independent versions.
 - Windows 10/11 x64 only for this installer. Raspberry Pi/macOS are separate
   host/runtime qualification work; a Windows bundle is no evidence for them.
 - Rust supervises the same closed Python pipe. Release builds locate only
@@ -115,7 +117,10 @@ launch them on the user's active desktop; missing isolation leaves those gates
    Observe selection/reconnect, actual PsychoPy instruction flip, automatic CSV,
    native Stop/Close cleanup and real hosted QR coupling. Check no child remains.
 7. Check XDF, CSV, participant-list and BIDS writes in the active folder, with
-   original CSV headers. Verify the folder button opens that path, the chooser
+   original CSV headers. A study with captured calibration/trial samples must
+   also save its six-panel PNG automatically from the XDF. Check the installed
+   manual plot command; an instructions-only stop must skip PNG without error.
+   Verify the folder button opens that path, the chooser
    persists a new path after restart, and the old folder's recordings stay put.
    Check upgrade/uninstall retains the test recording before release promotion.
    Installed scope is separate from scientific timing, physical

@@ -33,9 +33,9 @@
           <h1 data-measure>Breathing target-tracking studies on Windows</h1>
           <p data-measure>Respyra 2.0 gives researchers an experimenter control window, a PsychoPy participant task, and a native LSL/XDF recorder in one installable app. Participants follow a breathing target while the study varies the visual feedback they receive.</p>
           <div class="primary-links">
-            <a class="download-link" href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/00-Respyra-Suite_0.3.10_x64-setup.exe" data-measure>Download Respyra Suite for Windows</a>
-            <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/Respyra-2.0_0.3.10_x64-setup.exe" data-measure>Respyra 2.0 only</a>
-            <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.10" data-measure>Release notes and checksums</a>
+            <a class="download-link" href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/00-Respyra-Suite_2.3.12_x64-setup.exe" data-measure>Download Respyra Suite for Windows</a>
+            <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/Respyra-2.0_2.3.12_x64-setup.exe" data-measure>Respyra 2.0 only</a>
+            <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12" data-measure>Release notes and checksums</a>
           </div>
         </div>
       </section>
@@ -68,6 +68,7 @@
           <li data-measure>Runs calibration, baseline, countdown, target tracking, and participant assessments in PsychoPy.</li>
           <li data-measure>Receives a compatible raw Force stream from Vernier Stream Mini or a signed breathing waveform from Polar Stream Mini over LSL.</li>
           <li data-measure>Records every available input and a separate calibrated comparison waveform for each compatible alternative by default. One chosen input drives feedback; original CSV and BIDS exports are automatic.</li>
+          <li data-measure>Saves a six-panel session summary automatically from the verified XDF, without needing a CSV sidecar.</li>
           <li data-measure>Offers an optional, approval-based phone controller for monitoring and study controls.</li>
         </ul>
       </section>
@@ -77,13 +78,13 @@
         <p data-measure>The suite installs both Mini apps. Connect the one that matches your sensor; each publishes live data to Respyra over LSL.</p>
         <div class="streamer app-reference vernier">
           <h3><img class="app-icon" src="./images/vernier-icon.png" width="32" height="32" alt="Vernier Mini icon"><span data-measure>Vernier Stream Mini</span></h3>
-          <p data-measure>For a Vernier Go Direct Respiration Belt. Fresh settings publish every raw and derived outlet, including the Force signal that Respyra can use.</p>
-          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/Vernier-Stream-Mini_0.6.8_x64-setup.exe" data-measure>Download Vernier Stream Mini separately</a>
+          <p data-measure>For a Vernier Go Direct Respiration Belt. Fresh settings publish raw device data, including Force in N, and connection events. The other six outputs remain optional.</p>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/Vernier-Stream-Mini_0.6.9_x64-setup.exe" data-measure>Download Vernier Stream Mini separately</a>
         </div>
         <div class="streamer app-reference polar">
           <h3><img class="app-icon" src="./images/polar-icon.png" width="32" height="32" alt="Polar Mini icon"><span data-measure>Polar Stream Mini</span></h3>
           <p data-measure>For a Polar H10. Fresh settings publish raw ECG and accelerometer data, native heart rate/RR intervals, Chest Motion, Chest Motion DT and Flowborne phase. Other metrics and the combined copy start off.</p>
-          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/Polar-Stream-Mini_0.6.8_x64-setup.exe" data-measure>Download Polar Stream Mini separately</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/Polar-Stream-Mini_0.6.9_x64-setup.exe" data-measure>Download Polar Stream Mini separately</a>
         </div>
         <a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream" data-measure>Mini apps source and setup information</a>
       </section>
@@ -93,12 +94,12 @@
         <p data-measure>The suite installer supports Windows 10/11 x64. It includes Respyra 2.0, both Mini apps, Python/PsychoPy, and the recorder. Connect a compatible Vernier or Polar sensor before starting a study.</p>
         <p data-measure>Recordings are saved in the data folder inside the Respyra 2.0 installation. The Experiment hub shows the active folder path and lets you open, browse or paste a new one. Setup downloads Microsoft WebView2 if it is absent. Phone control needs an Internet connection.</p>
         <div class="link-list">
-          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.10" data-measure>Suite, separate installers, and source archive</a>
-          <a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v0.3.10/docs/windows-install.md" data-measure>Installation and study guide</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12" data-measure>Suite, separate installers, and source archive</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.12/docs/windows-install.md" data-measure>Installation and study guide</a>
           <a href="https://github.com/GeorgeFejer91/respyra-2.0/wiki" data-measure>Stream and data-flow wiki</a>
           <a href="https://github.com/GeorgeFejer91/respyra-2.0" data-measure>Source code and issues</a>
         </div>
-        <p class="qualification" data-measure>This unsigned v0.3.10 suite is a preview. Installed synthetic-input recording, three-input XDF/MNE checks and upgrade/uninstall retention passed. Physical Bluetooth reconnect, sensor performance, full-duration display timing and clean-machine installation remain unqualified.</p>
+        <p class="qualification" data-measure>This unsigned v2.3.12 suite is a preview. Installed synthetic-input recording, three-input XDF/MNE checks and upgrade/uninstall retention passed. Physical Bluetooth reconnect, sensor performance, full-duration display timing and clean-machine installation remain unqualified.</p>
       </section>
 
       <section id="origin" aria-labelledby="origin-title">
@@ -108,7 +109,7 @@
         <div class="link-list">
           <a href="https://osf.io/preprints/psyarxiv/wjuce_v1" data-measure>Read the original preprint</a>
           <a href="https://github.com/embodied-computation-group/respyra" data-measure>Original respyra source</a>
-          <a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v0.3.10/docs/THIRD-PARTY.md" data-measure>Licenses and attribution</a>
+          <a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.12/docs/THIRD-PARTY.md" data-measure>Licenses and attribution</a>
         </div>
       </section>
     </main>

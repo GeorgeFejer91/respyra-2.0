@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v0.3.10/00-Respyra-Suite_0.3.10_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.10) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
+**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/00-Respyra-Suite_2.3.12_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
 
 Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -15,7 +15,7 @@ Respyra 2.0 is developed by George Fejer. The project site includes a [default r
 
 The pinned `mini-streams` submodule provides [Vernier Stream Mini and Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream). `pnpm package:suite` builds both individual Mini installers, the separate Respyra installer, and a suite installer with all three applications and a common launcher. Clone with `git clone --recurse-submodules` to build the suite.
 
-The **v0.3.10 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v0.3.10) are on this repository's GitHub Release. Fresh Polar preferences select ECG, three-axis accelerometer, native heart rate/RR, Chest Motion, Chest Motion DT and Flowborne phase, with required readiness flags; other Polar metrics remain optional. Vernier retains its existing default outputs; Respyra has one main feedback-input selector and records every visible LSL stream by default, with a separately calibrated comparison outlet for each other live compatible input. The Data folder path is visible and editable. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
+The **v2.3.12 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12) are on this repository's GitHub Release. Fresh Polar preferences select ECG, three-axis accelerometer, native heart rate/RR, Chest Motion, Chest Motion DT and Flowborne phase, with required readiness flags; other Polar metrics remain optional. Vernier defaults to raw device data (including Force) and connection events; its other six outputs remain optional. Respyra has one main feedback-input selector and records every visible LSL stream by default, with a separately calibrated comparison outlet for each other live compatible input. Closing a study recording automatically produces its six-panel summary from the verified XDF. The Data folder path is visible and editable. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
 
 The importable Python package keeps its original name, `mpi`.
 
@@ -160,8 +160,9 @@ pnpm check:ui
 `web/` owns the shared setup/monitor/controller UI; `src-tauri/` supervises its Python process through
 closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
-helpers. `scripts/plot_session.py` reads local session CSVs or native Respyra XDFs.
-Generate the same six-panel summary directly from a recording, without a CSV sidecar:
+helpers. `mpi.session_summary` generates the six-panel summary automatically from
+the verified XDF after recording closes. `scripts/plot_session.py` provides the same
+reader for manual use, with XDF as its primary input and legacy CSV support:
 
 ```sh
 uv run --frozen python scripts/plot_session.py "data/recording.xdf" --no-show
@@ -172,8 +173,10 @@ supported. XDF selects the recorded study input, applies the chosen Polar polari
 when applicable, and uses the recorded trial/target parameters; labels retain N
 for Vernier and g for Polar PCA/signed Phan. Targets and errors are reconstructed
 at synchronized sample times, so CSV display-frame statistics need not be identical.
-Baseline calibration uses the study's recorded diagnostic markers. This is a manual
-plotting command; experiment completion does not automatically launch it.
+Baseline calibration uses the study's recorded diagnostic markers. Automatic
+generation runs without opening a plotting window. A run stopped before any
+calibration or trial samples has no summary; a later stop produces a partial-run
+summary. The installed engine also includes this command for regenerating a plot.
 
 `notebooks/` contains signal exploration,
 and `tests/` covers source, marker and recorded-file contracts. Install notebook

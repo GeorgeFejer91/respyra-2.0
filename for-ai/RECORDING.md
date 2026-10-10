@@ -94,6 +94,13 @@ Source/provenance is in `native/recorder/README.md`.
   the full-stream timing authority, including empty streams. BIDS export failure reports
   an error while preserving the verified XDF and participant record. Earlier
   recordings in `%LOCALAPPDATA%/Respira/data` remain untouched.
+- After successful XDF promotion and BIDS export, `mpi.session_summary` reads
+  that closed XDF and saves `<recording>_summary.png` beside it through Agg.
+  XDF is the primary summary input. Trial targets/errors use synchronized
+  accepted sample times; baseline diagnostics come from the study markers.
+  CSV frame-level statistics can differ. No plot window opens. Pre-study
+  stops skip plotting; later stops use captured phases. Plot failure reports
+  an error without undoing the verified recording, participant record or BIDS.
 - XDF is the primary cross-tool artifact. Its LSL headers retain source
   identity, channel order, labels, units, format, rate and processing
   provenance. The `recording.started` JSON marker stores BIDS-style subject,

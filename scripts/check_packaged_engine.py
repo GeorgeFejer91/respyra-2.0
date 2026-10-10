@@ -28,7 +28,8 @@ assert sys.stdout.encoding.lower() == "utf-8"
 assert all(Path(path).resolve().is_relative_to(runtime) for path in sys.path), sys.path
 for name in ("numpy", "scipy", "pandas", "matplotlib", "pylsl", "psychopy.core", "psychopy.visual",
              "psychopy.data", "psychopy.event", "pythoncom", "pywintypes",
-             "mpi.lsl_force", "mpi.event_markers", "mpi.recording", "mpi.validation_study_jenny", "respyra.core.runner"):
+             "mpi.lsl_force", "mpi.event_markers", "mpi.recording", "mpi.session_summary",
+             "mpi.validation_study_jenny", "respyra.core.runner"):
     module = importlib.import_module(name)
     assert Path(module.__file__).resolve().is_relative_to(runtime), (name, module.__file__)
 assert importlib.util.find_spec("ffpyplayer") is None

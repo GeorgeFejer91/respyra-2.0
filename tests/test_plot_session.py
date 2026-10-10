@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 
 from scripts.plot_session import compute_baseline_cal, compute_trial_stats, load_session, plot_session
+from mpi.session_summary import save_xdf_summary
 
 
 def recording(unit="N"):
@@ -89,6 +90,8 @@ def test_xdf_and_csv_produce_same_statistics_and_six_panels(tmp_path, monkeypatc
     fig.savefig(tmp_path / "summary.png")
     assert (tmp_path / "summary.png").stat().st_size > 10000
     plt.close(fig)
+    assert save_xdf_summary(tmp_path / "only.XDF") == tmp_path / "only_summary.png"
+    assert not plt.get_fignums()
 
 
 def test_stopped_phase_and_missing_or_ambiguous_input(tmp_path, monkeypatch):
@@ -122,3 +125,13 @@ def test_assessment_csv_fails_clearly(tmp_path):
     path.write_text("trial_num,accuracy\n1,4\n", encoding="utf-8")
     with pytest.raises(ValueError, match="self-assessment"):
         load_session(path)
+
+
+def test_pre_study_stop_has_no_summary(tmp_path, monkeypatch):
+    streams, _ = recording()
+    marker = streams[3]
+    marker["time_series"] = [[json.dumps({"event": "recording.started", "run_id": "test"})]]
+    marker["time_stamps"] = [0.5]
+    monkeypatch.setattr("pyxdf.load_xdf", lambda *args, **kwargs: (streams, {}))
+    assert save_xdf_summary(tmp_path / "stopped.xdf") is None
+    assert not list(tmp_path.glob("*.png"))

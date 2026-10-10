@@ -72,11 +72,15 @@ def main():
                 failure = failure or exc
             else:
                 message = "XDF saved. Experiment ended." if failure is None else f"{message}\nXDF saved."
+                if bridge.recorder.summary_plot is not None:
+                    message += " Summary PNG saved beside the XDF."
         if not bridge.closed.is_set():
             if bridge.stop_action is not None:
                 bridge.finish_stop(failure)
             if bridge.stopped and failure is None:
                 message = "XDF saved. Experiment stopped."
+                if bridge.recorder.summary_plot is not None:
+                    message += " Summary PNG saved beside the XDF."
             if markers.sequence:
                 markers.emit("ui.wrapper.result.requested", outcome=phase, message=message)
             from mpi.diagnostics import report

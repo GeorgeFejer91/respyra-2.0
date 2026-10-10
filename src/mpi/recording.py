@@ -135,6 +135,7 @@ class NativeRecording:
         self._lock = threading.Lock()
         self._reader = None
         self.participant_record = None
+        self.summary_plot = None
 
     def snapshot(self):
         with self._lock:
@@ -199,6 +200,7 @@ class NativeRecording:
         self.path = None
         self.participant_record = None
         self.phase, self.error, self.streams, self.summary = "preparing", None, {}, []
+        self.summary_plot = None
         self.data_sources = set()
         self.finite_sources = set()
         try:
@@ -333,6 +335,11 @@ class NativeRecording:
                                 self.participant_record["session"])
                 except Exception as exc:
                     raise RecordingError(f"XDF saved, but BIDS export failed: {exc}") from exc
+                try:
+                    from mpi.session_summary import save_xdf_summary
+                    self.summary_plot = save_xdf_summary(self.path)
+                except Exception as exc:
+                    raise RecordingError(f"XDF saved, but session summary failed: {exc}") from exc
             self.phase = "complete"
         except (OSError, ValueError, ET.ParseError, RecordingError, subprocess.TimeoutExpired) as exc:
             if process.poll() is None:

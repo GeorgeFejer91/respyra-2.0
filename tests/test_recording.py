@@ -152,6 +152,37 @@ def test_missing_native_bundle_reports_failure_without_starting(tmp_path):
     assert recorder.phase == 'error' and recorder.process is None and recorder.path is None
 
 
+@pytest.mark.parametrize('fails', [False, True])
+def test_summary_runs_after_promotion_and_keeps_xdf_on_plot_failure(monkeypatch, tmp_path, fails):
+    from mpi import bids_export, session_summary
+    monkeypatch.setattr(bids_export, 'export_bids', lambda *args: None)
+    recorder = NativeRecording(tmp_path, tmp_path)
+    recorder.path = tmp_path / 'P002_test.xdf.partial'
+    recorder.path.write_bytes(fixture_xdf())
+    recorder.required = ('raw-test', 'raw-test', 'raw-test')
+    recorder.participant_record = {'xdf_file':'P002_test.xdf', 'participant_number':'P002',
+                                   'session':'001', 'variables':[]}
+    recorder.process = SimpleNamespace(poll=lambda: 0, wait=lambda **_: 0,
+        stdin=SimpleNamespace(closed=True), stderr=SimpleNamespace(close=lambda: None))
+
+    def render(path):
+        assert path.suffix == '.xdf' and path.is_file()
+        assert recorded_participant_numbers(tmp_path) == [2]
+        if fails:
+            raise OSError('PNG destination unavailable')
+        return path.with_name(path.stem + '_summary.png')
+
+    monkeypatch.setattr(session_summary, 'save_xdf_summary', render)
+    if fails:
+        with pytest.raises(RecordingError, match='XDF saved, but session summary failed'):
+            recorder.stop()
+    else:
+        recorder.stop()
+        assert recorder.summary_plot == tmp_path / 'P002_test_summary.png'
+        assert recorder.phase == 'complete'
+    assert recorder.path.is_file() and recorder.process is None
+
+
 def test_failed_child_cannot_promote_a_closed_looking_file(tmp_path):
     recorder = NativeRecording(tmp_path, tmp_path)
     recorder.path = tmp_path / 'failed.xdf.partial'

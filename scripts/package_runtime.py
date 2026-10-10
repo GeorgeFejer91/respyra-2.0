@@ -124,6 +124,7 @@ def stage_runtime() -> None:
     scripts.mkdir()
     shutil.copy2(ROOT / "scripts/run_experiment.py", scripts)
     shutil.copy2(ROOT / "scripts/check_packaged_engine.py", scripts)
+    shutil.copy2(ROOT / "scripts/plot_session.py", scripts)
     recorder = ROOT / ".for-ai-local/recorder/runtime"
     recorder_manifest = json.loads((recorder / "manifest.json").read_text())
     if recorder_manifest["patches"] != digest(ROOT / "scripts/build_recorder.py"):
