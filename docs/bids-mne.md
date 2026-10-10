@@ -35,6 +35,28 @@ An XDF can carry BIDS-style identifiers and useful LSL metadata, but XDF is
 not a BIDS raw signal format and `mne_bids.read_raw_bids()` does not read it.
 The separate BIDS export below provides actual BIDS dataset files when needed.
 
+## Session summaries from XDF
+
+Starting with suite 2.3.12, a successfully finalized study recording saves
+`<recording>_summary.png` beside its XDF automatically when calibration or
+tracking samples are available. The six panels summarize the accepted
+calibration, trial signals and targets, condition means, and tracking errors.
+Instructions-only stops skip the summary; later stops summarize the recorded
+phases. The image supplements the original XDF, CSV and BIDS exports.
+
+To regenerate the image with the installed runtime, open PowerShell in the
+Respyra installation folder:
+
+```powershell
+& '.\engine\python\python.exe' -I -B -X utf8 '.\engine\scripts\plot_session.py' 'C:\path\recording.xdf' --no-show
+```
+
+The plotter reads the selected source and recorded events from XDF, preserving
+their timestamps without dejittering. CSV input remains available for older
+sessions. Its frame-based phase assignments can differ from the reconstructed
+XDF summary; retain the original recording for subsequent analysis. See the
+[installation guide](windows-install.md) for saved files and plotting options.
+
 ## Separate BIDS export
 
 Respyra writes a BIDS 1.11.2 behavioral dataset in the selected recording
