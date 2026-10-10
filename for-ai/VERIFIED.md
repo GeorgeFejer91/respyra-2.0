@@ -5,35 +5,78 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
-## Manual XDF session summaries — 2026-10-10
+## Automatic XDF summaries and suite 2.3.12 — 2026-10-10
 
-- VERIFIED captured CLI: `tests/test_plot_session.py` passed all five cases
-  under Python 3.10.11 and the existing locked runtime. Covered XDF-only selected
-  source/channel identity, excluded comparison/invalid samples, synchronized
-  timestamps without dejittering, multi-segment repeating targets, gain errors,
-  inverted PCA/signed Phan g labels, CSV/statistics compatibility, recorded
-  baseline diagnostics, stopped phases and missing/ambiguous inputs.
-- VERIFIED Agg CLI on the retained two-output and eight-output Mini recordings
-  from the suite receipt below, plus the original Force CSV. Both XDFs recovered
-  all 48 trials/six conditions and saved the six-panel PNG without a CSV sidecar.
-  Independent same-run comparison found baseline center/amplitude differences
-  below 0.00005 N (CSV rounding). Mean trial MAE differences were 0.00344 and
-  0.00772 N; largest per-trial differences were 0.10106 and 0.09283 N.
-  XDF includes 393/394 phase samples versus 447/442 CSV rows: XDF aligns accepted
-  sample timestamps to phase flips; CSV assigns consumed batches to display-frame
-  times. These are reconstructed summaries, not identical frame-level logs.
-- Inspected the final 48-trial PNG; compact condition legends, trial labels and
-  summary text fit. Existing synthetic study/recording/runtime evidence remains
-  valid: no signal publisher, acquisition, marker, timing or finalization owner
-  changed. Polar plots are covered by controlled fixtures, not a new physical
-  sensor or complete Polar study run. Plotting remains a manual repository tool;
-  the existing 0.3.12 installer was not rebuilt and does not ship this new reader.
-- Tested input SHA-256: `scripts/plot_session.py`
-  `4548d92d1b33e86ce55b872aab3d2506db2b01bc4238fb476a582bb8bb85af31`;
-  `tests/test_plot_session.py`
-  `fbb8685c7001c18b26f4f22c4720f9a6b3026b50e4b8986a19df80b533bb0343`.
-  Evidence: ignored `xdf-plot-tests.log`, `xdf-plot-cli.log`, `xdf-plot-pairs.log`,
-  `xdf-plot-pair-results.json` and summary PNGs beside the retained test recordings.
+- Artifact source/tag `v2.3.12`: `5602f9b0761be95ab97a6743c2434f982c2c4a74`;
+  pinned Mini 0.6.9 `32f9083343ea80f684baa9ea2c7f9f630ff81a3c`. Both were
+  clean at build. Main/Suite installers use 2.3.12; Mini versions remain independent.
+- VERIFIED captured CLI: 29 Python plot/recording/study-flow tests, then all six
+  plot cases after the final CLI headless-backend change; 14 Rust tests, locked
+  Clippy and Rustfmt. Headless Chrome passed 94 markers, five public pages/40
+  layouts, enlarged text, installer links, credits and private-QR redirect checks.
+- `src/mpi/session_summary.py` owns XDF and legacy CSV reconstruction/plotting;
+  `scripts/plot_session.py` and the installed fixed CLI delegate to it.
+  `NativeRecording.stop()` creates the six-panel PNG beside a verified closed
+  XDF after participant-list/BIDS export. Stops before captured study phases skip
+  plotting. Tests cover stopped phases, selected versus comparison/invalid
+  samples, multi-segment repeating targets, recorded baseline, gain/polarity,
+  inverted PCA/signed Phan g units, automatic PNG/figure closure and preservation
+  of the verified XDF when plotting fails. Summary paths stay local.
+- VERIFIED exact suite on private Win32 desktops: upgrade from 0.3.12 without
+  a destination argument and same-version reinstall matched all 18,452 runtime
+  files, both Mini payloads/resources and eight shortcuts. Two data sentinels
+  and other preferences survived; output choices reset with versioned backups.
+  The real user installation, registration, shortcut bytes and settings were
+  restored and verified unchanged. Installed embedded imports/app-local CRT and
+  native three-stream XDF readback passed. The Suite launcher opened three app
+  processes/windows; missing-input Start remained disabled/backend-rejected.
+- VERIFIED installed Vernier fresh 2/8, optional Force selection surviving
+  restart, return to two selections, and mock publishing of the default outlets.
+  Exact installed Python, study script, recorder and Mini completed a shortened
+  48-trial PsychoPy study. Independent XDF audit verified five streams, 761 raw,
+  723 derived and 1,467 event samples, and eight trials in each of six conditions.
+  Participant-list and BIDS outputs appeared; automatic XDF summary contained
+  398 phase rows/48 trials. Its six panels were visually inspected. The exact
+  installed CLI reproduced a PNG in a folder containing only the copied XDF.
+  Hosted-phone QR/edit/Start/Stop/Close and uninstall retention also passed;
+  all 14 retained test recording files kept their hashes.
+- REUSED earlier same-run XDF/CSV comparisons: baseline differences below
+  0.00005 N; mean MAE differences 0.00344/0.00772 N and largest per-trial
+  differences 0.10106/0.09283 N for two/eight-output recordings. XDF aligns
+  accepted samples to phase timestamps; CSV uses consumed display-frame batches.
+  Exact rendered frames are not recorded. Polar reconstruction uses fixtures;
+  unchanged Polar algorithms, all-eight Vernier recording and MNE/BIDS behavior
+  retain their scoped receipts below.
+- VERIFIED seven asset checksums and source ZIP parity: 194 Respyra and 243
+  Mini tracked product files matched Git. Dependency-source generation verified
+  pinned Python/native archives and all 430 root Cargo registry sources. The
+  standalone and Suite installers contain the same native executable, SHA-256
+  `fdd30cec9d92d618f8dd8e65ba7c537700571431f2e2579da4d43838228287d0`.
+  Suite (118,847,658 bytes):
+  `7e323316037ccacd9a8d60bc66ee822c281b24ea5339a6546772bf92df7c5fd1`.
+  Source ZIP (704,632,219 bytes):
+  `6b347a726667820974cd754f430c26d7b824872e711dd8d58c54537c866fe00c`.
+- Evidence: ignored `release-2.3.12-{python,plot-final,rust,site,suite-build}.log`,
+  `release-2.3.12-qualification.log`, `release-2.3.12-qualification-result.json`,
+  install/uninstall evidence directories, `release-2.3.12-installed-mini.log`,
+  `release-2.3.12-standalone-parity.log`, `release-2.3.12-handoff-result.json`,
+  the fresh `control-center-851fc87fc56144568beeececf17d3966/` synthetic recording
+  and `release-2.3.12-xdf-only/`. Earlier comparison evidence remains in
+  `xdf-plot-pair-results.json`. Native checks used private desktops and preference
+  guards; no test window/focus was shown on the user's desktop.
+- Limits: unsigned Windows x64 preview. Physical sensors/BLE, physiological
+  validity, scientific timing, clean-machine installation and other OSes remain
+  unqualified. The baseline Mini enlarged-battery no-fit limitation remains.
+- Publication: public [v2.3.12 prerelease](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12)
+  contains all eight assets; draft and published API sizes/digests matched local
+  files. Anonymous Suite download HEAD returned 200 and 118,847,658 bytes. Pages
+  `ebf23a79554684b2a62a67059a67257b35e8984c` reported `built`; sixteen fresh HTTPS
+  files matched its exact blobs, including the 2.3.12 download page and source
+  provenance `5602f9b0761be95ab97a6743c2434f982c2c4a74`. Both implementation
+  sources were verified at their pushed SHAs; no source-branch Actions run was
+  listed. Evidence: ignored `release-2.3.12-{draft,public,pages}-parity.json` and
+  publication logs. The initial slow uploader was canceled; subsequent HTTP/1
+  uploads completed. This receipt-only change does not alter installer/site inputs.
 
 ## Minimal Vernier defaults and suite 0.3.12 — 2026-10-10
 
@@ -245,11 +288,12 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Closed actions, ordered bounded pipe, public snapshots and Stop receipts: `src/mpi/desktop_bridge.py` | `tests/test_desktop_bridge.py` | verified for current inputs; see hub/recorder receipt | Action validation, sequence/framing/queue limits, projection or cleanup receipts change. |
 | Real engine startup/import isolation and marker lifetime through Close: `scripts/run_experiment.py`, desktop bridge | `tests/test_desktop_process.py` | verified for current focused inputs; see hub/recorder receipt | Launcher/imports, inherited stdio, pipe contracts or engine lifetime change. |
 | Optional Windows hooks and shutdown: `src/mpi/input_capture.py` | `tests/test_input_capture.py` | unrecorded | Hook registration, filtering, queues, drain/cleanup or marker handoff changes. |
-| Recorder readiness, missing/failed/hung child, participant list, partial files and XDF completeness: `src/mpi/recording.py` | `tests/test_recording.py` | verified for history reader and unchanged writer; see 2026-10-01 receipt | `NativeRecording`, `inspect_xdf`, child/readiness protocol or XDF validation changes. |
+| Recorder readiness, missing/failed/hung child, participant list, partial files and XDF completeness: `src/mpi/recording.py` | `tests/test_recording.py` | verified for current finalization; see automatic XDF summaries/suite 2.3.12 and earlier history-reader receipts | `NativeRecording`, `inspect_xdf`, child/readiness protocol or XDF validation changes. |
 | Native XDF persistence, calibration/cleanup markers, late/source-less streams and Unicode paths: `native/recorder/`, recording owner | `tests/check_recording.py` | verified for current inputs; see hub/recorder receipt | Recorder source/binary/DLLs, supervision or serialized data/marker contract changes. |
+| XDF/legacy CSV session summaries: `src/mpi/session_summary.py`, `scripts/plot_session.py` | `tests/test_plot_session.py`, private installed `tests/check_control_center.py --full-study` | verified for selected-source reconstruction and automatic finalization; see suite 2.3.12 receipt | Source/channel metadata, phase/target/baseline markers, gain/polarity/units, plot layout, finalization or plotting dependencies change. |
 | Offline XDF-to-CSV export and tutorial: `scripts/xdf_to_csv.py`, `notebooks/xdf_to_csv_tutorial.ipynb` | `tests/test_xdf_to_csv.py`, headless notebook execution | verified for current inputs; see offline export receipt | Converter/notebook logic, CSV columns or PyXDF version changes. |
 | All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | verified for current inputs; see hub/recorder receipt | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
-| Complete 48-trial study: study/calibration/recording owners | Private-desktop `tests/check_control_center.py --full-study`; Mini mock route remains separate | verified for current synthetic input and even participant; Mini mock evidence predates parity change | Study, inlet buffering, calibration, marker or recorder inputs change. |
+| Complete 48-trial study: study/calibration/recording owners | Private-desktop installed `tests/check_control_center.py --full-study` through `tests/run_private_mock.py` | verified for current installed synthetic Vernier input/even participant; see suite 2.3.12 receipt | Study, inlet buffering, calibration, marker or recorder inputs change. |
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | verified for recorded-number setup projection; see 2026-10-01 receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
