@@ -5,6 +5,57 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Minimal Vernier defaults and suite 0.3.12 — 2026-10-10
+
+- Artifact source: `4d76a5f36300eed4d4947ec9ed3102e354657b66`; pinned
+  Mini 0.6.9: `32f9083343ea80f684baa9ea2c7f9f630ff81a3c`. Fresh Vernier
+  preferences select only `rawVernier` and `signalStatus`; the other six
+  outputs remain optional. Raw device channels, Force units, calibration,
+  Polar defaults and recording/export algorithms are unchanged.
+- VERIFIED captured CLI: 15 runtime Rust tests, locked clippy and fmt. Tests
+  cover missing/fresh preferences, mock defaults, explicit selections and live
+  output switching. Headless Chrome passed the affected Mini defaults, saved
+  choices, resizing, label measurements and mock checks. The unchanged enlarged
+  battery Pretext failure retains its previously recorded baseline exclusion;
+  the full Mini UI matrix is not claimed as passing.
+- VERIFIED private desktop, exact installed suite: normal Vernier starts at
+  2/8, an optional Force selection survives restart, and Mock publishes two
+  outlets. Its native screenshot showed the correct checked controls. Upgrade
+  from 0.3.11 and same-version reinstallation matched all 18,450 engine files,
+  both Mini payloads/resources and eight shortcuts. Output selections reset
+  with versioned backups; other settings and two recording sentinels retained
+  their bytes. User installation, registration, shortcuts and preferences were
+  restored and verified unchanged.
+- VERIFIED two shortened 48-trial PsychoPy runs using the installed Mini and
+  embedded Python: two selected outputs and all eight selected outputs produced
+  closed five- and eleven-stream XDFs respectively (including one deliberately
+  late test marker). Independent readback reconstructed every trial, raw Force
+  sequence, accepted calibration and derived samples. The optional producer
+  waveform and combined outlet also matched their replay when selected.
+  Original CSV, participant-list and BIDS behavioral TSV exports appeared
+  automatically. The existing manual plotter saved a PNG from the fresh Force
+  CSV under Agg; no automatic end-of-run plot is implemented, and this does not
+  establish direct XDF/BIDS or Polar plotting support.
+- VERIFIED installed embedded imports/app-local CRT/native XDF round trip and
+  hosted-phone QR, controls, Stop/Close and cleanup with the two Vernier defaults.
+  Uninstall retained all 14 test recording/metadata files with unchanged hashes.
+- VERIFIED seven asset checksums and matching source archive: 192 Respyra and
+  243 Mini tracked product files matched Git source. Final installed main hash
+  matched installer extraction:
+  `1f2d6ef8c15ba2204f653c57cdf0d2aa312ff574acb17404827fe5759f18315c`.
+  Suite (118,839,135 bytes):
+  `2c23afdb4b497089f867b8605cf5836e4d4c25a0b66dcf36e3279e87b8a6693f`.
+  Source ZIP (704,621,935 bytes):
+  `1c4a4729216e9254c8712f86613f24f2fb7bfae461034da37846beb7da53c24c`.
+- Evidence: ignored `vernier-defaults-rust.log`, `vernier-defaults-clippy.log`,
+  `vernier-defaults-ui.log`, `vernier-defaults-suite-build.log`,
+  `vernier-defaults-install-evidence/`, `vernier-defaults-installed-mini.log`,
+  `vernier-defaults-studies.log`, `vernier-defaults-qualification-result.json`
+  and `vernier-defaults-handoff-result.json`. Local unsigned candidate, not a
+  published release. Physical BLE, physiological agreement, scientific timing,
+  clean VM and other operating systems remain outside this evidence. Unchanged
+  troubleshooting and Polar algorithms reuse their earlier scoped receipts.
+
 ## Troubleshooting reports — 2026-10-09
 
 - VERIFIED captured CLI: 47 focused diagnostics/setup/bridge/process/short-study
