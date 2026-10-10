@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
-  <meta name="description" content="Every default LSL variable in Respyra Suite v2.3.12: raw sources, units, processing and interpretation.">
+  <meta name="description" content="Every default LSL variable in Respyra Suite v2.3.13: raw sources, units, processing and interpretation.">
   <title>Default recorded variables — Respyra 2.0</title>
   <link rel="stylesheet" href="./site.css">
   <script type="module" src="./site.js"></script>
@@ -26,7 +26,7 @@
     <main id="main">
       <section class="page-title">
         <h1 data-measure>Default recorded variables</h1>
-        <p data-measure>This reference describes a fresh Respyra Suite v2.3.12 installation, bundling Polar and Vernier Stream Mini v0.6.9. The standard Polar selection contains seven signal types, with all three accelerometer axes kept together. Required quality flags are listed separately; the Vernier and Respyra defaults remain documented below.</p>
+        <p data-measure>This reference describes a fresh Respyra Suite v2.3.13 installation, bundling Polar and Vernier Stream Mini v0.6.9. The standard Polar selection contains seven signal types, with all three accelerometer axes kept together. Required quality flags are listed separately; the Vernier and Respyra defaults remain documented below.</p>
         <p data-measure>Installations publish no physiological data without connected, streaming sensors. Suite installation, upgrade and reinstallation reset stream selections to these defaults and back up the old Mini preferences. Device preferences and recordings are retained. Selected outputs may remain empty during warmup, insufficient cycles or a disconnected sensor, and recording starts when you press Start.</p>
         <nav class="source-links" aria-label="Variable sources"><a class="polar" href="#polar" data-measure>Polar Stream Mini</a><a class="vernier" href="#vernier" data-measure>Vernier Stream Mini</a><a class="respyra" href="#respyra" data-measure>Respyra 2.0</a><a href="#outlets" data-measure>Stream inventory</a></nav>
         <p data-measure>Red identifies Polar, yellow Vernier and blue Respyra. The reference panels reuse the apps’ compact headers and grouped rows; yellow accents use darker text on light backgrounds for readability. Source headings and exact names also identify origin without relying on color.</p>
@@ -133,10 +133,10 @@
       </section>
       <section>
         <h2 data-measure>Version and source evidence</h2>
-        <p>This list is pinned to <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12">suite v2.3.12</a>, Respyra source tag <code>v2.3.12</code> and Mini source <code>32f9083</code>. Definitions describe the implementation; software checks do not establish physiological validity.</p>
-        <div class="link-list"><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/crates/stream-mini-runtime/src/lib.rs">Fresh Mini selections</a><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/crates/polar-h10-metrics/src/catalog.rs">Polar formulas and units</a><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/crates/polar-h10-metrics/src/breathing_dynamics.rs">Optional dynamics implementation</a><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/docs/adr-waveforms.md">ADR timing and validity contracts</a><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.12/src/mpi/parallel_inputs.py">Respyra comparison calibration</a><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.12/src/mpi/lsl_force.py">Vernier study calibration</a><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.12/src/mpi/lsl_polar.py">Polar study calibration</a></div>
+        <p>This list is pinned to <a href="https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.13">suite v2.3.13</a>, Respyra source tag <code>v2.3.13</code> and Mini source <code>32f9083</code>. Definitions describe the implementation; software checks do not establish physiological validity.</p>
+        <div class="link-list"><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/crates/stream-mini-runtime/src/lib.rs">Fresh Mini selections</a><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/crates/polar-h10-metrics/src/catalog.rs">Polar formulas and units</a><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/crates/polar-h10-metrics/src/breathing_dynamics.rs">Optional dynamics implementation</a><a href="https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/32f9083343ea80f684baa9ea2c7f9f630ff81a3c/docs/adr-waveforms.md">ADR timing and validity contracts</a><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.13/src/mpi/parallel_inputs.py">Respyra comparison calibration</a><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.13/src/mpi/lsl_force.py">Vernier study calibration</a><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.13/src/mpi/lsl_polar.py">Polar study calibration</a></div>
       </section></main>
-    <footer><p data-measure>Respyra 2.0 by George Fejer · Windows suite v2.3.12 preview · Original respyra by Micah Allen and the Embodied Computation Group.</p><a href="./about.html" data-measure>Credits, sources and licenses</a></footer>
+    <footer><p data-measure>Respyra 2.0 by George Fejer · Windows suite v2.3.13 preview · Original respyra by Micah Allen and the Embodied Computation Group.</p><a href="./about.html" data-measure>Credits, sources and licenses</a></footer>
   </div>
 </body>
 </html>

@@ -88,6 +88,7 @@
     "source_id": "Exact LSL source_id of the selected study input stream.",
     "source_ids": "Required selected input and marker source IDs subscribed by the native recorder.",
     "policy": "Native recording policy; visible_and_late_except_excluded records current and future streams except explicitly unchecked LSL UIDs.",
+    "clock_reference": "Optional frozen respyra-clock-reference-v1 mapping between local LSL and UTC, with Europe/Berlin display zone, timeapi.io/system source, API status, measured RTT and transport uncertainty. Wall-clock accuracy and subsequent drift are not guaranteed. Importers must transform the LSL anchor by the marker clock correction when synchronizing XDF.",
     "pre_recording_events": "Ordered setup marker payloads emitted before native XDF recording began. They retain their original sequence and LSL times inside recording.started; they are not separate XDF samples.",
     "stream_name": "LSL name of the selected study input stream.",
     "signal_unit": "Native input unit: N for Vernier Force or g for Polar waveform.",

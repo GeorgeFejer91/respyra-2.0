@@ -29,7 +29,7 @@
         <h1 data-measure>Experiment marker library</h1>
         <p data-measure>Every current event type that Respyra can send to its LSL marker outlet and the bundled RespiRecorder: 94 marker types covering setup, input, calibration, trial phases, assessments, control actions and cleanup. Which events occur depends on the run, its options and any errors.</p>
         <div class="link-list"><a href="#inventory" data-measure>Browse all marker types</a><a href="#fields" data-measure>Payload dictionary</a><a href="./marker-catalog.json" download data-measure>Download the complete JSON catalog</a></div>
-        <p class="qualification" data-measure>Reference for the v2.3.12 event contract (respyra-event-markers-v1), generated from the experiment's Python catalog. Field descriptions include documentation clarifications. This public page contains event definitions; actual sent markers and counts belong to each local recording.</p>
+        <p class="qualification" data-measure>Reference for the v2.3.13 event contract (respyra-event-markers-v1), generated from the experiment's Python catalog. Field descriptions include documentation clarifications. This public page contains event definitions; actual sent markers and counts belong to each local recording.</p>
       </section>
       <section class="app-reference respyra" aria-labelledby="stream-title">
         <header class="reference-heading"><img class="app-icon" src="./logo.svg" width="32" height="32" alt=""><h2 id="stream-title" data-measure>Respyra — event stream and recording</h2></header>
@@ -630,6 +630,7 @@
 <div id="field-center" data-field-name="center"><dt><code>center</code></dt><dd data-measure>Comparison input calibration center, in unit, calculated from that input&#39;s accepted range samples.</dd></div>
 <div id="field-center_n" data-field-name="center_n"><dt><code>center_n</code></dt><dd data-measure>Calculated force center in Newtons; null for Polar input.</dd></div>
 <div id="field-center_value" data-field-name="center_value"><dt><code>center_value</code></dt><dd data-measure>Calculated breathing signal center in signal_unit.</dd></div>
+<div id="field-clock_reference" data-field-name="clock_reference"><dt><code>clock_reference</code></dt><dd data-measure>Optional frozen respyra-clock-reference-v1 mapping between local LSL and UTC, with Europe/Berlin display zone, timeapi.io/system source, API status, measured RTT and transport uncertainty. Wall-clock accuracy and subsequent drift are not guaranteed. Importers must transform the LSL anchor by the marker clock correction when synchronizing XDF.</dd></div>
 <div id="field-compatible" data-field-name="compatible"><dt><code>compatible</code></dt><dd data-measure>Boolean: discovery metadata satisfies the raw Vernier Force (N) or an exact Polar signed-waveform contract; live samples are checked separately before acceptance.</dd></div>
 <div id="field-condition" data-field-name="condition"><dt><code>condition</code><span class="qualification" data-measure>Every marker</span></dt><dd data-measure>Condition name, or null outside a trial.</dd></div>
 <div id="field-conditions" data-field-name="conditions"><dt><code>conditions</code></dt><dd data-measure>Condition names in the TrialHandler input list; each selected trial is marked separately.</dd></div>
@@ -723,7 +724,7 @@
             </div>
           </li></ul></section>
     </main>
-    <footer><p data-measure>Respyra 2.0 by George Fejer · Definitions follow the experiment's event catalog.</p><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.12/src/mpi/event_markers/catalog.json" data-measure>Shipped v2.3.12 catalog source</a></footer>
+    <footer><p data-measure>Respyra 2.0 by George Fejer · Definitions follow the experiment's event catalog.</p><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.13/src/mpi/event_markers/catalog.json" data-measure>Shipped v2.3.13 catalog source</a></footer>
   </div>
 </body>
 </html>
