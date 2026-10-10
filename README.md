@@ -160,7 +160,22 @@ pnpm check:ui
 `web/` owns the shared setup/monitor/controller UI; `src-tauri/` supervises its Python process through
 closed native commands and a private control pipe. `src/mpi/` contains
 study configuration, LSL input, marker catalog, and signal
-helpers. `scripts/plot_session.py` reads local CSV sessions. `notebooks/` contains signal exploration,
+helpers. `scripts/plot_session.py` reads local session CSVs or native Respyra XDFs.
+Generate the same six-panel summary directly from a recording, without a CSV sidecar:
+
+```sh
+uv run --frozen python scripts/plot_session.py "data/recording.xdf" --no-show
+```
+
+The PNG is saved beside its input as `<recording>_summary.png`. CSV input remains
+supported. XDF selects the recorded study input, applies the chosen Polar polarity
+when applicable, and uses the recorded trial/target parameters; labels retain N
+for Vernier and g for Polar PCA/signed Phan. Targets and errors are reconstructed
+at synchronized sample times, so CSV display-frame statistics need not be identical.
+Baseline calibration uses the study's recorded diagnostic markers. This is a manual
+plotting command; experiment completion does not automatically launch it.
+
+`notebooks/` contains signal exploration,
 and `tests/` covers source, marker and recorded-file contracts. Install notebook
 tools only when using those files: `python -m uv sync --frozen --python 3.10.11 --group notebooks`.
 

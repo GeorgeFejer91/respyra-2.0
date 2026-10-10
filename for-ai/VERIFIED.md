@@ -5,6 +5,36 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Manual XDF session summaries — 2026-10-10
+
+- VERIFIED captured CLI: `tests/test_plot_session.py` passed all five cases
+  under Python 3.10.11 and the existing locked runtime. Covered XDF-only selected
+  source/channel identity, excluded comparison/invalid samples, synchronized
+  timestamps without dejittering, multi-segment repeating targets, gain errors,
+  inverted PCA/signed Phan g labels, CSV/statistics compatibility, recorded
+  baseline diagnostics, stopped phases and missing/ambiguous inputs.
+- VERIFIED Agg CLI on the retained two-output and eight-output Mini recordings
+  from the suite receipt below, plus the original Force CSV. Both XDFs recovered
+  all 48 trials/six conditions and saved the six-panel PNG without a CSV sidecar.
+  Independent same-run comparison found baseline center/amplitude differences
+  below 0.00005 N (CSV rounding). Mean trial MAE differences were 0.00344 and
+  0.00772 N; largest per-trial differences were 0.10106 and 0.09283 N.
+  XDF includes 393/394 phase samples versus 447/442 CSV rows: XDF aligns accepted
+  sample timestamps to phase flips; CSV assigns consumed batches to display-frame
+  times. These are reconstructed summaries, not identical frame-level logs.
+- Inspected the final 48-trial PNG; compact condition legends, trial labels and
+  summary text fit. Existing synthetic study/recording/runtime evidence remains
+  valid: no signal publisher, acquisition, marker, timing or finalization owner
+  changed. Polar plots are covered by controlled fixtures, not a new physical
+  sensor or complete Polar study run. Plotting remains a manual repository tool;
+  the existing 0.3.12 installer was not rebuilt and does not ship this new reader.
+- Tested input SHA-256: `scripts/plot_session.py`
+  `4548d92d1b33e86ce55b872aab3d2506db2b01bc4238fb476a582bb8bb85af31`;
+  `tests/test_plot_session.py`
+  `fbb8685c7001c18b26f4f22c4720f9a6b3026b50e4b8986a19df80b533bb0343`.
+  Evidence: ignored `xdf-plot-tests.log`, `xdf-plot-cli.log`, `xdf-plot-pairs.log`,
+  `xdf-plot-pair-results.json` and summary PNGs beside the retained test recordings.
+
 ## Minimal Vernier defaults and suite 0.3.12 — 2026-10-10
 
 - Artifact source: `4d76a5f36300eed4d4947ec9ed3102e354657b66`; pinned
@@ -34,8 +64,8 @@ suites to initialize this ledger.
   waveform and combined outlet also matched their replay when selected.
   Original CSV, participant-list and BIDS behavioral TSV exports appeared
   automatically. The existing manual plotter saved a PNG from the fresh Force
-  CSV under Agg; no automatic end-of-run plot is implemented, and this does not
-  establish direct XDF/BIDS or Polar plotting support.
+  CSV under Agg. At this artifact source no direct XDF/BIDS or Polar plotting
+  support was tested; the newer repository-only plotter receipt is above.
 - VERIFIED installed embedded imports/app-local CRT/native XDF round trip and
   hosted-phone QR, controls, Stop/Close and cleanup with the two Vernier defaults.
   Uninstall retained all 14 test recording/metadata files with unchanged hashes.

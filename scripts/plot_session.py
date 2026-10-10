@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """Post-session visualization for the breath tracking task.
 
-Generates a 6-panel summary figure from a session CSV file, helping
+Generates a 6-panel summary figure from a session CSV or Respyra XDF, helping
 experimenters evaluate participant performance and verify task operation.
 
 Usage
 -----
-    python -m respyra.utils.vis.plot_session data/sub-01_ses-001_2026-02-24.csv
-    python -m respyra.utils.vis.plot_session data/*.csv --no-show
+    python scripts/plot_session.py data/recording.xdf --no-show
+    python scripts/plot_session.py data/session.csv --no-show
 
-The figure is saved as ``{csv_stem}_summary.png`` alongside the CSV.
+The figure is saved as ``{input_stem}_summary.png`` alongside the input.
+XDF targets/errors use recorded sample times, not the CSV's display-frame times.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -58,22 +60,32 @@ ZERO_LINE_COLOR = "#666666"
 PHASE_ORDER = {"range_cal": 0, "baseline": 1, "countdown": 2, "tracking": 3}
 
 
-def load_session(csv_path: str) -> pd.DataFrame:
-    """Read a session CSV, coerce column types, and add monotonic session time.
+def load_session(csv_path: str | Path) -> pd.DataFrame:
+    """Read CSV or XDF into the common plotting table, with elapsed session time.
 
     Parameters
     ----------
     csv_path : str
-        Path to a CSV file produced by :class:`respyra.core.data_logger.DataLogger`.
+        Path to an original sample CSV or a native Respyra XDF recording.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame sorted by ``(trial_num, phase_order, timestamp)`` with an
-        additional ``session_time`` column providing monotonic elapsed time
-        across phase boundaries.
+        CSV rows use reconstructed phase order; XDF rows use synchronized
+        sample timestamps. ``signal_unit`` in attrs supplies N or g labels.
     """
+    if Path(csv_path).suffix.lower() == ".xdf":
+        return load_xdf_session(csv_path)
+    if Path(csv_path).suffix.lower() != ".csv":
+        raise ValueError("Expected a session .csv or Respyra .xdf file")
     df = pd.read_csv(csv_path)
+    unit = "g" if "signal_g" in df.columns else "N"
+    df = df.rename(columns={"signal_g": "force_n", "target_signal_g": "target_force",
+                            "error_g": "error", "compensated_error_g": "compensated_error"})
+    required = {"timestamp", "force_n", "target_force", "error", "phase", "condition", "trial_num"}
+    if not required.issubset(df.columns) or df.empty:
+        raise ValueError("No session samples; use the sample CSV, not the self-assessment CSV")
+    df["condition"] = df["condition"].fillna("")
 
     # Numeric columns (empty strings → NaN)
     for col in ("timestamp", "frame", "force_n", "target_force", "error", "feedback_gain"):
@@ -94,7 +106,147 @@ def load_session(csv_path: str) -> pd.DataFrame:
 
     # Build a monotonic session_time for the full-session trace.
     df["session_time"] = _build_session_time(df)
+    df.attrs["signal_unit"] = unit
 
+    return df
+
+
+def _field(info, key, default=""):
+    """Read one value from PyXDF's XML lists."""
+    values = info.get(key) or [default]
+    return values[0] if values[0] is not None else default
+
+
+def load_xdf_session(path: str | Path) -> pd.DataFrame:
+    """Reconstruct the selected study input and phases from XDF alone.
+
+    Keep clock synchronization but disable nominal-rate timestamp smoothing.
+    Pair raw values with the selected derived outlet's accepted timestamps;
+    comparison outlets and invalid Polar samples cannot enter the summary.
+    The existing target generator owns target reconstruction. No CSV sidecar
+    or assumptions about stream display names/channel order are needed.
+    """
+    import pyxdf
+
+    streams, _ = pyxdf.load_xdf(str(path), synchronize_clocks=True, dejitter_timestamps=False)
+    marker_streams = [s for s in streams if
+                      _field(_field(s["info"], "desc", {}), "schema") == "respyra-event-markers-v1"]
+    if len(marker_streams) != 1:
+        raise ValueError("Expected exactly one Respyra study marker stream in XDF")
+    markers = marker_streams[0]
+    events = [(float(t), json.loads(row[0])) for t, row in
+              zip(markers["time_stamps"], markers["time_series"], strict=True)]
+    events.sort(key=lambda item: item[0])
+    run_ids = {e.get("run_id") for _, e in events}
+    if len(run_ids) != 1 or None in run_ids:
+        raise ValueError("XDF markers must identify one Respyra run")
+    run_id = next(iter(run_ids))
+
+    def unique_stream(source_id):
+        matches = [s for s in streams if _field(s["info"], "source_id") == source_id]
+        if len(matches) != 1 or not len(matches[0]["time_stamps"]):
+            raise ValueError(f"Missing or ambiguous selected XDF stream: {source_id}")
+        return matches[0]
+
+    selected = unique_stream(f"respyra-breathing-{run_id}")
+    desc = _field(selected["info"], "desc", {})
+    raw = unique_stream(_field(desc, "raw_source_id"))
+    raw_desc = _field(raw["info"], "desc", {})
+    channels = _field(raw_desc, "channels", {}).get("channel", [])
+    polar = _field(desc, "input_contract") in {"respyra-polar-pca/1", "respyra-polar-phan-signed/1"}
+    unit = "g" if polar else "N"
+    indices = [i for i, c in enumerate(channels) if _field(c, "unit") == unit and
+               (polar or (_field(c, "sensor_number") == "1" and _field(c, "type") == "RawMeasurement"))]
+    if len(indices) != 1:
+        raise ValueError("Selected raw XDF input has no unique study signal channel")
+    calibration = next((e for _, e in events if e["event"] == "calibration.completed"), {})
+    setup_events = [e for _, e in events]
+    for _, event in events:
+        if event["event"] == "recording.started":
+            setup_events = event.get("pre_recording_events", []) + setup_events
+    direction = next((e for e in reversed(setup_events) if e["event"] == "source.polarity.set"), {})
+    if polar and not calibration and not direction:
+        raise ValueError("Polar XDF is missing the selected input polarity")
+    polarity = (calibration.get("input_polarity", -1 if direction.get("enabled") else 1)
+                if polar else 1)
+    if polarity not in (-1, 1):
+        raise ValueError("Polar XDF is missing the selected input polarity")
+
+    raw_times = np.asarray(raw["time_stamps"], dtype=float)
+    values = np.asarray(raw["time_series"], dtype=float)[:, indices[0]] * polarity
+    order = np.argsort(raw_times, kind="stable")
+    raw_times, values = raw_times[order], values[order]
+    times = np.asarray(selected["time_stamps"], dtype=float)
+    if not np.isfinite(raw_times).all() or not np.isfinite(times).all():
+        raise ValueError("XDF has nonfinite signal timestamps")
+    right = np.searchsorted(raw_times, times).clip(0, len(raw_times) - 1)
+    left = (right - 1).clip(0)
+    nearest = np.where(abs(raw_times[left] - times) <= abs(raw_times[right] - times), left, right)
+    periods = np.diff(raw_times)
+    periods = periods[periods > 0]
+    # Allow clock-fit error, but never pair across half a sample interval.
+    tolerance = min(0.01, float(np.median(periods)) * 0.45) if len(periods) else 0.001
+    paired = abs(raw_times[nearest] - times) <= tolerance
+    values = values[nearest]
+
+    phase_starts = {"calibration.attempt.started": "range_cal", "baseline.started": "baseline",
+                    "countdown.started": "countdown", "tracking.started": "tracking"}
+    phase_ends = {"calibration.attempt.ended", "baseline.ended", "countdown.ended", "tracking.ended"}
+    terminal = {"run.aborted", "run.completed", "display.closed", "recording.finalizing"}
+    intervals = []
+    active = None
+    for stamp, event in events:
+        name = event["event"]
+        if active is not None and (name in phase_starts or name in phase_ends or name in terminal):
+            intervals.append((*active, stamp))
+            active = None
+        if name in phase_starts:
+            active = (stamp, event, phase_starts[name])
+    if active is not None:
+        intervals.append((*active, float(times.max()) + np.finfo(float).eps * abs(times.max())))
+
+    frames = []
+    for start, event, phase, end in intervals:
+        mask = (times >= start) & (times < end)
+        if not paired[mask].all():
+            raise ValueError("Cannot pair selected study samples with recorded raw timestamps")
+        elapsed, signal = times[mask] - start, values[mask]
+        if not np.isfinite(signal).all():
+            raise ValueError("Selected study samples contain nonfinite raw values")
+        gain = float(event.get("feedback_gain", 1))
+        target = np.full(len(signal), np.nan)
+        compensated = target.copy()
+        if phase == "tracking":
+            from respyra.core.target_generator import ConditionDef, SegmentDef, TargetGenerator
+
+            center = event.get("target_center_value", event.get("target_center_n"))
+            amplitude = event.get("target_amplitude_value", event.get("target_amplitude_n"))
+            segments = [SegmentDef(float(s["freq_hz"]), int(s["n_cycles"])) for s in event.get("segments", [])]
+            if (center is None or amplitude is None or not np.isfinite([center, amplitude, gain]).all()
+                    or amplitude <= 0 or not segments
+                    or any(not np.isfinite(s.freq_hz) or s.freq_hz <= 0 or s.n_cycles <= 0 for s in segments)):
+                raise ValueError("Tracking marker lacks valid target parameters")
+            generator = TargetGenerator(ConditionDef(event["condition"], segments), center, amplitude)
+            target = np.array([generator.get_target(t) for t in elapsed])
+            compensated = target - (center + gain * (signal - center))
+        frames.append(pd.DataFrame({"timestamp": elapsed, "frame": np.nan, "force_n": signal,
+                                    "target_force": target, "error": target - signal,
+                                    "compensated_error": compensated, "phase": phase,
+                                    "condition": event.get("condition") or "",
+                                    "trial_num": event.get("trial") or 0, "feedback_gain": gain,
+                                    "session_time": times[mask]}))
+    if not frames or not any(len(frame) for frame in frames):
+        raise ValueError("XDF contains no recorded calibration or trial phase samples")
+    df = pd.concat(frames, ignore_index=True).sort_values("session_time").reset_index(drop=True)
+    df["trial_num"] = df["trial_num"].astype("Int64")
+    df["session_time"] -= intervals[0][0]
+    df.attrs.update(signal_unit=unit, source_format="XDF")
+    baseline_cal = [{"trial_num": e["trial"], "condition": e.get("condition") or "",
+                     "center": e.get("center_value", e.get("center_n")),
+                     "amplitude": e.get("amplitude_value", e.get("amplitude_n"))}
+                    for _, e in events if e["event"] == "baseline.calculated"]
+    if baseline_cal:
+        df.attrs["baseline_calibration"] = baseline_cal
     return df
 
 
@@ -143,10 +295,10 @@ def compute_trial_stats(df: pd.DataFrame) -> pd.DataFrame:
     -------
     pd.DataFrame
         One row per trial with columns: ``trial_num``, ``condition``,
-        ``mae`` (mean absolute error in Newtons), ``mae_sd``,
+        ``mae`` (mean absolute error in the input unit), ``mae_sd``,
         ``rmse``, and ``n_samples``.  Empty if no tracking data exists.
     """
-    tracking = df[df["phase"] == "tracking"].copy()
+    tracking = df[df["phase"] == "tracking"].dropna(subset=["error"]).copy()
     if tracking.empty:
         return pd.DataFrame()
 
@@ -179,9 +331,14 @@ def compute_baseline_cal(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         One row per trial with columns: ``trial_num``, ``condition``,
         ``force_min``, ``force_max``, ``force_mean``, ``center``
-        (midpoint of min/max), and ``amplitude`` (half-range, minimum 0.5 N).
-        Empty if no baseline data exists.
+        (midpoint of min/max), and ``amplitude`` (half-range, minimum 0.5 N
+        or 1e-5 g). XDF uses the study's baseline.calculated markers for
+        center/amplitude when present. Empty if no baseline data exists.
     """
+    if "baseline_calibration" in df.attrs:
+        # These markers report the actual samples used by the study, including
+        # samples consumed just before the first baseline display flip.
+        return pd.DataFrame(df.attrs["baseline_calibration"]).dropna(subset=["center", "amplitude"])
     baseline = df[df["phase"] == "baseline"].dropna(subset=["force_n"])
     if baseline.empty:
         return pd.DataFrame()
@@ -197,7 +354,8 @@ def compute_baseline_cal(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     cal["center"] = (cal["force_max"] + cal["force_min"]) / 2
-    cal["amplitude"] = ((cal["force_max"] - cal["force_min"]) / 2).clip(lower=0.5)
+    minimum = 1e-5 if df.attrs.get("signal_unit") == "g" else 0.5
+    cal["amplitude"] = ((cal["force_max"] - cal["force_min"]) / 2).clip(lower=minimum)
 
     return cal
 
@@ -231,12 +389,13 @@ def plot_session(df: pd.DataFrame, csv_path: str) -> plt.Figure:
     trial_stats = compute_trial_stats(df)
     baseline_cal = compute_baseline_cal(df)
     tracking = df[df["phase"] == "tracking"].copy()
+    unit = df.attrs.get("signal_unit", "N")
 
-    _plot_full_trace(axes[0, 0], df)
-    _plot_error_timeseries(axes[0, 1], tracking)
-    _plot_trial_mae_bars(axes[1, 0], trial_stats)
-    _plot_error_distribution(axes[1, 1], tracking, trial_stats)
-    _plot_baseline_stability(axes[2, 0], baseline_cal)
+    _plot_full_trace(axes[0, 0], df, unit)
+    _plot_error_timeseries(axes[0, 1], tracking, unit)
+    _plot_trial_mae_bars(axes[1, 0], trial_stats, unit)
+    _plot_error_distribution(axes[1, 1], tracking, trial_stats, unit)
+    _plot_baseline_stability(axes[2, 0], baseline_cal, unit)
     _plot_summary_text(axes[2, 1], df, trial_stats, baseline_cal, csv_path)
 
     fig.suptitle(
@@ -265,12 +424,13 @@ def _style_ax(ax, title, xlabel="", ylabel=""):
 # -- Panel 1: Full session force trace + target ----------------------------
 
 
-def _plot_full_trace(ax, df):
-    _style_ax(ax, "Full Session Trace", "Session time (s)", "Force (N)")
+def _plot_full_trace(ax, df, unit="N"):
+    _style_ax(ax, "Full Session Trace", "Session time (s)", f"Breathing signal ({unit})")
 
     trials = sorted(df["trial_num"].dropna().unique())
 
     # Phase background shading
+    labeled_trials = set(trials[::max(1, int(np.ceil(len(trials) / 12)))])
     for trial_num in trials:
         for phase_name, color in PHASE_COLORS.items():
             mask = (df["trial_num"] == trial_num) & (df["phase"] == phase_name)
@@ -317,6 +477,8 @@ def _plot_full_trace(ax, df):
             continue
         t0 = trial_data["session_time"].iloc[0]
         ax.axvline(t0, color="#555555", linewidth=0.5, linestyle="--")
+        if trial_num not in labeled_trials:
+            continue
         cond = (
             trial_data["condition"].dropna().iloc[0]
             if trial_data["condition"].notna().any()
@@ -332,7 +494,7 @@ def _plot_full_trace(ax, df):
         ax.text(
             t0 + 0.3,
             ymax - (ymax - ymin) * 0.03,
-            f"T{int(trial_num)} {cond_short}{gain_str}",
+            "Cal" if trial_num == 0 else f"T{int(trial_num)} {cond_short}{gain_str}",
             color="#aaaaaa",
             fontsize=7,
             va="top",
@@ -343,8 +505,8 @@ def _plot_full_trace(ax, df):
 # -- Panel 2: Signed tracking error per trial -----------------------------
 
 
-def _plot_error_timeseries(ax, tracking):
-    _style_ax(ax, "Tracking Error Over Time", "Time in phase (s)", "Error (N)")
+def _plot_error_timeseries(ax, tracking, unit="N"):
+    _style_ax(ax, "Tracking Error Over Time", "Time in phase (s)", f"Error ({unit})")
 
     if tracking.empty:
         ax.text(
@@ -360,27 +522,28 @@ def _plot_error_timeseries(ax, tracking):
         return
 
     ax.axhline(0, color=ZERO_LINE_COLOR, linewidth=1.0)
-    ax.axhline(1.0, color=ERROR_POS_COLOR, linewidth=0.7, linestyle=":", alpha=0.5)
-    ax.axhline(-1.0, color=ERROR_POS_COLOR, linewidth=0.7, linestyle=":", alpha=0.5)
+    if unit == "N":
+        ax.axhline(1.0, color=ERROR_POS_COLOR, linewidth=0.7, linestyle=":", alpha=0.5)
+        ax.axhline(-1.0, color=ERROR_POS_COLOR, linewidth=0.7, linestyle=":", alpha=0.5)
 
     trials = sorted(tracking["trial_num"].dropna().unique())
-    cmap = plt.cm.viridis(np.linspace(0.2, 0.9, len(trials)))
+    seen = set()
 
-    for i, trial_num in enumerate(trials):
+    for trial_num in trials:
         t_data = tracking[tracking["trial_num"] == trial_num]
         cond = t_data["condition"].iloc[0]
-        cond_short = CONDITION_SHORT.get(cond, cond[:2].upper())
         # Show gain in label when perturbation is active
         gain = t_data["feedback_gain"].iloc[0] if "feedback_gain" in t_data.columns else 1.0
         gain_str = f" g={gain}" if pd.notna(gain) and gain != 1.0 else ""
         ax.plot(
             t_data["timestamp"],
             t_data["error"],
-            color=cmap[i],
+            color=CONDITION_COLORS.get(cond, "#999999"),
             linewidth=0.7,
             alpha=0.8,
-            label=f"T{int(trial_num)} ({cond_short}{gain_str})",
+            label=f"{cond.replace('_', ' ')}{gain_str}" if cond not in seen else "_nolegend_",
         )
+        seen.add(cond)
 
     ax.legend(
         loc="upper right",
@@ -395,8 +558,8 @@ def _plot_error_timeseries(ax, tracking):
 # -- Panel 3: Per-trial MAE bar chart -------------------------------------
 
 
-def _plot_trial_mae_bars(ax, trial_stats):
-    _style_ax(ax, "Per-Trial Mean Absolute Error", "Trial", "MAE (N)")
+def _plot_trial_mae_bars(ax, trial_stats, unit="N"):
+    _style_ax(ax, "Per-Trial Mean Absolute Error", "Trial", f"MAE ({unit})")
 
     if trial_stats.empty:
         ax.text(
@@ -418,8 +581,9 @@ def _plot_trial_mae_bars(ax, trial_stats):
     ax.bar(
         range(len(trials)), mae_vals, color=colors, alpha=0.85, edgecolor="white", linewidth=0.3
     )
-    ax.set_xticks(range(len(trials)))
-    ax.set_xticklabels([f"T{int(t)}" for t in trials])
+    positions = range(0, len(trials), max(1, int(np.ceil(len(trials) / 12))))
+    ax.set_xticks(positions)
+    ax.set_xticklabels([f"T{int(trials[i])}" for i in positions])
 
     # Overall mean line
     overall_mae = mae_vals.mean()
@@ -454,8 +618,8 @@ def _plot_trial_mae_bars(ax, trial_stats):
 # -- Panel 4: Error distribution by condition (box plot) -------------------
 
 
-def _plot_error_distribution(ax, tracking, trial_stats):
-    _style_ax(ax, "Error Distribution by Condition", "", "|Error| (N)")
+def _plot_error_distribution(ax, tracking, trial_stats, unit="N"):
+    _style_ax(ax, "Error Distribution by Condition", "", f"|Error| ({unit})")
 
     if tracking.empty:
         ax.text(
@@ -514,7 +678,7 @@ def _plot_error_distribution(ax, tracking, trial_stats):
                     )
 
     ax.set_xticks(range(len(conditions)))
-    ax.set_xticklabels([c.replace("_", " ") for c in conditions], fontsize=9)
+    ax.set_xticklabels([c.replace("_no_feedback", "\nno feedback") for c in conditions], fontsize=9)
 
     if box_data:
         ax.legend(
@@ -529,8 +693,8 @@ def _plot_error_distribution(ax, tracking, trial_stats):
 # -- Panel 5: Baseline calibration stability -------------------------------
 
 
-def _plot_baseline_stability(ax, baseline_cal):
-    _style_ax(ax, "Baseline Calibration Stability", "Trial", "Force (N)")
+def _plot_baseline_stability(ax, baseline_cal, unit="N"):
+    _style_ax(ax, "Baseline Calibration Stability", "Trial", f"Breathing signal ({unit})")
 
     if baseline_cal.empty:
         ax.text(
@@ -569,8 +733,9 @@ def _plot_baseline_stability(ax, baseline_cal):
     # Connect centers with a line to show drift
     ax.plot(range(len(trials)), centers, color="white", linewidth=0.8, alpha=0.4, linestyle="--")
 
-    ax.set_xticks(range(len(trials)))
-    ax.set_xticklabels([f"T{int(t)}" for t in trials])
+    positions = range(0, len(trials), max(1, int(np.ceil(len(trials) / 12))))
+    ax.set_xticks(positions)
+    ax.set_xticklabels([f"T{int(trials[i])}" for i in positions])
 
     # Legend
     unique_conds = baseline_cal["condition"].unique()
@@ -604,14 +769,16 @@ def _plot_summary_text(ax, df, trial_stats, baseline_cal, csv_path):
     ax.set_title("Summary Statistics", color="white", fontsize=11, fontweight="bold", pad=8)
 
     tracking = df[df["phase"] == "tracking"]
+    unit = df.attrs.get("signal_unit", "N")
     lines = []
 
     # Session info
     lines.append(f"File: {Path(csv_path).name}")
-    n_trials = int(df["trial_num"].dropna().nunique())
-    lines.append(f"Trials: {n_trials}")
-    lines.append(f"Total samples: {len(df)}")
-    lines.append(f"Tracking samples: {len(tracking)}")
+    n_trials = int(df.loc[df["trial_num"] > 0, "trial_num"].nunique())
+    lines.append(f"Trials: {n_trials} | Samples: {len(df)} | Tracking: {len(tracking)}")
+    if df.attrs.get("source_format") == "XDF":
+        lines.append("XDF targets/errors reconstructed at sample times.")
+        lines.append("CSV display-frame statistics may differ.")
     lines.append("")
 
     # Overall performance
@@ -623,10 +790,9 @@ def _plot_summary_text(ax, df, trial_stats, baseline_cal, csv_path):
         best = trial_stats.loc[best_idx]
         worst = trial_stats.loc[worst_idx]
 
-        lines.append(f"Overall MAE: {overall_mae:.3f} N")
-        lines.append(f"Overall RMSE: {overall_rmse:.3f} N")
-        lines.append(f"Best trial: T{int(best['trial_num'])} ({best['mae']:.3f} N)")
-        lines.append(f"Worst trial: T{int(worst['trial_num'])} ({worst['mae']:.3f} N)")
+        lines.append(f"Overall MAE: {overall_mae:.3f} {unit}; RMSE: {overall_rmse:.3f} {unit}")
+        lines.append(f"Best: T{int(best['trial_num'])} ({best['mae']:.3f} {unit}); "
+                     f"worst: T{int(worst['trial_num'])} ({worst['mae']:.3f} {unit})")
         lines.append("")
 
         # Per-condition
@@ -639,17 +805,12 @@ def _plot_summary_text(ax, df, trial_stats, baseline_cal, csv_path):
             # Show gain if present
             cond_tracking = tracking[tracking["condition"] == cond]
             if "feedback_gain" in cond_tracking.columns:
-                gain = (
-                    cond_tracking["feedback_gain"].dropna().iloc[0]
-                    if len(cond_tracking) > 0
-                    else 1.0
-                )
+                gains = cond_tracking["feedback_gain"].dropna()
+                gain = gains.iloc[0] if not gains.empty else 1.0
                 gain_str = f" (gain={gain})" if gain != 1.0 else ""
             else:
                 gain_str = ""
-            lines.append(f"{label}{gain_str}:")
-            lines.append(f"  MAE = {c_mae:.3f} +/- {c_sd:.3f} N")
-            lines.append(f"  RMSE = {c_rmse:.3f} N")
+            lines.append(f"{label}{gain_str}: MAE {c_mae:.3f} +/- {c_sd:.3f}; RMSE {c_rmse:.3f} {unit}")
         lines.append("")
 
     # Baseline calibration
@@ -657,11 +818,11 @@ def _plot_summary_text(ax, df, trial_stats, baseline_cal, csv_path):
         centers = baseline_cal["center"].values
         amps = baseline_cal["amplitude"].values
         lines.append(
-            f"Baseline center: {centers.mean():.2f} N "
+            f"Baseline center: {centers.mean():.2f} {unit} "
             f"(range {centers.min():.2f}-{centers.max():.2f})"
         )
         lines.append(
-            f"Baseline amplitude: {amps.mean():.2f} N (range {amps.min():.2f}-{amps.max():.2f})"
+            f"Baseline amplitude: {amps.mean():.2f} {unit} (range {amps.min():.2f}-{amps.max():.2f})"
         )
 
     text = "\n".join(lines)
@@ -674,7 +835,7 @@ def _plot_summary_text(ax, df, trial_stats, baseline_cal, csv_path):
         fontsize=8.5,
         fontfamily="monospace",
         verticalalignment="top",
-        linespacing=1.4,
+        linespacing=1.05,
     )
 
 
@@ -684,16 +845,16 @@ def _plot_summary_text(ax, df, trial_stats, baseline_cal, csv_path):
 def main() -> None:
     """CLI entry point: parse arguments and generate summary figures.
 
-    Processes one or more session CSV files, saving each as
-    ``{csv_stem}_summary.png`` alongside the original.
+    Processes session CSV or XDF files, saving each as
+    ``{input_stem}_summary.png`` alongside the original.
     """
     parser = argparse.ArgumentParser(
-        description="Generate a 6-panel summary figure from a breath tracking session CSV.",
+        description="Generate a 6-panel summary figure from a Respyra session CSV or XDF.",
     )
     parser.add_argument(
-        "csv_path",
+        "session_path",
         nargs="+",
-        help="Path(s) to session CSV file(s).",
+        help="Path(s) to session .csv or Respyra .xdf file(s).",
     )
     parser.add_argument(
         "--no-show",
@@ -702,17 +863,24 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    for csv_path in args.csv_path:
+    failed = False
+    for csv_path in args.session_path:
         if not os.path.isfile(csv_path):
             print(f"File not found: {csv_path}", file=sys.stderr)
+            failed = True
             continue
 
         print(f"Loading {csv_path}...")
-        df = load_session(csv_path)
+        try:
+            df = load_session(csv_path)
+        except (ValueError, OSError, ImportError, KeyError, TypeError) as exc:
+            print(f"Cannot load {csv_path}: {exc}", file=sys.stderr)
+            failed = True
+            continue
 
         print(
             f"  {len(df)} rows, "
-            f"{df['trial_num'].dropna().nunique()} trials, "
+            f"{df.loc[df['trial_num'] > 0, 'trial_num'].nunique()} trials, "
             f"phases: {sorted(df['phase'].dropna().unique())}"
         )
 
@@ -726,6 +894,8 @@ def main() -> None:
             plt.show()
         else:
             plt.close(fig)
+    if failed:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
