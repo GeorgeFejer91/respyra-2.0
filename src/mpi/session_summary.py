@@ -886,6 +886,9 @@ def main() -> None:
         help="Save PNG without displaying interactively.",
     )
     args = parser.parse_args()
+    if args.no_show:
+        import matplotlib
+        matplotlib.use("Agg", force=True)
 
     failed = False
     for csv_path in args.session_path:
