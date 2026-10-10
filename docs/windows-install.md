@@ -24,8 +24,8 @@ To update an existing suite, close Respyra and both Mini apps, download the newe
 suite installer and run it under the same Windows account. Setup recognizes
 the existing installation and reuses its program folder; it handles replacement
 of the installed applications without a separate manual uninstall. Recordings,
-the chosen recording folder and device preferences are kept. Starting with
-suite **0.3.11**, each suite installation resets stream-output selections to
+the chosen recording folder and device preferences are kept. Each suite
+installation resets stream-output selections to
 the documented study defaults, including on upgrade or reinstallation. The old
 Mini preferences are backed up using the installer version, for example
 `preferences.json.before-respyra-2.3.12`,
@@ -78,7 +78,7 @@ calibration/cleanup, and discovers additional streams during the run. **XDF reco
 shows the file, subscribed sources and saved/failed status. PsychoPy owns participant screens. The local panel
 and optional QR-linked phone retain the established controls and monitoring.
 
-In **0.3.11**, **Troubleshooting mode** is checked by default in the Experiment
+**Troubleshooting mode** is checked by default in the Experiment
 hub. Uncheck it to disable detailed reports; that choice is remembered on restart
 and survives a suite upgrade. A failed experiment opens a separate **Error report**
 window with the original traceback, source identity, latest trial/phase, runtime
@@ -91,7 +91,7 @@ It can contain technical source names and recording paths, so review it before
 sharing. Normal Stop/Close does not create an error report. Engine exits without
 a Python traceback include the exit status and available engine log tail instead.
 
-Starting with suite **0.3.12** (Mini **0.6.9**), Vernier defaults to two outlets:
+In suite **2.3.12** (Mini **0.6.9**), Vernier defaults to two outlets:
 raw device data, including Force in N, and connection-event markers. The other
 six outputs remain optional. Polar defaults to ten selected outputs plus its
 connection-status outlet. Suite installation resets these output selections
