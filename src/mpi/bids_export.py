@@ -184,7 +184,9 @@ def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], partici
             "condition": {"Description": "Study condition, when applicable"},
             "phase": {"Description": "Study phase, when applicable"},
             "screen": {"Description": "Study screen, when applicable"},
-            **(_clock_metadata(reference, origin) if reference else {}),
+            **({"ClockReference": reference,
+                "TimeOrigin": {key: value for key, value in _clock_metadata(reference, origin).items()
+                               if key != "ClockReference"}} if reference else {}),
             **({"lsl_time_s": {"Description": "Clock-synchronized XDF event time", "Units": "s"},
                 "utc_time": {"Description": "Estimated ISO 8601 UTC event time"},
                 "berlin_time": {"Description": "Estimated ISO 8601 Europe/Berlin event time, with DST offset"},

@@ -62,6 +62,8 @@ New BIDS signal tables retain `timestamp` and every `channelN`, then append
 `ClockReference`, `TimeOriginLSL`, `TimeOriginUTC` and `TimeOriginBerlin`.
 Events tables include ISO UTC/Berlin times. The MNE reader imports only the
 recorded signal channels; timestamp columns do not become physiological channels.
+The events sidecar groups its origin values inside a `TimeOrigin` object, as
+required by the BIDS events JSON schema.
 Older XDFs without a reference keep their existing BIDS layout.
 
 ## Accuracy

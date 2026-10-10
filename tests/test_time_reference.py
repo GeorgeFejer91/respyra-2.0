@@ -125,6 +125,9 @@ def test_bids_absolute_times_share_the_synchronized_marker_clock(monkeypatch, tm
     with next(directory.glob("*events.tsv")).open() as handle:
         event = next(csv.DictReader(handle, delimiter="\t"))
     assert event["utc_time"] == timing.timestamp_fields(shifted, 110.02)["utc_time"]
+    event_metadata = json.loads(next(directory.glob('*events.json')).read_text())
+    assert event_metadata['TimeOrigin']['TimeOriginLSL'] == 110
+    assert 'TimeOriginLSL' not in event_metadata
     table = next(directory.glob("*acq-lsl01*_beh.tsv"))
     with table.open() as handle:
         row = next(csv.DictReader(handle, delimiter="\t"))
