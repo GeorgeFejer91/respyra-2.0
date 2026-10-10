@@ -21,6 +21,7 @@ from mpi.event_markers import MarkerOutlet
 from mpi.lsl_force import open_force_source
 from mpi.lsl_viewer import LSLViewer
 from mpi.recording import NativeRecording, inspect_xdf
+from mpi.time_reference import TimeReference, TIME_COLUMNS, timestamp_fields
 
 identity = os.environ.get("RESPYRA_TEST_SOURCE_ID") or "polar-stream-vernier-raw-check-" + uuid4().hex
 outlet = None
@@ -36,6 +37,9 @@ if not os.environ.get("RESPYRA_TEST_SOURCE_ID"):
             ch.append_child_value(key, value)
     outlet = StreamOutlet(raw)
 markers = MarkerOutlet()
+markers.clock_reference = TimeReference()
+if '--offline-time' not in sys.argv:
+    markers.clock_reference.start()
 viewer = LSLViewer(markers.health_snapshot()["source_id"])
 stop = threading.Event()
 late = None
@@ -186,6 +190,20 @@ try:
         assert len(ended) == len(CONFIG.trial.build_conditions('001')) == 48
         assert any(event['event'] == 'run.completed' for event in events)
         assert not any(event['event'] in {'run.failed', 'run.aborted'} for event in events)
+        reference = next(event['clock_reference'] for event in events if event['event'] == 'recording.started')
+        if '--offline-time' in sys.argv:
+            assert reference['source'] == 'system'
+        import csv
+        samples_csv = next(path for path in output.glob('*.csv') if not path.name.endswith('-self-assessment.csv'))
+        with samples_csv.open(encoding='utf-8', newline='') as handle:
+            sample_rows = list(csv.DictReader(handle))
+        assert {row['phase'] for row in sample_rows} == {'range_cal', 'baseline', 'countdown', 'tracking'}
+        for row in sample_rows:
+            fields = timestamp_fields(reference, float(row['lsl_time_s']))
+            assert {key: row[key] for key in TIME_COLUMNS} == fields
+        with next(output.glob('*-self-assessment.csv')).open(encoding='utf-8', newline='') as handle:
+            answers = list(csv.DictReader(handle))
+        assert len(answers) == 48 and all(row['utc_time'] and row['berlin_time'] for row in answers)
         if native_keys:
             accepted = [event for event in events if event['event']=='input.key' and event['accepted']]
             for screen in ['instructions', 'calibration_ready', 'calibration_result',

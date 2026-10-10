@@ -83,11 +83,26 @@ class Polar(LSLPolarSource):
 
 
 def test_participant_parity_counterbalances_block_order():
+    from collections import Counter
+    feedback_order = ["normal", "shallow", "deep", "normal", "deep", "shallow",
+                      "shallow", "deep", "normal", "deep", "shallow", "normal"]
     for value, first_feedback in [('0', False), ('1', True), ('2', False), ('P003', True), ('100', False)]:
         conditions = build_conditions(value)
         assert len(conditions) == 48
         assert [condition.feedback for condition in conditions[::12]] == [first_feedback, not first_feedback, first_feedback, not first_feedback]
         assert conditions[0].name == ('normal' if first_feedback else 'normal_no_feedback')
+        expected = []
+        for group, name in enumerate(feedback_order):
+            feedback = first_feedback if group // 3 % 2 == 0 else not first_feedback
+            expected.extend([name if feedback else name + '_no_feedback'] * 4)
+        assert [condition.name for condition in conditions] == expected
+        assert set(Counter(condition.name for condition in conditions).values()) == {8}
+        for condition in conditions:
+            assert [(segment.freq_hz, segment.n_cycles) for segment in condition.segments] == [(0.1, 4)]
+            assert condition.feedback_gain == ({'normal': 1, 'deep': .5, 'shallow': 1.5}[condition.name]
+                                               if condition.feedback else 1)
+    assert (CONFIG.timing.range_cal_duration_sec, CONFIG.timing.baseline_duration_sec,
+            CONFIG.timing.countdown_duration_sec, CONFIG.timing.tracking_duration_sec) == (15, 10, 3, 40)
     with pytest.raises(ValueError, match='participant number'):
         build_conditions('101')
 
@@ -96,6 +111,8 @@ def test_participant_parity_counterbalances_block_order():
     "complete", "polar_complete", "ready_escape", "tracking_error", "no_force",
 ])
 def test_short_study_emits_complete_timeline(monkeypatch, scenario, tmp_path):
+    from mpi.time_reference import TimeReference, TIME_COLUMNS
+    monkeypatch.setattr(TimeReference, "start", lambda self: None)
     from psychopy import core, event
     from respyra.core import display, runner
     script_path = Path(__file__).resolve().parents[1] / "scripts" / "run_experiment.py"
@@ -235,9 +252,13 @@ def test_short_study_emits_complete_timeline(monkeypatch, scenario, tmp_path):
     expected_columns = ([{"force_n": "signal_g", "target_force": "target_signal_g",
                           "error": "error_g", "compensated_error": "compensated_error_g"}.get(name, name)
                          for name in cfg.data_columns] if scenario == "polar_complete" else list(cfg.data_columns))
+    expected_columns.extend(TIME_COLUMNS)
     assert list(rows[0]) == expected_columns if rows else samples.read_text().splitlines()[0].split(',') == expected_columns
     if scenario in {"complete", "polar_complete"}:
         assert {row["phase"] for row in rows} >= {"range_cal", "baseline", "countdown", "tracking"}
         with ratings.open(newline="", encoding="utf-8") as f:
             answers = list(csv.DictReader(f))
-        assert answers == [{"trial_num":"1","condition":"normal","self_condition":"n","confidence":"1","self_accuracy":"1"}]
+        assert [{key: value for key, value in row.items() if key not in TIME_COLUMNS} for row in answers] == [
+            {"trial_num":"1","condition":"normal","self_condition":"n","confidence":"1","self_accuracy":"1"}]
+        assert all(row["time_reference"] == "system" and row["utc_time"] and row["berlin_time"]
+                   and row["lsl_time_s"] for row in rows + answers)

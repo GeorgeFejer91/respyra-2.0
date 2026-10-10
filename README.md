@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/00-Respyra-Suite_2.3.12_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
+**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/00-Respyra-Suite_2.3.13_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.13) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
 
 Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -15,7 +15,7 @@ Respyra 2.0 is developed by George Fejer. The project site includes a [default r
 
 The pinned `mini-streams` submodule provides [Vernier Stream Mini and Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream). `pnpm package:suite` builds both individual Mini installers, the separate Respyra installer, and a suite installer with all three applications and a common launcher. Clone with `git clone --recurse-submodules` to build the suite.
 
-The **v2.3.12 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12) are on this repository's GitHub Release. Fresh Polar preferences select ECG, three-axis accelerometer, native heart rate/RR, Chest Motion, Chest Motion DT and Flowborne phase, with required readiness flags; other Polar metrics remain optional. Vernier defaults to raw device data (including Force) and connection events; its other six outputs remain optional. Respyra has one main feedback-input selector and records every visible LSL stream by default, with a separately calibrated comparison outlet for each other live compatible input. Closing a study recording automatically produces its six-panel summary from the verified XDF. The Data folder path is visible and editable. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
+The **v2.3.13 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.13) are on this repository's GitHub Release. Fresh Polar preferences select ECG, three-axis accelerometer, native heart rate/RR, Chest Motion, Chest Motion DT and Flowborne phase, with required readiness flags; other Polar metrics remain optional. Vernier defaults to raw device data (including Force) and connection events; its other six outputs remain optional. Respyra has one main feedback-input selector and records every visible LSL stream by default, with a separately calibrated comparison outlet for each other live compatible input. Closing a study recording automatically produces its six-panel summary from the verified XDF. The Data folder path is visible and editable. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
 
 The importable Python package keeps its original name, `mpi`.
 
@@ -32,6 +32,11 @@ for build/download checks, writable CSV location and qualification limits.
 The attributed original [Respyra logo](assets/branding/README.md) is included.
 
 ## Setup
+
+The [experiment audit](docs/experiment-audit.md) compares this study with the
+original import. Suite 2.3.13 adds
+[UTC/Berlin timestamp fields](docs/timestamps.md), using an optional free HTTPS
+reference and automatic offline computer-clock fallback.
 
 Use Python 3.10, [`uv`](https://docs.astral.sh/uv/), Node/pnpm, Rust/Cargo,
 and the Tauri Windows prerequisites (MSVC build tools and WebView2). From the

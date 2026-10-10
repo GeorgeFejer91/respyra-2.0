@@ -31,15 +31,15 @@ const screenshots = path.resolve('.for-ai-local');
     await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
     assert.notEqual(await page.locator('html').getAttribute('data-pretext-fit'), 'unavailable');
     assert.equal(await page.getByRole('link', { name:'Download Respyra Suite for Windows' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/00-Respyra-Suite_2.3.12_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/00-Respyra-Suite_2.3.13_x64-setup.exe');
     assert.equal(await page.getByRole('link', { name:'Respyra 2.0 only' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/Respyra-2.0_2.3.12_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/Respyra-2.0_2.3.13_x64-setup.exe');
     for (const [name, file] of [
       ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.9_x64-setup.exe'],
       ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.9_x64-setup.exe'],
     ]) {
       assert.equal(await page.getByRole('link', { name }).getAttribute('href'),
-        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/' + file);
+        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/' + file);
     }
     for (const name of ['Download Vernier Stream Mini separately', 'Download Polar Stream Mini separately', 'Stream and data-flow wiki', 'Read the original preprint']) {
       assert(await page.getByRole('link', { name }).isVisible(), name);
@@ -72,7 +72,7 @@ const screenshots = path.resolve('.for-ai-local');
     const definitions = await page.locator('[data-variable-id] p').allTextContents();
     assert(definitions.every(text => text.length > 80), 'Every default variable needs a substantive definition');
     await page.goto(base + 'about.html');
-    assert(await page.getByText(/current Windows release is v2.3.12/).isVisible());
+    assert(await page.getByText(/current Windows release is v2.3.13/).isVisible());
     assert.equal(await page.getByRole('link', {name:'George Fejer · Google Scholar'}).getAttribute('href'), 'https://scholar.google.com/citations?hl=en&user=GPARoloAAAAJ');
     assert.equal(await page.getByRole('link', {name:'George Fejer · ORCID'}).getAttribute('href'), 'https://orcid.org/0000-0002-4904-5504');
     assert(await page.getByText(/Micah Allen and the Embodied Computation Group created/).isVisible());

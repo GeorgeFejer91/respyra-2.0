@@ -317,7 +317,7 @@ def test_catalog_has_pairs_and_logger_has_no_output():
         if name.startswith("ui.") and name.endswith(".shown"):
             assert name[:-5] + "dismissed" in events
     required = {field for event in events.values() for field in event["fields"]}
-    assert set(CATALOG["event_field_definitions"]) - required == {"ui_origin", "ui_client_seq"}
+    assert set(CATALOG["event_field_definitions"]) - required == {"ui_origin", "ui_client_seq", "clock_reference"}
     logger = NullSampleLogger()
     logger.log_row(force_n=10)
     logger.flush()

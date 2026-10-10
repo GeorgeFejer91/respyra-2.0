@@ -71,9 +71,18 @@ Source/provenance is in `native/recorder/README.md`.
   Completion checks XDF bounds, headers, sample-chunk counts and matching footers
   for all streams, plus nonempty exact required streams. Promote `.xdf.partial`
   only on success. Preserve failures; never report an outlet/subscriber as disk evidence.
-- XDF and original-schema CSV files use the remembered recording folder, defaulting
+- XDF and CSV files retaining original columns use the remembered recording folder, defaulting
   to `data/` inside the selected Respyra installation folder; they never enter
   Git/Pages. Settings stores the folder under `%LOCALAPPDATA%/Respyra/`.
+  `mpi.time_reference` probes TimeAPI.io in a setup worker and freezes without
+  waiting at `recording.started`, which stores its LSL/UTC mapping. Missing,
+  invalid, slow or pending HTTPS falls back to the initial system-clock anchor;
+  late responses cannot change a run. CSVs append accepted LSL sample and
+  estimated UTC/Berlin times with per-file JSON provenance; assessment row times
+  mean log-write time. BIDS appends numeric LSL/Unix/Berlin-offset columns,
+  UTC/Berlin event times and the same mapping corrected to PyXDF's clock domain.
+  MNE excludes timing columns from signals. Legacy XDFs keep their old layout.
+  Clock accuracy/drift is not certified; see `docs/timestamps.md`.
   The Experiment hub's Data folder segment shows the current path, opens it,
   and accepts either a browsed or pasted existing writable absolute path during
   setup. Choosing a folder does not move earlier files. After XDF

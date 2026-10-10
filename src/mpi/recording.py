@@ -250,7 +250,9 @@ class NativeRecording:
                                  subject=f"{subject_number:03d}" if subject_number is not None else None,
                                  session=values["session"], task="respyra",
                                  variables=[row.copy() for row in values.get("variables", [])],
-                                 policy="visible_and_late_except_excluded", excluded_uids=sorted(excluded))
+                                 policy="visible_and_late_except_excluded", excluded_uids=sorted(excluded),
+                                 **({"clock_reference": markers.clock_reference.freeze()}
+                                    if getattr(markers, "clock_reference", None) is not None else {}))
                     self.wait_for_data(self.required[1], cancel_check=cancel_check)
                     return
                 if time.monotonic() >= deadline:

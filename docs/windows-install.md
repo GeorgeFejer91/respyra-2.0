@@ -2,16 +2,16 @@
 
 See the [default recorded-variable reference](https://georgefejer91.github.io/respyra-2.0/variables.html) for signal sources, units and interpretation, and the [study procedure](https://georgefejer91.github.io/respyra-2.0/study.html) for calibration and outputs.
 
-**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/00-Respyra-Suite_2.3.12_x64-setup.exe) for Windows 10/11 x64. Its filename is
-`00-Respyra-Suite_2.3.12_x64-setup.exe`; the `00-` prefix places it first in the
-[v2.3.12 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.12).
+**Recommended:** [Download the Respyra Suite installer](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/00-Respyra-Suite_2.3.13_x64-setup.exe) for Windows 10/11 x64. Its filename is
+`00-Respyra-Suite_2.3.13_x64-setup.exe`; the `00-` prefix places it first in the
+[v2.3.13 Release downloads](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.13).
 It installs Respyra 2.0, Polar Stream Mini, and Vernier Stream Mini, and adds four
 Start menu and desktop shortcuts: one for each program and **Launch Respyra Suite**.
 The latter starts the two sensor publishers and Respyra together.
 
-Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/Respyra-2.0_2.3.12_x64-setup.exe),
-[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/Polar-Stream-Mini_0.6.9_x64-setup.exe),
-and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.12/Vernier-Stream-Mini_0.6.9_x64-setup.exe).
+Separate installers are also on the same release: [Respyra 2.0](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/Respyra-2.0_2.3.13_x64-setup.exe),
+[Polar Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/Polar-Stream-Mini_0.6.9_x64-setup.exe),
+and [Vernier Stream Mini](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/Vernier-Stream-Mini_0.6.9_x64-setup.exe).
 The [project wiki](https://github.com/GeorgeFejer91/respyra-2.0/wiki) diagrams
 the three-app data flow and explains each Mini's streams.
 The installer lets you choose a destination folder, creates
@@ -28,7 +28,7 @@ the chosen recording folder and device preferences are kept. Each suite
 installation resets stream-output selections to
 the documented study defaults, including on upgrade or reinstallation. The old
 Mini preferences are backed up using the installer version, for example
-`preferences.json.before-respyra-2.3.12`,
+`preferences.json.before-respyra-2.3.13`,
 beside the original file in each Mini's Windows application-data folder.
 Running the same installer again also supports reinstallation. This is a full
 installer update, so it downloads the complete package rather than a file-difference patch.
@@ -91,7 +91,7 @@ It can contain technical source names and recording paths, so review it before
 sharing. Normal Stop/Close does not create an error report. Engine exits without
 a Python traceback include the exit status and available engine log tail instead.
 
-In suite **2.3.12** (Mini **0.6.9**), Vernier defaults to two outlets:
+In suite **2.3.13** (Mini **0.6.9**), Vernier defaults to two outlets:
 raw device data, including Force in N, and connection-event markers. The other
 six outputs remain optional. Polar defaults to ten selected outputs plus its
 connection-status outlet. Suite installation resets these output selections

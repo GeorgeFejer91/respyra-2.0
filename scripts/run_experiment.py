@@ -214,6 +214,11 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
     """
     if markers is None:
         markers = MarkerOutlet()
+    from mpi.time_reference import TIME_COLUMNS, TimeReference, TimedCSVLogger
+    clock_reference = getattr(markers, "clock_reference", None)
+    if clock_reference is None:
+        clock_reference = markers.clock_reference = TimeReference()
+        clock_reference.start()  # Optional background probe while setup is open.
     belt = None
     win = None
     state = None
@@ -271,16 +276,19 @@ def run_experiment(cfg: ExperimentConfig | None = None, bridge=None, markers=Non
 
         from pathlib import Path
         from respyra.core.data_logger import DataLogger, create_session_file
-        # Keep the original CSV schemas alongside every XDF recording.
+        # Keep original columns/values, adding explicit sample and wall times.
         for value in (participant, session):
             if not value or any(c in value for c in '<>:"/\\|?*') or any(ord(c) < 32 for c in value):
                 raise ValueError("CSV participant/session IDs cannot contain filename characters")
         filepath = create_session_file(participant, session, str(Path(cfg.output_dir).resolve()))
         if Path(filepath).exists() or Path(filepath + "-self-assessment.csv").exists():
             raise FileExistsError("A CSV already exists for this session timestamp; retry in a second")
-        logger = DataLogger(filepath, columns=cfg.data_columns)
+        logger = DataLogger(filepath, columns=[*cfg.data_columns, *TIME_COLUMNS])
+        logger = TimedCSVLogger(logger, clock_reference, sample_rows=True)
+        hooks.enter_context(logger.observe_samples(belt))
         self_assessment_logger = DataLogger(filepath + "-self-assessment.csv",
-            columns=["trial_num", "condition", "self_condition", "confidence", "self_accuracy"])
+            columns=["trial_num", "condition", "self_condition", "confidence", "self_accuracy", *TIME_COLUMNS])
+        self_assessment_logger = TimedCSVLogger(self_assessment_logger, clock_reference)
 
         if bridge is not None:
             bridge.check_cancel()

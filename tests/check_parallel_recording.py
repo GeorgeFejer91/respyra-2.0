@@ -24,6 +24,7 @@ from mpi.event_markers import MarkerOutlet  # noqa: E402
 from mpi.lsl_force import open_force_source  # noqa: E402
 from mpi.parallel_inputs import ParallelInputs  # noqa: E402
 from mpi.recording import NativeRecording, inspect_xdf  # noqa: E402
+from mpi.time_reference import TimeReference  # noqa: E402
 
 base = "Parallel" + uuid4().hex[:8]
 force_id = "device-force-" + base
@@ -92,6 +93,8 @@ source = recorder = None
 try:
     source = open_force_source(resolve_byprop("source_id", force_id, timeout=5)[0])
     markers = MarkerOutlet()
+    markers.clock_reference = TimeReference()
+    markers.clock_reference.start()
     source.start_derived(markers.run_id)
     source.comparisons = ParallelInputs.discover(source, markers)
     assert len(source.comparisons.sources) == 2, [s.source_id for s in source.comparisons.sources]

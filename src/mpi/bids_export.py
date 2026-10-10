@@ -9,9 +9,11 @@ import math
 import os
 import re
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import pyxdf
+from mpi.time_reference import BERLIN, iso_time, recorded_reference, timestamp_fields
 
 
 def _stream(streams, identity):
@@ -42,7 +44,7 @@ def _regular_frequency(stream):
     return nominal
 
 
-def _write_signal(stream, destination, origin, label):
+def _write_signal(stream, destination, origin, label, reference=None):
     stamps = stream["time_stamps"]
     series = stream["time_series"]
     if not len(stamps):
@@ -76,6 +78,14 @@ def _write_signal(stream, destination, origin, label):
         metadata[name] = {"Description": f"{label}: LSL channel {index + 1}", "LongName": title}
         if unit:
             metadata[name]["Units"] = unit
+    if reference is not None:
+        columns.extend(["lsl_time_s", "utc_unix_s", "berlin_utc_offset_s"])
+        metadata.update(_clock_metadata(reference, origin))
+        metadata.update({
+            "lsl_time_s": {"Description": "Clock-synchronized XDF sample time without dejitter", "Units": "s"},
+            "utc_unix_s": {"Description": "Estimated seconds since 1970-01-01T00:00:00Z", "Units": "s"},
+            "berlin_utc_offset_s": {"Description": "Europe/Berlin offset from UTC at this sample, including DST", "Units": "s"},
+        })
     if frequency is not None:
         metadata.update({"SamplingFrequency": frequency, "StartTime": round(float(stamps[0]) - origin, 9),
                          "Columns": columns, "PhysioType": "generic"})
@@ -101,8 +111,20 @@ def _write_signal(stream, destination, origin, label):
                         values.append(format(number, precision) if math.isfinite(number) else "n/a")
                 else:
                     values.append(str(value))
-            writer.writerow([format(float(stamp) - origin, ".9f"), *values])
+            times = []
+            if reference is not None:
+                unix_time = reference["unix_anchor_s"] + (float(stamp) - reference["lsl_anchor_s"])
+                offset = datetime.fromtimestamp(unix_time, BERLIN).utcoffset().total_seconds()
+                times = [format(float(stamp), ".17g"), format(unix_time, ".17g"), int(offset)]
+            writer.writerow([format(float(stamp) - origin, ".9f"), *values, *times])
     path.with_suffix("").with_suffix(".json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+
+
+def _clock_metadata(reference, origin):
+    origin_unix = reference["unix_anchor_s"] + (origin - reference["lsl_anchor_s"])
+    return {"ClockReference": reference, "TimeOriginLSL": origin,
+            "TimeOriginUTC": iso_time(origin_unix),
+            "TimeOriginBerlin": iso_time(origin_unix, BERLIN)}
 
 
 def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], participant: str, session: str):
@@ -114,6 +136,7 @@ def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], partici
         raise ValueError("Participant or session cannot be used in a BIDS filename")
     streams, _ = pyxdf.load_xdf(str(xdf_path), dejitter_timestamps=False)
     raw, markers, calibrated = (_stream(streams, identity) for identity in required[:3])
+    reference = recorded_reference(markers)
     origin = float(raw["time_stamps"][0])
     root = output / "bids"
     root.mkdir(parents=True, exist_ok=True)
@@ -139,7 +162,8 @@ def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], partici
         events = staging / f"{stem}_events.tsv"
         with events.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
-            writer.writerow(["onset", "duration", "trial_type", "trial", "condition", "phase", "screen"])
+            time_columns = ["lsl_time_s", "utc_time", "berlin_time", "time_reference"] if reference else []
+            writer.writerow(["onset", "duration", "trial_type", "trial", "condition", "phase", "screen", *time_columns])
             rows = []
             for stamp, sample in zip(markers["time_stamps"], markers["time_series"]):
                 event = json.loads(sample[0])
@@ -147,9 +171,11 @@ def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], partici
                     raise ValueError("XDF contains an invalid Respyra marker")
                 rows.append((float(stamp) - origin, event))
             for onset, event in sorted(rows, key=lambda row: row[0]):
+                times = timestamp_fields(reference, onset + origin) if reference else {}
                 writer.writerow([format(onset, ".9f"), 0, event["event"],
                                  *[(str(event.get(key)) if event.get(key) is not None else "n/a")
-                                   for key in ("trial", "condition", "phase", "screen")]])
+                                   for key in ("trial", "condition", "phase", "screen")],
+                                 *[times[key] for key in time_columns]])
         events.with_suffix(".json").write_text(json.dumps({
             "onset": {"Description": "Seconds relative to the first selected raw breathing sample"},
             "duration": {"Description": "Point event duration in seconds"},
@@ -158,17 +184,22 @@ def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], partici
             "condition": {"Description": "Study condition, when applicable"},
             "phase": {"Description": "Study phase, when applicable"},
             "screen": {"Description": "Study screen, when applicable"},
+            **(_clock_metadata(reference, origin) if reference else {}),
+            **({"lsl_time_s": {"Description": "Clock-synchronized XDF event time", "Units": "s"},
+                "utc_time": {"Description": "Estimated ISO 8601 UTC event time"},
+                "berlin_time": {"Description": "Estimated ISO 8601 Europe/Berlin event time, with DST offset"},
+                "time_reference": {"Description": "timeapi.io or offline system reference"}} if reference else {}),
         }, indent=2) + "\n", encoding="utf-8")
         for label, stream in (("raw", raw), ("calibrated", calibrated)):
             filename = (f"{stem}_recording-{label}" if _regular_frequency(stream) is not None
                         else f"{prefix}_acq-{label}_run-{run:02d}")
-            _write_signal(stream, staging / filename, origin, label)
+            _write_signal(stream, staging / filename, origin, label, reference)
         others = [stream for stream in streams if stream is not raw and stream is not markers and stream is not calibrated]
         for index, stream in enumerate(others, start=1):
             label = f"lsl{index:02d}"
             filename = (f"{stem}_recording-{label}" if _regular_frequency(stream) is not None
                         else f"{prefix}_acq-{label}_run-{run:02d}")
-            _write_signal(stream, staging / filename, origin, label)
+            _write_signal(stream, staging / filename, origin, label, reference)
         directory.mkdir(parents=True, exist_ok=True)
         promoted = []
         try:

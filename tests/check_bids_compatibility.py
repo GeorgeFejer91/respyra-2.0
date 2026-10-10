@@ -16,6 +16,7 @@ import mne_bids
 import pyxdf
 
 from mpi.bids_mne import read_bids_signal
+from mpi.time_reference import recorded_reference, timestamp_fields
 
 
 def read_table(path, metadata):
@@ -38,6 +39,7 @@ def check(xdf, events, resample_hz):
     marker_streams = [stream for stream in streams
                       if (stream["info"]["source_id"][0] or "").startswith("respyra-events-")]
     assert len(marker_streams) == 1
+    reference = recorded_reference(marker_streams[0])
     tables = []
     for path in events.parent.iterdir():
         if not (path.name.endswith("_physio.tsv.gz") or path.name.endswith("_beh.tsv")):
@@ -70,7 +72,8 @@ def check(xdf, events, resample_hz):
         assert metadata["LSLSource"]["ChannelFormat"] == info["channel_format"][0]
         columns, rows = read_table(path, metadata)
         assert columns[0] == "timestamp" and len(rows) == len(source["time_stamps"])
-        assert len(columns) - 1 == int(info["channel_count"][0])
+        signal_columns = [column for column in columns[1:] if column.startswith("channel")]
+        assert len(signal_columns) == int(info["channel_count"][0])
         if path.name.endswith("_physio.tsv.gz"):
             nominal = float(info["nominal_srate"][0])
             assert nominal > 0 and metadata["SamplingFrequency"] == nominal
@@ -79,7 +82,7 @@ def check(xdf, events, resample_hz):
         else:
             assert "SamplingFrequency" not in metadata
         channels = (((info.get("desc") or [{}])[0] or {}).get("channels") or [{}])[0].get("channel", [])
-        for index, column in enumerate(columns[1:]):
+        for index, column in enumerate(signal_columns):
             channel = channels[index] if index < len(channels) else {}
             assert metadata[column]["LongName"] == (channel.get("label") or [column])[0]
             assert metadata[column].get("Units", "") == (channel.get("unit") or [""])[0]
@@ -95,10 +98,15 @@ def check(xdf, events, resample_hz):
                     assert not math.isfinite(float(value))
                 else:
                     assert math.isclose(float(cell), float(value), rel_tol=1e-8, abs_tol=1e-8)
+            if reference:
+                assert metadata['ClockReference'] == reference
+                assert float(row[columns.index('lsl_time_s')]) == float(stamp)
+                unix_time = reference['unix_anchor_s'] + (float(stamp) - reference['lsl_anchor_s'])
+                assert float(row[columns.index('utc_unix_s')]) == unix_time
         samples += len(rows)
         if kind != "string":
             result, stamps = read_bids_signal(path, sfreq=None if path.suffix == ".gz" else resample_hz)
-            assert result.n_times > 0 and len(result.ch_names) == len(columns) - 1
+            assert result.n_times > 0 and len(result.ch_names) == len(signal_columns)
             assert len(stamps) == len(rows)
             opened += 1
     expected = {str(stream["info"]["stream_id"]) for stream in streams
@@ -112,6 +120,9 @@ def check(xdf, events, resample_hz):
     for row, (stamp, sample) in zip(event_rows, markers):
         assert abs(float(row["onset"]) - (float(stamp) - origin)) <= 1e-9
         assert row["trial_type"] == json.loads(sample[0])["event"]
+        if reference:
+            for key, value in timestamp_fields(reference, stamp).items():
+                assert row[key] == value
     pnpm = shutil.which("pnpm.cmd") or shutil.which("pnpm")
     assert pnpm, "pnpm is required for the BIDS validator gate"
     validator = subprocess.run([pnpm, "dlx", "bids-validator@1.15.0", str(root), "--json"],

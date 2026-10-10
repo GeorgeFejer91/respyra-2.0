@@ -52,7 +52,9 @@ def read_bids_signal(path: str | Path, *, sfreq: float | None = None):
     stamps = np.array([float(row[0]) for row in rows], dtype=float)
     if not np.all(np.isfinite(stamps)) or np.any(np.diff(stamps) <= 0):
         raise ValueError("BIDS signal timestamps must be finite and increasing")
-    data = np.array([[float("nan") if cell == "n/a" else float(cell) for cell in row[1:]]
+    signal_columns = [column for column in columns[1:] if column.startswith("channel")]
+    indices = [columns.index(column) for column in signal_columns]
+    data = np.array([[float("nan") if row[index] == "n/a" else float(row[index]) for index in indices]
                      for row in rows], dtype=float).T
     if path.name.endswith("_beh.tsv") and len(stamps) > 1:
         grid = stamps[0] + np.arange(math.floor((stamps[-1] - stamps[0]) * rate) + 1) / rate
@@ -67,11 +69,11 @@ def read_bids_signal(path: str | Path, *, sfreq: float | None = None):
                 if 0 <= position < len(grid) and abs(grid[position] - stamp) < 1e-9:
                     sampled[index, position] = value
         data = sampled
-    names = [metadata.get(column, {}).get("LongName", column) for column in columns[1:]]
+    names = [metadata.get(column, {}).get("LongName", column) for column in signal_columns]
     if len(names) != len(set(names)):
-        names = columns[1:]
+        names = signal_columns
     info = mne.create_info(names, sfreq=rate, ch_types=["misc"] * len(names))
     info["description"] = json.dumps({"LSLSource": metadata["LSLSource"],
                                       "ChannelUnits": {column: metadata.get(column, {}).get("Units", "")
-                                                       for column in columns[1:]}})
+                                                       for column in signal_columns}})
     return mne.io.RawArray(data, info, verbose="ERROR"), stamps
