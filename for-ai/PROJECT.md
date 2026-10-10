@@ -119,10 +119,14 @@ feedback. See `RECORDING.md`.
 ## Signal boundary
 
 The suite starts with Mini acquisition defaults: Vernier publishes its raw
-`VernierRaw` Force outlet; Polar publishes direct ECG, ACC, heart rate and RR
+`VernierRaw` device outlet (including Force in N) and connection-event markers;
+its other six outputs start off. Polar publishes direct ECG, ACC, heart rate and RR
 plus Chest Motion, Chest Motion DT and Flowborne phase, with the three required
 quality/validity companions. All-in-one and other derived metrics start off.
-Saved Mini choices survive upgrade. Respyra offers one grouped selector for
+Starting with suite 0.3.11, installation resets Mini output choices to study
+defaults with a preferences backup; other settings and recordings are retained.
+Choices made afterward persist until the next suite installation.
+Respyra offers one grouped selector for
 the main visual-feedback input. `mpi.parallel_inputs` opens other live
 compatible inputs at Start and publishes a separately calibrated comparison
 outlet for each. Native XDF records all visible and later LSL streams by

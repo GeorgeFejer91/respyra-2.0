@@ -90,6 +90,12 @@ It can contain technical source names and recording paths, so review it before
 sharing. Normal Stop/Close does not create an error report. Engine exits without
 a Python traceback include the exit status and available engine log tail instead.
 
+Starting with suite **0.3.12** (Mini **0.6.9**), Vernier defaults to two outlets:
+raw device data, including Force in N, and connection-event markers. The other
+six outputs remain optional. Polar defaults to ten selected outputs plus its
+connection-status outlet. Suite installation resets these output selections
+with a backup, while preserving other settings and recordings.
+
 By default, Respyra records every visible and later LSL outlet, including Mini
 raw ECG, ACC, heart rate, RR, belt Force and breathing metrics when published.
 It also creates a separate calibrated comparison waveform for every other live

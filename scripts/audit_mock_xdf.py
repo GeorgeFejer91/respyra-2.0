@@ -68,22 +68,26 @@ def audit(path: Path) -> dict:
         assert np.max(np.abs(force_copy["time_stamps"] - times)) < 1e-6
         assert np.max(np.abs(force_copy["time_series"][:, 0] - values)) < 1e-5
 
-    producer = next(stream for stream in streams if stream["info"]["type"][0] == "Respiration"
-                    and stream["info"]["desc"][0].get("stream_role") == ["derived_breathing_waveform"])
-    settings = producer["info"]["desc"][0]["processing"][0]
-    assert settings["algorithm"] == ["polar-stream-vernier-force-respiration"]
-    assert settings["settings_schema"] == ["vernier-breathing-settings-v1"]
-    assert settings["window_seconds"] == ["30"]
-    assert settings["bounds_update_samples"] == ["5"]
-    assert settings["lower_quantile"] == ["0.05"] and settings["upper_quantile"] == ["0.95"]
-    assert len(producer["time_stamps"]) == len(times)
-    producer_sequence = sequence[0] + np.rint((producer["time_stamps"] - times[0]) / .05).astype(np.int64)
-    assert producer_sequence[0] >= 0 and np.all(np.diff(producer_sequence) == 1)
-    assert np.max(np.abs(producer["time_stamps"] - times[0] - (producer_sequence - sequence[0]) * .05)) < .02
+    producer = next((stream for stream in streams if stream["info"]["type"][0] == "Respiration"
+                     and stream["info"]["desc"][0].get("stream_role") == ["derived_breathing_waveform"]), None)
+    producer_sequence = []
+    producer_error = None
+    replay = np.empty(0)
+    if producer is not None:
+        settings = producer["info"]["desc"][0]["processing"][0]
+        assert settings["algorithm"] == ["polar-stream-vernier-force-respiration"]
+        assert settings["settings_schema"] == ["vernier-breathing-settings-v1"]
+        assert settings["window_seconds"] == ["30"]
+        assert settings["bounds_update_samples"] == ["5"]
+        assert settings["lower_quantile"] == ["0.05"] and settings["upper_quantile"] == ["0.95"]
+        assert len(producer["time_stamps"]) == len(times)
+        producer_sequence = sequence[0] + np.rint((producer["time_stamps"] - times[0]) / .05).astype(np.int64)
+        assert producer_sequence[0] >= 0 and np.all(np.diff(producer_sequence) == 1)
+        assert np.max(np.abs(producer["time_stamps"] - times[0] - (producer_sequence - sequence[0]) * .05)) < .02
 
-    replay = mock_breathing(int(producer_sequence[-1]))
-    producer_error = np.max(np.abs(producer["time_series"][:, 0] - replay[producer_sequence]))
-    assert producer_error < 2e-6
+        replay = mock_breathing(int(producer_sequence[-1]))
+        producer_error = np.max(np.abs(producer["time_series"][:, 0] - replay[producer_sequence]))
+        assert producer_error < 2e-6
     combined = next((stream for stream in streams if stream["info"]["type"][0] == "VernierMini"), None)
     combined_rows = []
     combined_error = None
@@ -181,7 +185,7 @@ def audit(path: Path) -> dict:
             "raw_samples": len(times), "raw_sequence_first": int(sequence[0]),
             "raw_sequence_last": int(sequence[-1]), "derived_samples": len(derived_times),
             "producer_breathing_samples": len(producer_sequence),
-            "producer_breathing_max_error": float(producer_error),
+            "producer_breathing_max_error": float(producer_error) if producer_error is not None else None,
             "combined_rows": len(combined_rows), "combined_breathing_max_error": float(combined_error) if combined_error is not None else None,
             "derived_precalibration_nan": int(np.isnan(derived_values).sum()),
             "derived_postcalibration_finite": int(finite.sum()), "marker_count": len(events),

@@ -1,6 +1,8 @@
 # Windows standalone packaging protocol
 
-Fresh suite preferences must retain the Mini defaults: Vernier raw Force and
+Fresh suite preferences must retain the Mini defaults: Vernier `rawVernier`
+(raw device data including Force in N) plus `signalStatus` connection events;
+the other six Vernier outlets start off. Polar defaults are
 Polar direct ECG, ACC, native heart rate/RR, Chest Motion, Chest Motion DT
 and Flowborne phase, with required PCA quality/validity and Phan validity.
 Polar All-in-one and other derived metrics start off. Respyra defaults all visible/later LSL streams and
