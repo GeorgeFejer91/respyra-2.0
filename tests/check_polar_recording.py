@@ -70,7 +70,7 @@ def run(metric, suffix, contract, flags):
         markers = MarkerOutlet()
         source.start_derived(markers.run_id)
         recorder = NativeRecording(root / ".for-ai-local/recorder/runtime", output)
-        recorder.start({"participant": "PolarCheck", "session": "001"}, source, markers)
+        recorder.start({"participant": "P901", "session": "001"}, source, markers)
         source.calibrate(0.0, 0.02, markers.run_id)
         markers.emit("calibration.completed", center_n=None, amplitude_n=None,
                      y_min_n=None, y_max_n=None, center_value=0.0,
