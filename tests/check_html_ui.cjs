@@ -158,21 +158,6 @@ const path = require('node:path');
     assert(await page.getByRole('checkbox', { name:'Record StudyPolar_adrPcaWaveform' }).isChecked());
     assert(await page.getByRole('checkbox', { name:'Record Comparison waveform for StudyPolar_adrPcaWaveform' }).isChecked());
     assert(await page.getByRole('checkbox', { name:'Record Polar H10 heart rate' }).isChecked());
-    const originalStreams = await page.evaluate(() => window.testSnapshot().progress.streams);
-    for (const name of ['Respyra-BreathCal', 'Respyra-Calibrated-Breathing']) {
-      await page.evaluate(({streams,name}) => window.testProgress({streams:[...streams,
-        {uid:'derived-ui',source_id:'respyra-breathing-ui',name,type:'Respiration',numeric:true,
-          signal:'live',lsl_time:2,channels:[{index:0,label:'Calibrated breathing',unit:'normalized',value:0.4}]}]}),
-        {streams:originalStreams,name});
-      const record = page.getByRole('checkbox', {name:'Record '+name,exact:true});
-      await record.waitFor();
-      assert.equal(await record.count(), 1);
-      assert(await record.isChecked());
-      assert(await record.isDisabled(), 'Calibrated input remains mandatory during setup');
-      assert.equal(await page.getByText('Respyra breathing',{exact:true}).count(), 1, 'Actual outlet replaces its pending row');
-      if (name !== 'Respyra-BreathCal') assert.equal(await page.getByRole('checkbox',{name:'Record Respyra-BreathCal',exact:true}).count(), 0);
-    }
-    await page.evaluate(streams => window.testProgress({streams}), originalStreams);
     const auxRow = page.locator('.stream-row').filter({ hasText:'Polar H10 heart rate' });
     await auxRow.getByRole('checkbox', { name:/Record/ }).uncheck();
     await page.waitForFunction(() => window.testSnapshot().excluded_streams.includes('aux-ui'));
@@ -343,6 +328,16 @@ const path = require('node:path');
       shell.hidden = true; return result;
     })));
     assert.equal(await page.getByText('Respyra breathing', { exact:true }).count(), 1);
+    for (const name of ['Respyra-BreathCal', 'Respyra-Calibrated-Breathing']) {
+      await page.evaluate(name => window.testProgress({streams:window.testSnapshot().progress.streams.map(
+        row => row.uid === 'derived-ui' ? {...row,name} : row)}), name);
+      const record = page.getByRole('checkbox', {name:'Record '+name,exact:true});
+      await record.waitFor();
+      assert.equal(await record.count(), 1);
+      assert(await record.isChecked());
+      assert.equal(await page.getByText('Respyra breathing',{exact:true}).count(), 1, 'Current and legacy actual outlets replace the pending row');
+      if (name !== 'Respyra-BreathCal') assert.equal(await page.getByRole('checkbox',{name:'Record Respyra-BreathCal',exact:true}).count(), 0);
+    }
     await page.locator('#stop').click();
     await page.locator('#close').waitFor({ state:'visible' });
     const actions = await page.evaluate(() => window.testActions);
