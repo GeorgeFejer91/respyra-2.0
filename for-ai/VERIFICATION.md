@@ -43,6 +43,10 @@ build helpers, browser checks, native integration, study and installer checks.
   for normal Mini checks. The guard must reject running Mini apps, restore bytes
   or original absence in `finally`, and verify restoration. Mock mode does not
   persist its output selections.
+  Persist original bytes/absence, registry and shortcut snapshots in ignored
+  recovery evidence before mutations. Allow enough time for restoration; an
+  outer timeout must not terminate a live restoration guard. After interrupted
+  verification, recover and verify saved state before running another check.
 - Minimized/offscreen windows, a second monitor, Windows virtual desktops and
   hiding after launch are not proof of isolation; they may flash or take focus.
   Do not move/minimize existing user windows, change display settings, bring a

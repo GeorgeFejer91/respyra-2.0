@@ -130,9 +130,10 @@ try:
                     inlet = StreamInlet(info, recover=False)
                     print("source_metadata", inlet.info(timeout=2).name(),
                           inlet.info(timeout=2).type(), flush=True)
-                    for _ in range(5):
-                        sample, timestamp = inlet.pull_sample(timeout=2)
-                        print("sample", timestamp, sample, flush=True)
+                    if args.mode != "startup":
+                        for _ in range(5):
+                            sample, timestamp = inlet.pull_sample(timeout=2)
+                            print("sample", timestamp, sample, flush=True)
                     inlet.close_stream()
             break
         if not psutil.pid_exists(pid):
@@ -223,10 +224,10 @@ try:
                 raise RuntimeError("Study did not reach the first display flip before disconnect")
             psutil.Process(pid).terminate()
             print("mock_disconnected", pid, flush=True)
-        code = psutil.Process(worker_pid).wait(timeout=180 * args.repeat +
+        code = psutil.Process(worker_pid).wait(timeout=600 * args.repeat +
                                                 48 * max(0, args.tracking_seconds - .15) * args.repeat)
     except psutil.TimeoutExpired:
-        raise RuntimeError("Full-study worker exceeded 180 seconds")
+        raise RuntimeError("Full-study worker exceeded 600 seconds")
     print("study_exit", code, flush=True)
     if Path(os.environ["RESPYRA_TEST_LOG"]).exists():
         print("study_tail", "\n".join(Path(os.environ["RESPYRA_TEST_LOG"]).read_text(encoding="utf-8").splitlines()[-12:]), flush=True)

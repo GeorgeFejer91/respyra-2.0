@@ -5,6 +5,76 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Concise default stream names and suite 2.3.14 — 2026-10-11
+
+- Artifact source/tag `v2.3.14`: `e6c6e800ab8a28f1bb6dc14e740517fbc50c91b6`; pinned Mini 0.6.10
+  `c11617715b252371b1ed734ffc5d4d76fde6b882`. Final Mini installers were compiled at clean
+  `7e8cba02a592364b4d49c9307cc72ff742cc34ea`; the checked diff to the pin
+  contains only `docs/index.html` and `scripts/validate_docs.mjs`, so application
+  build inputs are identical. No locked dependency or signal formula changed.
+- VERIFIED 58 Python cases across two focused runs, 123 Mini Rust cases,
+  Rustfmt/locked all-target Clippy, and three live LSL output modes. Factory
+  names use H10/Vernier; literal historical source IDs and custom prefixes were
+  checked. Root Polar PCA/DT and three-input parallel XDF checks passed.
+  New-name PyXDF/MNE imports covered all eight signals and BIDS had zero errors
+  (NO_AUTHORS only). New-name MNELAB was NOT RUN; its unchanged 2.3.13 scope is reused.
+- VERIFIED headless real hub: eight layouts, 22 actions, zero page errors;
+  current/legacy calibrated rows deduplicate by stable source ID and remain
+  required for recording. Mini reference checked 61 metric cards and responsive
+  layouts; fresh Vernier two-output wording and operator-adjustable raw selection
+  have explicit assertions. Changed hub/default-reference screenshots were inspected.
+- VERIFIED exact installer: upgrade from 2.3.13 and same-version reinstall,
+  18,453 runtime files, both Mini resources and eight shortcuts; output resets
+  and versioned backups retained other settings/data. Guards restored the real
+  user installation, registration, shortcuts and preferences. Embedded runtime
+  imports/app-local CRT/native XDF, three-app launcher, Polar ten selected metrics
+  plus Link, Vernier fresh/saved/mock two defaults, installed Polar input,
+  hosted-phone lifecycle and uninstall retention passed.
+- VERIFIED exact installed embedded Python and Mini completed the shortened
+  48-trial study. Independent XDF readback, original CSV, BIDS, participant list,
+  automatic six-panel PNG and installed XDF-only plotting passed. Test phase
+  durations are shortened; the application's scientific durations are unchanged.
+- VERIFIED seven asset checksums and source ZIP parity: 199 Respyra
+  and 243 Mini product files; pinned dependency-source archives.
+  Standalone/Suite native executable SHA-256:
+  `ef7b6d693713237c78c029f0dbe3d437fcfd1abada2f601c05eda57bdb834e12`.
+  Suite (118,857,274 bytes): `4eff903270c38a0b62d3d44ee7568c664304ff71b4557e1d48b8349428f05c36`.
+  Source ZIP (704,667,938 bytes): `fba4d4fcc445038fb75684fa56422fe024e83850040c04b62a8fe5335dd36cc4`.
+- VERIFIED public prerelease has eight assets; draft/public sizes/digests match
+  local files and anonymous Suite HEAD returned 200. Root Pages
+  `7ea11b899ccb1fb66eaa0552b90bd0cc791d1607` reported built; all 67 live files,
+  six wiki pages at `25dc36a16378c2c05c45dae7365b99156ed57296` and six main guides
+  matched. Mini Pages `7dabbe2b961683dbb56f70837de193e8b93b3680` reported built
+  and five files matched the pin; its documentation-only main commit preserves
+  the prior main application's unrelated history.
+- REUSED unchanged 2.3.13 optional asynchronous TimeAPI/UTC/Berlin/offline
+  behavior and scoped 2.3.12/13 native troubleshooting popup/Copy/supervision.
+  Absolute timestamps remain estimates. Checks used captured CLI/headless Chrome
+  or private Win32 desktops without switching/focusing the user's desktop.
+- Evidence: ignored `names-*.log/json/png`, `release-2.3.14-*.log/json`, install
+  and uninstall evidence, the recorded full-study XDF and `release-2.3.14-xdf-only/`.
+  Preliminary participant/live-probe/font-test fixture failures were corrected.
+  The general Python launcher could not see the existing local installation;
+  verification used the project Python launcher. An outer timeout interrupted
+  reinstall restoration. Registration/shortcuts were recovered from that run's
+  snapshots; Polar preferences and Vernier absence used the prior known-folder
+  backup evidence. Reinstall alone was retried with persisted original state
+  and a longer allowance; its full comparison/restoration passed. The Polar
+  startup fixture subscribed after its invalid period; early subscription passed
+  every original reference/timing assertion. Full-study qualification used a
+  600-second worker allowance, with unchanged phase durations and completion
+  assertions. The final preview assertion was moved into the calibrated outlet's
+  active lifetime; recorded/XDF assertions remain and passed after it closed.
+  These test-only fixes were committed after product qualification.
+  Source packaging exceeded its initial 900-second allowance. Only source
+  packaging was retried with a 3,600-second allowance; passed installed-runtime
+  gates were retained and final archive/source/checksum parity was checked.
+  Initial logs were retained and no assertion was removed. Obsolete preview is NOT RUN.
+  Unsigned Windows x64 preview; physical BLE/sensors, physiology, clean-machine
+  acquisition and full-duration scientific timing remain unqualified. The Mini
+  battery no-fit baseline remains. This does not diagnose the historical lab crash
+  or certify the entire original toolbox. Control-plane/test-only edits leave artifact/tag/site product inputs fixed.
+
 ## Optional Berlin time, study audit and suite 2.3.13 — 2026-10-11
 
 - Artifact source/tag `v2.3.13`: `6f37aa48c808aaa5b61ef1c7b7eb37aefd9c2834`;
@@ -350,12 +420,12 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Behavior / owner | Focused check | Recorded evidence state | Invalidate / rerun when |
 | --- | --- | --- | --- |
 | Signal stitching and rise/fall waveforms: `src/mpi/signal.py` | `tests/test_signal.py` | unrecorded | Signal functions, input assumptions or numeric dependencies change. |
-| Raw Force metadata/units, finite samples, duplicate identities and saved selection: `src/mpi/lsl_force.py` | `tests/test_lsl_force.py` | verified for current inputs; see hub/recorder receipt | Force validation, source identity/storage, freshness or producer metadata contract changes. |
-| Polar PCA/signed Phan contracts, validity, direction, calibration and native XDF: `src/mpi/lsl_polar.py`, `polar_calibration.py` | `tests/test_lsl_polar.py`, `tests/check_polar_lsl.py`, `tests/check_polar_recording.py` | verified for unchanged synthetic signal/recording inputs; UI has newer selector receipt | Producer metadata, companion timing, source selection, study calibration, recorder or derived formula changes. |
-| Optional comparison loss and unavailable calibration: `src/mpi/parallel_inputs.py` | `tests/test_parallel_inputs.py`, `tests/check_parallel_recording.py` | verified for loss, too few samples, flat Force/Polar ranges and continued selected-input XDF; see comparison-failure receipt | Comparison lifecycle, source identity access, calibration skip handling or consuming inlet/recorder contract changes. |
+| Raw Force metadata/units, finite samples, duplicate identities and saved selection: `src/mpi/lsl_force.py` | `tests/test_lsl_force.py` | verified for current renamed producer contract; see suite 2.3.14 receipt | Force validation, source identity/storage, freshness or producer metadata contract changes. |
+| Polar PCA/signed Phan contracts, validity, direction, calibration and native XDF: `src/mpi/lsl_polar.py`, `polar_calibration.py` | `tests/test_lsl_polar.py`, `tests/check_polar_lsl.py`, `tests/check_polar_recording.py` | verified for concise-name synthetic PCA/DT recording and exact installed input; see suite 2.3.14 receipt | Producer metadata, companion timing, source selection, study calibration, recorder or derived formula changes. |
+| Optional comparison loss and unavailable calibration: `src/mpi/parallel_inputs.py` | `tests/test_parallel_inputs.py`, `tests/check_parallel_recording.py` | verified for concise-name parallel inputs, optional loss and closed XDF; see suite 2.3.14 receipt | Comparison lifecycle, source identity access, calibration skip handling or consuming inlet/recorder contract changes. |
 | Automatic discovery, exact reconnect, loss/retry, saved fields and cancelled selection: `src/mpi/lsl_setup.py` (`SourceSetup`) | `tests/test_lsl_setup.py` | verified for participant parity and recorded-number projection; see 2026-10-01 receipt | Setup state transitions, source selection, remembered identity or Start prerequisites change. |
 | Optional clock, UTC/Berlin CSV and offline Start: `src/mpi/time_reference.py`, study/recording owners | `tests/test_time_reference.py`, `tests/test_experiment_flow.py`, private online/offline full-study checks | verified for frozen reference, optional network and per-sample/assessment timing; see suite 2.3.13 receipt | Clock probes/mapping, timezone data, CSV schemas, study capture or recording-start contract changes. |
-| Clock-aware XDF/BIDS/MNE: `bids_export.py`, `bids_mne.py`, `scripts/xdf_to_csv.py` | Exporter/reader/converter unit tests and recorded-XDF BIDS/MNE compatibility scripts | verified for corrected reference anchors, preserved channels and zero BIDS errors; see suite 2.3.13 receipt | Export schemas, synchronized clock mapping, channel selection, PyXDF/MNE/BIDS inputs change. |
+| Clock-aware XDF/BIDS/MNE: `bids_export.py`, `bids_mne.py`, `scripts/xdf_to_csv.py` | Exporter/reader/converter unit tests and recorded-XDF BIDS/MNE compatibility scripts | new-name BIDS/MNE verified; unchanged clock mapping reused from 2.3.13; see suite 2.3.14 receipt | Export schemas, synchronized clock mapping, channel selection, PyXDF/MNE/BIDS inputs change. |
 | Marker payload/catalog, renaming, key timing and flip alignment: `src/mpi/event_markers/` | `tests/test_event_markers.py` | verified for the optional clock-reference field and existing catalog; see suite 2.3.13 and earlier marker receipts | Event owner/catalog, timing, phase wrappers or payload consumers change. |
 | Short study completion/abort/error, no-data calibration and original CSV modes: `scripts/run_experiment.py`, `src/mpi/validation_study_jenny.py` | `tests/test_experiment_flow.py` | verified for timestamp CSV logging and unchanged study progression; see suite 2.3.13 receipt | Study flow, calibrated input, marker contract, logging schema or installed `respyra` APIs change. |
 | Closed actions, ordered bounded pipe, public snapshots and Stop receipts: `src/mpi/desktop_bridge.py` | `tests/test_desktop_bridge.py` | verified for current inputs; see hub/recorder receipt | Action validation, sequence/framing/queue limits, projection or cleanup receipts change. |
@@ -363,21 +433,21 @@ relevant callers, consumers and shared inputs when recording a reusable pass.
 | Optional Windows hooks and shutdown: `src/mpi/input_capture.py` | `tests/test_input_capture.py` | unrecorded | Hook registration, filtering, queues, drain/cleanup or marker handoff changes. |
 | Recorder readiness, missing/failed/hung child, participant list, partial files and XDF completeness: `src/mpi/recording.py` | `tests/test_recording.py` | verified for current clock/finalization inputs; see suite 2.3.13 and earlier history-reader receipts | `NativeRecording`, `inspect_xdf`, child/readiness protocol or XDF validation changes. |
 | Native XDF persistence, calibration/cleanup markers, late/source-less streams and Unicode paths: `native/recorder/`, recording owner | `tests/check_recording.py` | verified for current inputs; see hub/recorder receipt | Recorder source/binary/DLLs, supervision or serialized data/marker contract changes. |
-| XDF/legacy CSV session summaries: `src/mpi/session_summary.py`, `scripts/plot_session.py` | `tests/test_plot_session.py`, private installed `tests/check_control_center.py --full-study` | verified for current timestamp CSV and installed automatic/XDF-only plots; see suite 2.3.13 and scoped 2.3.12 receipts | Source/channel metadata, phase/target/baseline markers, gain/polarity/units, plot layout, finalization or plotting dependencies change. |
+| XDF/legacy CSV session summaries: `src/mpi/session_summary.py`, `scripts/plot_session.py` | `tests/test_plot_session.py`, private installed `tests/check_control_center.py --full-study` | verified for exact installed 2.3.14 automatic/XDF-only plots; legacy timestamp CSV scope reused from 2.3.13 | Source/channel metadata, phase/target/baseline markers, gain/polarity/units, plot layout, finalization or plotting dependencies change. |
 | Offline XDF-to-CSV export and tutorial: `scripts/xdf_to_csv.py`, `notebooks/xdf_to_csv_tutorial.ipynb` | `tests/test_xdf_to_csv.py`, headless notebook execution | converter verified for optional clock-reference exports; unchanged notebook retains earlier offline-export evidence; see suite 2.3.13 receipt | Converter/notebook logic, CSV columns or PyXDF version changes. |
-| All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | verified for current inputs; see hub/recorder receipt | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
-| Complete 48-trial study: study/calibration/recording owners | Private-desktop installed `tests/check_control_center.py --full-study` through `tests/run_private_mock.py` | verified for online/offline source and installed synthetic Vernier/even participant; see suite 2.3.13 receipt | Study, inlet buffering, calibration, marker or recorder inputs change. |
+| All-channel preview, late markers and calibrated XDF values: `src/mpi/lsl_viewer.py`, `LSLForceSource`, recording owner | `tests/check_control_center.py` | verified for active calibrated preview, late markers and independently decoded closed XDF; see suite 2.3.14 receipt | Viewer subscriptions, calibrated output/formula, time bases or recording data change. |
+| Complete 48-trial study: study/calibration/recording owners | Private-desktop installed `tests/check_control_center.py --full-study` through `tests/run_private_mock.py` | verified for exact installed 2.3.14 synthetic Vernier; online/offline source scope reused from 2.3.13 | Study, inlet buffering, calibration, marker or recorder inputs change. |
 | Browser action ordering, timestamps and overload: `web/action-queue.js` | `tests/action-queue.test.mjs` | unrecorded | Queue sequencing, clock capture, dispatch or failure behavior changes. |
 | Finite trace geometry and sample-loss gaps: `web/lsl-monitor.js` | `tests/lsl-monitor.test.mjs` | reusable; see recorder preview receipt | Trace computation, sample/time assumptions or monitor rendering changes. |
 | Invitation/command/state contracts and mutual BRSP proof: `web/remote-profile.js`, shared BRSP assets | `tests/remote-viewer.test.mjs` | verified for recorded-number setup projection; see 2026-10-01 receipt | Invitation, scopes, validation, proof/state or reliable mutation contracts change. |
-| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for participant dropdown and red recorded choice; see 2026-10-01 receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
+| Opening panel, dialogs, actions, fit/recovery and enlarged text: `web/index.html`, `experiment-hub.css`, `experiment-hub.js` | `pnpm check:ui` plus inspect changed area | verified for current/legacy source-ID projection, eight layouts/22 actions and font recovery; see suite 2.3.14 receipt | Relevant DOM/CSS, rendering/status projection, fonts or Pretext inputs change; no downstream rerun for isolated presentation. |
 | Companion/Recorder embedding, responsive layouts and remote mutations: `companion/`, remote-host/profile modules | `pnpm check:remote` (Recorder companion configured); live VDO separately | verified for current prompt controls in the opaque Recorder iframe and published viewer; see typed prompt controls receipt | Shared phone behavior/assets, embedding or remote transport changes; truly desktop-only selectors/paths leave phone evidence valid. |
-| Project landing, installer/Mini links, logo and legacy QR routing: `companion/index.html`, `remote.html`, `site.*`, publication inputs | `node tests/check_project_site.cjs`, published asset parity and private-desktop published phone check | verified for 2.3.13 live site/wiki/source parity; see suite 2.3.13 receipt | Site/route/assets, source attribution, linked release assets or published endpoint changes. |
+| Project landing, installer/Mini links, logo and legacy QR routing: `companion/index.html`, `remote.html`, `site.*`, publication inputs | `node tests/check_project_site.cjs`, published asset parity and private-desktop published phone check | verified for 2.3.14 live site/wiki/guides and Mini reference parity; see suite 2.3.14 receipt | Site/route/assets, source attribution, linked release assets or published endpoint changes. |
 | Rust engine paths, closed actions/framing and normal/failed/hung shutdown: `src-tauri/src/main.rs` | Cargo fmt/test/clippy commands in `VERIFICATION.md` | current fmt, 13 tests and clippy passed; see typed prompt controls receipt | Rust supervisor, command/capability/configuration or build/runtime inputs change. |
 | Native remote ownership, approval, scopes, sequence, expiry, deduplication and bounded projection: `src-tauri/src/viewer.rs` | Cargo tests (viewer module), fmt/clippy | verified for current inputs; see Mini pipeline receipt | Grants/approval, owner/peer/epoch/lease, dispatch, revisions or data visibility change. |
-| Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/run_private_mock.py` after a matching native build | verified for installed Mini mock, early Stop and complete phone controlled study; see Mini pipeline receipt | Native/pipe/lifecycle/remote contracts or consuming runtime change. |
-| Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | installed hosted-phone lifecycle and current published asset parity verified; see suite 2.3.13 receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
-| Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | exact public 2.3.13 Suite/standalone parity and installation gates verified; see suite 2.3.13 receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
+| Actual WebView/Python/LSL selection/reconnect, Start/Stop/Close, QR and remote round trip | `tests/run_private_mock.py` after a matching native build | verified for exact installed 2.3.14 Mini input/defaults and hosted phone; see suite 2.3.14 receipt | Native/pipe/lifecycle/remote contracts or consuming runtime change. |
+| Current public phone page pairing and published byte parity | Published mode in `tests/run_private_mock.py`; deployment/parity readback | exact installed hosted-phone lifecycle verified; 2.3.14 published files match; see suite 2.3.14 receipt | Deployed companion inputs or endpoint state changes, or current deployment is claimed; local intercepted assets cannot qualify it. |
+| Standalone/installed Windows runtime and exact NSIS artifact | `PACKAGING.md` build/import/install/native/hash gates | exact public 2.3.14 Suite/standalone parity and install gates verified; see suite 2.3.14 receipt | New installer/runtime/artifact bytes or release promotion; ordinary UI source iteration does not require packaging. |
 | Windows shortcut icon transparency and circle tint: `assets/icon.svg`, packaging generator, PNG/ICO | Direct SVG icon generation, alpha/color assertions and 48 px preview | reusable; see shortcut icon receipt | SVG, icon generation, generated PNG/ICO or icon tooling changes. A new installer has its own packaging gate. |
 | Physical belt/phone, scientific timing and other operating systems | Separate named hardware/platform qualification | NOT RUN / unverified in `PROJECT.md` | Those surfaces are requested or claimed; synthetic/browser evidence does not qualify them. |
 | Agent routing, policy links and control-plane structure | `for-ai/scripts/check-context.ps1`, diff and local-link review | Record the policy change's final checks in handoff | Router/rule/linked document changes; this never triggers product suites by itself. |

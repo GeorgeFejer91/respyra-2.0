@@ -62,6 +62,7 @@ try:
     recorder.start(dict(participant="2", session="001"), source, markers)
     assert source.calibrated_id in recorder.snapshot()["data_sources"]
     assert source.calibrated_sample is None
+    live_calibrated_seen = set()
     if '--full-study' in sys.argv:
         # Exercise every configured trial and actual PsychoPy phase with fast timings
         # and simulated responses. This is deliberately separate from a participant run.
@@ -126,9 +127,21 @@ try:
             event.waitKeys = lambda **kwargs: ['1' if markers.screen in {'accuracy', 'confidence'}
                                              else 'n' if markers.screen == 'breathing_judgment' else 'space']
         core.quit = lambda: None
+        previous_observer = markers.observer
+        def observe_active_calibrated(payload):
+            if not source.stopped:
+                for row in viewer.snapshot():
+                    if row['source_id'] == source.calibrated_id and row['signal'] == 'live':
+                        value = row['channels'][0]['value']
+                        if value is not None and math.isfinite(value):
+                            live_calibrated_seen.add(source.calibrated_id)
+            if previous_observer:
+                previous_observer(payload)
+        markers.observer = observe_active_calibrated
         study.run_experiment(cfg, bridge, markers)
         assert markers.state is not None
         assert source.stopped
+        assert source.calibrated_id in live_calibrated_seen, "Calibrated preview never became live during the study"
         calibration_center, calibration_amplitude = source.center, source.amplitude
     else:
         source.get_all()
@@ -149,7 +162,9 @@ try:
         if not source.stopped:
             source.get_all()
         rows = {row["source_id"]: row for row in viewer.snapshot()}
-        if (all(identity in rows for identity in [identity, source.calibrated_id, "late-control-markers"])
+        if (all(key in rows for key in ([identity, "late-control-markers"] if source.stopped
+                                        else [identity, source.calibrated_id, "late-control-markers"]))
+            and source.calibrated_id in recorder.snapshot()["data_sources"]
             and (source.stopped or all(rows[key]["signal"] == "live" for key in [identity, source.calibrated_id]))
             and rows['late-control-markers']['channels'][0]['value'] == 'late.marker'
             and "late-control-markers" in recorder.snapshot()["data_sources"]):

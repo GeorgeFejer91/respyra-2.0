@@ -1,11 +1,13 @@
 # Windows standalone packaging protocol
 
-Fresh suite preferences must retain the Mini defaults: Vernier `rawVernier`
-(raw device data including Force in N) plus `signalStatus` connection events;
-the other six Vernier outlets start off. Polar defaults are
-Polar direct ECG, ACC, native heart rate/RR, Chest Motion, Chest Motion DT
-and Flowborne phase, with required PCA quality/validity and Phan validity.
-Polar All-in-one and other derived metrics start off. Respyra defaults all visible/later LSL streams and
+Fresh suite preferences must retain the Mini defaults: published `Vernier_Raw`
+(all device channels, including Force in N, and acquisition diagnostics) plus
+`Vernier_Link` connection events; the other six Vernier outlets start off.
+Polar defaults publish `H10_ECG`, `H10_ACC`, `H10_HR`, `H10_RR`, `H10_ChestPCA`,
+`H10_ChestDT`, `H10_BreathPhase`, `H10_PCAQuality`, `H10_PCAValid`, `H10_DTValid`
+and `H10_Link`. Polar All-in-one and other derived metrics start off.
+Use [`../docs/stream-names.md`](../docs/stream-names.md) for naming/identity migration;
+internal metric IDs, units and scientific processing are retained. Respyra defaults all visible/later LSL streams and
 parallel comparison waveforms to recording. Starting with suite 0.3.11, installation,
 upgrade and reinstallation explicitly reset Mini output selections to these defaults.
 Back up the old preferences and remove only outputMode/polarOutputs/vernierOutputs;
@@ -139,6 +141,10 @@ launch them on the user's active desktop; missing isolation leaves those gates
    `dist/runtime-manifest.json` under the same GitHub Release as the exact
    installer, with `dist/SHA256SUMS.txt`. Upload assets, never put them in Git
    history or the static phone Pages branch. Source publication follows WORKFLOW.
+   Before draft tag-parity checks, create and push the version tag at the exact
+   qualified source commit. A GitHub draft's target commit does not create that
+   tag until publication. Verify the remote tag SHA and every uploaded asset's
+   size/digest before promoting the draft, then verify public download access.
 
 ## Distribution gate
 
