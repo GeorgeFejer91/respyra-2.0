@@ -261,3 +261,5 @@ calibration; unselected Polar polarity stays native +1 pending analysis.
 
 Git and runnable checks are the authority for branch, revision, and behavior.
 Do not turn this section into a second status ledger.
+
+Default recording and naming policy: D-0021 in DECISIONS.md, implemented in Suite 2.3.14 / Mini 0.6.10. The essential publisher selection is 11 Polar plus 2 Vernier outlets; Respyra adds selected calibration, usable comparisons and events (17 total with all three inputs). Exact names and abbreviations are documented in docs/stream-names.md and the live variables reference. Recorder discovery remains all-published; input hooks default Off.

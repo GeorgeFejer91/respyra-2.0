@@ -1,6 +1,6 @@
 # Native recording contract
 
-Default candidate capture: Start advertises one `Respyra-Comparison-*`
+Default candidate capture: Start advertises one `Respyra-Compare-*`
 normalized LSL outlet for every other live compatible Vernier Force or Polar
 PCA/signed-Phan input whose raw Record box remains checked. The native recorder
 requires each such raw and derived outlet to supply samples before the study
@@ -30,7 +30,7 @@ Source/provenance is in `native/recorder/README.md`.
   `mpi.recording.NativeRecording` owns the native child's private pipes, output,
   readiness, stop and file completion. HTML/phone Start uses the existing action
   path; neither may select an executable, arbitrary path or shell command.
-- Start prepares `Respyra-Calibrated-Breathing` before launching the recorder and
+- Start prepares `Respyra-BreathCal` before launching the recorder and
   requires the exact selected raw input, marker and derived subscriptions plus actual samples
   from each before participant setup acceptance or PsychoPy creation. Failure
   rejects Start. Before calibration, the derived channel emits NaN with the raw

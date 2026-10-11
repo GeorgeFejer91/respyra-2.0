@@ -76,7 +76,7 @@ from mpi.recording import NativeRecording
 identity = "package-proof-" + uuid4().hex
 derived_id = "respyra-breathing-" + uuid4().hex
 raw = StreamOutlet(StreamInfo("Packaged recorder proof", "VernierRaw", 1, 50, cf_float32, identity))
-derived = StreamOutlet(StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 50, cf_float32, derived_id))
+derived = StreamOutlet(StreamInfo("Respyra-BreathCal", "Respiration", 1, 50, cf_float32, derived_id))
 stop = threading.Event()
 def push():
     while not stop.wait(.02):

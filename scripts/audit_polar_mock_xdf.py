@@ -193,7 +193,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
         assert counts["run.completed"] == 0
         failed = next(item for item in events if item["event"] == "run.failed")
         assert failed["error_type"] == "LSLForceError" and "lost" in failed["message"]
-        derived = by_name["Respyra-Calibrated-Breathing"]
+        derived = by_name["Respyra-BreathCal"]
         assert np.all(np.isnan(derived["time_series"][:, 0]))
         inspect_xdf(path, [markers["info"]["source_id"][0], derived["info"]["source_id"][0]])
         return {"result": "passed", "xdf": str(path), "outcome": "source_lost",
@@ -203,7 +203,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     if expect_abort:
         assert counts["run.aborted"] == counts["recording.finalizing"] == 1
         assert counts["run.completed"] == counts["run.failed"] == 0
-        derived = by_name["Respyra-Calibrated-Breathing"]
+        derived = by_name["Respyra-BreathCal"]
         assert np.all(np.isnan(derived["time_series"][:, 0]))
         saved = [json.loads(line) for line in (path.parent / "participant-list.jsonl").read_text(encoding="utf-8").splitlines()]
         assert sum(item["xdf_file"] == path.name for item in saved) == 1
@@ -265,7 +265,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     assert math.isfinite(center) and math.isfinite(amplitude) and amplitude > 0
     direction = next(item for item in earlier if item["event"] == "source.polarity.set")
     assert calibration["input_polarity"] == (-1 if direction["enabled"] else 1)
-    derived = by_name["Respyra-Calibrated-Breathing"]
+    derived = by_name["Respyra-BreathCal"]
     derived_desc = derived["info"]["desc"][0]
     assert derived_desc["input_contract"] == [contract]
     assert derived_desc["raw_source_id"] == selected["info"]["source_id"]

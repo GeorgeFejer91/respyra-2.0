@@ -67,7 +67,7 @@ channel labels, units, nominal rate and processing metadata. Every table keeps
 recorded sample timestamps relative to the first selected raw breathing sample.
 The XDF is the complete original recording, including empty outlets.
 
-Suite 2.3.13 adds optional UTC/Berlin wall times and
+Suite 2.3.14 adds optional UTC/Berlin wall times and
 clock provenance to CSV and BIDS. See [timestamps.md](timestamps.md) for fields,
 offline fallback, DST handling and the accuracy boundary, and
 [experiment-audit.md](experiment-audit.md) for the original-study parity audit.

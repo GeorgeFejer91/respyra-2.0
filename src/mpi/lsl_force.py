@@ -175,7 +175,7 @@ class LSLForceSource:
             return
         self.calibrated_id = identity
         self.calibrated_run_id = run_id
-        name = f"Respyra-Comparison-{suffix}" if comparison else "Respyra-Calibrated-Breathing"
+        name = f"Respyra-Compare-{suffix}" if comparison else "Respyra-BreathCal"
         info = StreamInfo(name, "Respiration", 1, 0, cf_float32, identity)
         desc = info.desc()
         for key, value in {"application": "Respyra 2.0", "raw_source_id": self.source_id,

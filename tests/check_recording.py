@@ -33,7 +33,7 @@ def main():
     identity = "recording-proof-force-" + uuid4().hex
     derived_id = "respyra-breathing-" + uuid4().hex
     raw = StreamOutlet(StreamInfo("Recorder proof Force", "VernierRaw", 1, 50, cf_float32, identity))
-    derived = StreamOutlet(StreamInfo("Respyra-Calibrated-Breathing", "Respiration", 1, 50, cf_float32, derived_id))
+    derived = StreamOutlet(StreamInfo("Respyra-BreathCal", "Respiration", 1, 50, cf_float32, derived_id))
     omitted_id = "recording-proof-omitted-" + uuid4().hex
     omitted = StreamOutlet(StreamInfo("Unchecked stream", "Auxiliary", 1, 50, cf_float32, omitted_id))
     markers = MarkerOutlet()

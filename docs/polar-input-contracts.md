@@ -9,8 +9,8 @@ or lowers its waveform. Start remains disabled until that direction is set.
 
 | Contract | Polar metric ID and outlet suffix | Required validity outlets |
 | --- | --- | --- |
-| `respyra-polar-pca/1` | Chest Motion: `adr_pca_waveform`, `_ChestMotion` | `_PCA-Valid` |
-| `respyra-polar-phan-signed/1` | Chest Motion DT: `adr_axis_mean_difference`, `_ChestMotion-DT` | `_PCA-Valid`, `_Phan-Valid` |
+| `respyra-polar-pca/1` | Chest Motion: `adr_pca_waveform`, `_ChestPCA` | `_PCAValid` |
+| `respyra-polar-phan-signed/1` | Chest Motion DT: `adr_axis_mean_difference`, `_ChestDT` | `_PCAValid`, `_DTValid` |
 
 These are default display names, never discovery rules. Respyra identifies a
 compatible waveform from one floating-point (`Float32` or `Double64`) channel
@@ -38,7 +38,7 @@ arbitrary motion remain incompatible without the required units and semantics.
 Polar waveform `g` values are acceleration-derived projections, **not chest
 displacement or belt force**. Respyra applies the selected direction, performs
 its range calibration in those native units, and creates the same named
-`Respyra-Calibrated-Breathing` one-channel normalized outlet used by the study.
+`Respyra-BreathCal` one-channel normalized outlet used by the study.
 For Polar its formula is `(polarity × waveform_g − center_g) / amplitude_g`;
 samples are NaN before calibration and retain source LSL timestamps. The study
 uses its existing phases and target generator, with targets and feedback errors
@@ -54,3 +54,5 @@ These are software input contracts, not a claim that either Polar waveform
 measures the same quantity as the Vernier belt or gives equivalent study
 performance. Paired recordings and analysis are still needed for that claim.
 See [Polar Mini's waveform methods and output contracts](https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/main/docs/adr-waveforms.md).
+
+Factory stream names in Suite 2.3.14 are H10_ChestPCA and H10_ChestDT. Their historical source IDs and metadata contracts remain unchanged; discovery does not depend on display names. See [stream names](stream-names.md).

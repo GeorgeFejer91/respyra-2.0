@@ -1,6 +1,6 @@
 # Sample times and Berlin wall time
 
-Suite 2.3.13 adds a clock reference to each study.
+Suite 2.3.14 adds a clock reference to each study.
 Original phase-relative CSV fields and experiment timing remain unchanged.
 
 During setup, Respyra makes up to three small HTTPS requests to

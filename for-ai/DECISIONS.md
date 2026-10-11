@@ -370,7 +370,7 @@ decision and link both entries.
 ## D-0019 — Default to complete candidate capture with one feedback source
 
 - Date: 2026-10-04
-- Status: Accepted
+- Status: Superseded in part by D-0021 (2026-10-11); historical hardware target retained
 - Context: The experimenter wants useful Mini outputs preselected, one
   unambiguous feedback choice, and paired raw/transformed inputs for analysis.
 - Decision: Keep one selected input for live feedback. Record all visible and
@@ -401,3 +401,36 @@ decision and link both entries.
   survive a crash of the entire native host.
 - Supersedes: D-0019's requirement to preserve output choices during suite upgrades;
   its one-feedback/all-published-recording behavior remains unchanged.
+
+## D-0021 — Pin essential study outputs and concise scientific stream names
+
+- Date: 2026-10-11
+- Status: Accepted
+- Context: The user confirmed the essential recorded-variable selection and
+  requested shorter descriptive names in a new downloadable suite.
+- Decision: Fresh Polar selects ECG, three-axis ACC, HR, RR, the signed PCA and
+  detrended chest-motion candidates, estimated breath phase and their three
+  quality/validity companions; its connection marker is also published. Fresh
+  Vernier selects the complete raw device row and connection marker. Extra
+  scalar copies, All-in-one and other derived metrics stay off. Respyra records
+  all published and later outlets by default, adds the selected normalized
+  waveform, comparison copies for usable alternatives and study events. Optional
+  global keyboard/mouse capture stays off. Suite installation restores this
+  selection with preference backups; subsequent explicit choices persist.
+- Naming rule: Use the shortest unambiguous measure/construct name. Prefer
+  established abbreviations such as ECG, ACC, HR and RR; explain abbreviations,
+  units, channel contents and exact published names in the public variable
+  reference. Retain only the source prefix needed to distinguish producers.
+  Derived candidates must identify the actual transform; readiness/quality
+  flags must remain distinguishable from measurements. Do not imply validated
+  lung volume, airflow or clinical accuracy from an acceleration-derived name.
+  Keep long method/provenance details in LSL metadata and documentation.
+- Consequences: Suite 2.3.14 / Mini 0.6.10 shorten default display names while
+  retaining source IDs, metric IDs, units, formulas, sample timing and CSV
+  compatibility. Migrate only known factory prefixes; preserve custom names.
+  Verify exact installed defaults and recorder/analysis acceptance before release.
+  Live Pages must list shipped names, optional outputs and timestamp fields;
+  source inspection alone is not evidence of the downloaded installer or deployment.
+- Supersedes: D-0019's broad Mini selection target; retains its selected-only
+  feedback and default capture of all actually published streams. D-0020's
+  backed-up output reset and local diagnostics remain in force.

@@ -31,15 +31,15 @@ const screenshots = path.resolve('.for-ai-local');
     await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
     assert.notEqual(await page.locator('html').getAttribute('data-pretext-fit'), 'unavailable');
     assert.equal(await page.getByRole('link', { name:'Download Respyra Suite for Windows' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/00-Respyra-Suite_2.3.13_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.14/00-Respyra-Suite_2.3.14_x64-setup.exe');
     assert.equal(await page.getByRole('link', { name:'Respyra 2.0 only' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/Respyra-2.0_2.3.13_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.14/Respyra-2.0_2.3.14_x64-setup.exe');
     for (const [name, file] of [
-      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.9_x64-setup.exe'],
-      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.9_x64-setup.exe'],
+      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.10_x64-setup.exe'],
+      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.10_x64-setup.exe'],
     ]) {
       assert.equal(await page.getByRole('link', { name }).getAttribute('href'),
-        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.13/' + file);
+        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.14/' + file);
     }
     for (const name of ['Download Vernier Stream Mini separately', 'Download Polar Stream Mini separately', 'Stream and data-flow wiki', 'Read the original preprint']) {
       assert(await page.getByRole('link', { name }).isVisible(), name);
@@ -52,7 +52,7 @@ const screenshots = path.resolve('.for-ai-local');
     await page.goto(base + 'variables.html');
     assert.deepEqual(await page.locator('#polar [data-variable-id]').evaluateAll(rows => rows.map(row => row.dataset.variableId)),
       primaryIds);
-    for (const metric of defaults) assert((await page.locator(`[data-variable-id="${metric.id}"] code`).textContent()).includes('Polar-H10-Mini_' + metric.streamSuffix));
+    for (const metric of defaults) assert((await page.locator(`[data-variable-id="${metric.id}"] code`).textContent()).includes('H10_' + metric.streamSuffix));
     assert.deepEqual(await page.locator('#polar [data-support-id]').evaluateAll(rows => rows.map(row => row.dataset.supportId)),
       ['adr_pca_quality','adr_pca_valid','adr_axis_difference_valid','polar_signal_state']);
     assert.equal(await page.locator('#polar-support').getAttribute('open'), null);
@@ -63,7 +63,9 @@ const screenshots = path.resolve('.for-ai-local');
       ['force','respiration_rate','steps','step_rate','vernier_signal_state',...vernierDiagnostics]);
     assert.equal(await page.locator('#respyra [data-variable-id]').count(), 3);
     assert.equal(await page.locator('[data-variable-id] strong').count(), 22);
-    assert.equal(await page.locator('[data-csv-id] strong').count(), 13);
+    assert.equal(await page.locator('[data-csv-id] strong').count(), 17);
+    assert.deepEqual(await page.locator('[data-csv-id]').evaluateAll(rows => rows.slice(-4).map(row => row.dataset.csvId)), ['lsl_time_s','utc_time','berlin_time','time_reference']);
+    assert(await page.locator('#naming').isVisible());
     assert(await page.getByText(/can advertise 17 default outlets/).isVisible());
     assert.equal(await page.locator('#vernier-optional').getAttribute('open'), null);
     await page.locator('#vernier-optional summary').click();
@@ -72,7 +74,7 @@ const screenshots = path.resolve('.for-ai-local');
     const definitions = await page.locator('[data-variable-id] p').allTextContents();
     assert(definitions.every(text => text.length > 80), 'Every default variable needs a substantive definition');
     await page.goto(base + 'about.html');
-    assert(await page.getByText(/current Windows release is v2.3.13/).isVisible());
+    assert(await page.getByText(/current Windows release is v2.3.14/).isVisible());
     assert.equal(await page.getByRole('link', {name:'George Fejer · Google Scholar'}).getAttribute('href'), 'https://scholar.google.com/citations?hl=en&user=GPARoloAAAAJ');
     assert.equal(await page.getByRole('link', {name:'George Fejer · ORCID'}).getAttribute('href'), 'https://orcid.org/0000-0002-4904-5504');
     assert(await page.getByText(/Micah Allen and the Embodied Computation Group created/).isVisible());
