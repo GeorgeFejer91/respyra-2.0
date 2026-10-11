@@ -207,7 +207,7 @@ const path = require('node:path');
     }
     for (const [width, height, textSize] of [[320,480,16], [360,700,16], [820,760,32], [1440,900,32]]) {
       await page.setViewportSize({ width, height });
-      await page.evaluate(size => { document.documentElement.style.fontSize = `${size}px`; document.documentElement.style.letterSpacing = '.08em'; }, textSize);
+      await page.evaluate(size => { document.documentElement.style.fontSize = `${size}px`; document.documentElement.style.letterSpacing = '.08em'; window.dispatchEvent(new Event('resize')); }, textSize);
       await waitForViewportFit();
       const fit = await page.evaluate(() => ({ width:document.documentElement.scrollWidth, height:document.documentElement.scrollHeight,
         shell:!!document.querySelector('#shell').getClientRects().length,
@@ -217,12 +217,12 @@ const path = require('node:path');
       assert(fit.width <= width + 1 && fit.height <= height + 1 && (fit.shell || fit.notice), JSON.stringify({ width, height, fit }));
       if (fit.shell) assert(!fit.clipped.length, JSON.stringify({ width, height, fit }));
     }
-    await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.documentElement.style.letterSpacing = ''; });
+    await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.documentElement.style.letterSpacing = ''; window.dispatchEvent(new Event('resize')); });
     await page.setViewportSize({ width:1200, height:760 });
     await page.waitForFunction(() => document.querySelector('#shell').getClientRects().length > 0);
     await page.locator('#marker-inventory-open').click();
     await page.setViewportSize({ width:320, height:480 });
-    await page.evaluate(() => { document.documentElement.style.fontSize = '32px'; document.documentElement.style.letterSpacing = '.08em'; });
+    await page.evaluate(() => { document.documentElement.style.fontSize = '32px'; document.documentElement.style.letterSpacing = '.08em'; window.dispatchEvent(new Event('resize')); });
     const dialogFit = await page.locator('#marker-inventory-dialog').evaluate(dialog => {
       const box = dialog.getBoundingClientRect();
       const clipped = [...dialog.querySelectorAll('[data-measure]')].filter(element =>
@@ -238,7 +238,7 @@ const path = require('node:path');
     await page.locator('#marker-inventory-list').evaluate(list => { list.scrollTop = list.scrollHeight; });
     assert(await page.locator('#marker-inventory-list li').last().isVisible());
     await page.locator('#marker-inventory-close').click();
-    await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.documentElement.style.letterSpacing = ''; });
+    await page.evaluate(() => { document.documentElement.style.fontSize = ''; document.documentElement.style.letterSpacing = ''; window.dispatchEvent(new Event('resize')); });
     await page.setViewportSize({ width:1200, height:760 });
     await page.waitForFunction(() => document.querySelector('#shell').getClientRects().length > 0);
     await page.locator('#feedback-source').selectOption('polar-ui');
@@ -284,7 +284,7 @@ const path = require('node:path');
     await page.locator('#prompt-retry').waitFor({state:'visible'});
     for (const [width,height,size] of [[820,760,16],[1440,900,16],[320,480,32]]) {
       await page.setViewportSize({width,height});
-      await page.evaluate(size => {document.documentElement.style.fontSize=size+'px';},size);
+      await page.evaluate(size => {document.documentElement.style.fontSize=size+'px'; window.dispatchEvent(new Event('resize'));},size);
       await waitForViewportFit();
       const fit=await page.evaluate(() => ({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,
         shown:!!document.getElementById('shell').getClientRects().length,notice:!!document.getElementById('no-fit').getClientRects().length,
@@ -294,7 +294,7 @@ const path = require('node:path');
       if(width>=820) assert(fit.shown,'Prompt controls must fit supported desktop sizes');
     }
     await page.setViewportSize({width:1200,height:760});
-    await page.evaluate(() => {document.documentElement.style.fontSize='16px';});
+    await page.evaluate(() => {document.documentElement.style.fontSize='16px'; window.dispatchEvent(new Event('resize'));});
     await waitForViewportFit();
     await page.locator('#prompt-retry').click();
     assert(await page.locator('#prompt-continue').isDisabled(), 'One accepted command disables its old prompt');
