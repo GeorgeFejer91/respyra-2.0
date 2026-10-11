@@ -7,6 +7,12 @@ from scripts.audit_polar_mock_xdf import _metric_source_id, _mock_acc, _mock_seq
 @pytest.mark.parametrize("suffix,identity_suffix", [
     ("ChestMotion", "PCA-Breathing"),
     ("ChestMotion-DT", "Phan-Breathing"),
+    ("ChestPCA", "PCA-Breathing"),
+    ("ChestDT", "Phan-Breathing"),
+    ("PCAQuality", "PCA-Quality"),
+    ("PCAValid", "PCA-Valid"),
+    ("DTValid", "Phan-Valid"),
+    ("ACC", "Accelerometer"),
     ("PCA-Breathing", "PCA-Breathing"),
     ("Phan-Breathing", "Phan-Breathing"),
     ("Accelerometer", "Accelerometer"),

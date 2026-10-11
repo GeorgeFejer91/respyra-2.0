@@ -24,6 +24,11 @@ METRICS = {
 CONTRACTS = {"pca": ("adr_pca_waveform", "respyra-polar-pca/1"),
              "phan": ("adr_axis_mean_difference", "respyra-polar-phan-signed/1")}
 CURRENT_SUFFIXES = {
+    "adr_pca_waveform": "ChestPCA", "adr_axis_mean_difference": "ChestDT",
+    "adr_pca_valid": "PCAValid", "adr_axis_difference_valid": "DTValid",
+    "adr_pca_quality": "PCAQuality",
+}
+PREVIOUS_SUFFIXES = {
     "adr_pca_waveform": "ChestMotion", "adr_axis_mean_difference": "ChestMotion-DT",
     "adr_pca_valid": "PCA-Valid", "adr_axis_difference_valid": "Phan-Valid",
     "adr_pca_quality": "PCA-Quality",
@@ -32,7 +37,10 @@ CURRENT_SUFFIXES = {
 
 def _metric_source_id(base, suffix):
     # Display renames retain the identities saved by earlier Mini versions.
-    identity_suffix = {"ChestMotion": "PCA-Breathing", "ChestMotion-DT": "Phan-Breathing"}.get(suffix, suffix)
+    identity_suffix = {"ChestMotion": "PCA-Breathing", "ChestMotion-DT": "Phan-Breathing",
+                       "ChestPCA": "PCA-Breathing", "ChestDT": "Phan-Breathing",
+                       "PCAValid": "PCA-Valid", "DTValid": "Phan-Valid",
+                       "PCAQuality": "PCA-Quality", "ACC": "Accelerometer"}.get(suffix, suffix)
     return f"polar-h10-{base}_{identity_suffix}"
 
 
@@ -87,12 +95,14 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     assert len(by_name) == len(streams), "Duplicate stream names in XDF"
     raw = next(stream for stream in streams if stream["info"]["type"][0] == "Accelerometer"
                and "-Mock-" in stream["info"]["name"][0])
-    raw_suffix = "_Accelerometer" if raw["info"]["name"][0].endswith("_Accelerometer") else "_rawACC"
+    raw_suffix = next(suffix for suffix in ("_ACC", "_Accelerometer", "_rawACC")
+                      if raw["info"]["name"][0].endswith(suffix))
     base = raw["info"]["name"][0].removesuffix(raw_suffix)
     assert raw["info"]["name"] == [base + raw_suffix]
-    metric_names = CURRENT_SUFFIXES if raw_suffix == "_Accelerometer" else METRICS
+    metric_names = (CURRENT_SUFFIXES if raw_suffix == "_ACC" else
+                    PREVIOUS_SUFFIXES if raw_suffix == "_Accelerometer" else METRICS)
     if base + "_PCA-Breathing" in by_name:
-        metric_names = {**CURRENT_SUFFIXES, "adr_pca_waveform": "PCA-Breathing",
+        metric_names = {**PREVIOUS_SUFFIXES, "adr_pca_waveform": "PCA-Breathing",
                         "adr_axis_mean_difference": "Phan-Breathing"}
     assert raw["info"]["channel_format"] == ["float32"]
     channels = raw["info"]["desc"][0]["channels"][0]["channel"]

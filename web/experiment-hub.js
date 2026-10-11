@@ -459,10 +459,10 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       if (nativeSelectedId) selectedSource = eligible.find(row => row.source_id === nativeSelectedId)?.uid || selectedSource;
       if (!native && !selectedSource && !sourceAssigned && eligible.length === 1) selectedSource = eligible[0].uid;
       if (selectedSource) sourceAssigned = true;
-      const actualProcessed = latestRows.some(row => row.name === 'Respyra-Calibrated-Breathing' && row.source_id?.startsWith('respyra-breathing-'));
+      const actualProcessed = latestRows.some(row => row.source_id?.startsWith('respyra-breathing-'));
 
       streams = latestRows.map((row, index) => {
-        const id = row.uid, processed = row.name === 'Respyra-Calibrated-Breathing' && row.source_id?.startsWith('respyra-breathing-');
+        const id = row.uid, processed = !!row.source_id?.startsWith('respyra-breathing-');
         const baseName = shortNames[index];
         const nextIndex = (shortNameIndex.get(baseName) || 0) + 1;
         shortNameIndex.set(baseName, nextIndex);
@@ -499,10 +499,10 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         return { id, name: row.name, shortName, detail: `${row.type} · ${row.signal} · ${row.reason} · ${row.channels.length} channels`,
           compatible: row.compatible, signal: row.signal,
           record: required || (native ? !nativeExcluded.has(id) : choice.record !== false),
-          display: choice.display ?? required, required, channels, numeric: row.numeric,
+          display: choice.display ?? required, required, processed, channels, numeric: row.numeric,
           markers: markerHistory.points, color: colorFor(id, processed) };
       });
-      if (selectedSource && !actualProcessed) streams.push({ id: 'pending-calibrated', name: 'Respyra-Calibrated-Breathing', shortName: 'Respyra breathing',
+      if (selectedSource && !actualProcessed) streams.push({ id: 'pending-calibrated', name: 'Respyra-BreathCal', shortName: 'Respyra breathing',
         detail: 'Prepared at Start; calibrated values begin after calibration', record: true, display: false, required: true,
         pending: true, channels: [], markers: [], color: '#4ed482' });
       if (selectedSource && (!native || nativeState.phase === 'setup') && (native ? nativeState.compare_inputs !== false : $('compare-inputs').checked)) {
@@ -514,7 +514,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         }
       }
       streams.sort((a, b) => Number(b.id === selectedSource) - Number(a.id === selectedSource) ||
-        Number(b.id === 'pending-calibrated' || b.name === 'Respyra-Calibrated-Breathing') - Number(a.id === 'pending-calibrated' || a.name === 'Respyra-Calibrated-Breathing'));
+        Number(b.id === 'pending-calibrated' || b.processed) - Number(a.id === 'pending-calibrated' || a.processed));
 
       const signature = JSON.stringify([selectedSource, discoveryError, nativeProgress.health?.signal, eligible.map(row => [row.uid, row.type]), streams.map(({ id, name, shortName, signal, required, pending, record }) => [id, name, shortName, signal, required, pending, record])]);
       if (signature !== discoverySignature) {

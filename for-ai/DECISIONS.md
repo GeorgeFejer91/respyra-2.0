@@ -428,6 +428,9 @@ decision and link both entries.
 - Consequences: Suite 2.3.14 / Mini 0.6.10 shorten default display names while
   retaining source IDs, metric IDs, units, formulas, sample timing and CSV
   compatibility. Migrate only known factory prefixes; preserve custom names.
+  `H10` and `Vernier` are reserved factory prefixes with historical factory
+  identities. A previous custom prefix with either exact name adopts that
+  identity and may need to be reselected; other custom identity bases are retained.
   Verify exact installed defaults and recorder/analysis acceptance before release.
   Live Pages must list shipped names, optional outputs and timestamp fields;
   source inspection alone is not evidence of the downloaded installer or deployment.

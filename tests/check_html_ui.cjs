@@ -17,6 +17,10 @@ const path = require('node:path');
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch({ channel:'chrome', headless:true });
   const page = await browser.newPage({ viewport:{ width:1200, height:760 } });
+  page.setDefaultTimeout(120000);
+  const waitForViewportFit = () => page.waitForFunction(() =>
+    document.documentElement.scrollWidth <= innerWidth + 1 &&
+    document.documentElement.scrollHeight <= innerHeight + 1);
   const errors = [];
   page.on('pageerror', error => errors.push(String(error)));
   await page.addInitScript(() => {
@@ -85,7 +89,7 @@ const path = require('node:path');
         if (action.action === 'start') {
           state.phase = 'experiment'; state.message = 'Experiment running in PsychoPy.';
           state.progress.recording = { phase:'recording', streams:[{ source_id:rawId, name:'Vernier Stream Mini' },
-            { source_id:'respyra-breathing-ui', name:'Respyra-Calibrated-Breathing' },
+            { source_id:'respyra-breathing-ui', name:'Respyra-BreathCal' },
             { source_id:'respyra-events-ui', name:'Respyra-Events' }] };
         }
         if (action.action === 'abort') { state.phase = 'finished'; state.message = 'XDF saved. Experiment stopped.'; state.progress.recording.phase = 'complete'; }
@@ -96,6 +100,7 @@ const path = require('node:path');
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
     await page.locator('#feedback-source option').nth(2).waitFor({ state:'attached' });
+    await page.waitForFunction(() => document.querySelector('#shell').dataset.typeFit === 'fit' && !document.querySelector('#shell').hidden);
     assert.deepEqual(await page.locator('#feedback-source option').allTextContents(),
       ['Choose one breathing input', 'Vernier Mini · Vernier Stream Mini', 'Polar Mini · StudyPolar_adrPcaWaveform']);
     assert.deepEqual(await page.locator('#feedback-source optgroup').evaluateAll(groups => groups.map(group => group.label)),
@@ -153,6 +158,21 @@ const path = require('node:path');
     assert(await page.getByRole('checkbox', { name:'Record StudyPolar_adrPcaWaveform' }).isChecked());
     assert(await page.getByRole('checkbox', { name:'Record Comparison waveform for StudyPolar_adrPcaWaveform' }).isChecked());
     assert(await page.getByRole('checkbox', { name:'Record Polar H10 heart rate' }).isChecked());
+    const originalStreams = await page.evaluate(() => window.testSnapshot().progress.streams);
+    for (const name of ['Respyra-BreathCal', 'Respyra-Calibrated-Breathing']) {
+      await page.evaluate(({streams,name}) => window.testProgress({streams:[...streams,
+        {uid:'derived-ui',source_id:'respyra-breathing-ui',name,type:'Respiration',numeric:true,
+          signal:'live',lsl_time:2,channels:[{index:0,label:'Calibrated breathing',unit:'normalized',value:0.4}]}]}),
+        {streams:originalStreams,name});
+      const record = page.getByRole('checkbox', {name:'Record '+name,exact:true});
+      await record.waitFor();
+      assert.equal(await record.count(), 1);
+      assert(await record.isChecked());
+      assert(await record.isDisabled(), 'Calibrated input remains mandatory during setup');
+      assert.equal(await page.getByText('Respyra breathing',{exact:true}).count(), 1, 'Actual outlet replaces its pending row');
+      if (name !== 'Respyra-BreathCal') assert.equal(await page.getByRole('checkbox',{name:'Record Respyra-BreathCal',exact:true}).count(), 0);
+    }
+    await page.evaluate(streams => window.testProgress({streams}), originalStreams);
     const auxRow = page.locator('.stream-row').filter({ hasText:'Polar H10 heart rate' });
     await auxRow.getByRole('checkbox', { name:/Record/ }).uncheck();
     await page.waitForFunction(() => window.testSnapshot().excluded_streams.includes('aux-ui'));
@@ -174,7 +194,7 @@ const path = require('node:path');
     await rawRow.getByRole('checkbox', { name:/Display/ }).check();
     for (const [width, height] of [[1200,760], [820,760], [390,844], [800,600]]) {
       await page.setViewportSize({ width, height });
-      await page.waitForTimeout(100);
+      await waitForViewportFit();
       assert(await page.locator('#shell').isVisible(), `Hub hidden at ${width}×${height}: ` + JSON.stringify(await page.evaluate(() => {
         document.querySelector('#shell').hidden = false;
         return ({
@@ -203,7 +223,7 @@ const path = require('node:path');
     for (const [width, height, textSize] of [[320,480,16], [360,700,16], [820,760,32], [1440,900,32]]) {
       await page.setViewportSize({ width, height });
       await page.evaluate(size => { document.documentElement.style.fontSize = `${size}px`; document.documentElement.style.letterSpacing = '.08em'; }, textSize);
-      await page.waitForTimeout(120);
+      await waitForViewportFit();
       const fit = await page.evaluate(() => ({ width:document.documentElement.scrollWidth, height:document.documentElement.scrollHeight,
         shell:!!document.querySelector('#shell').getClientRects().length,
         notice:!!document.querySelector('#no-fit').getClientRects().length,
@@ -250,7 +270,7 @@ const path = require('node:path');
     assert(await page.locator('#start').isDisabled());
     for (const [width, height] of [[820,760], [390,844], [320,480]]) {
       await page.setViewportSize({ width, height });
-      await page.waitForTimeout(120);
+      await waitForViewportFit();
       const fit = await page.evaluate(() => ({ width:document.documentElement.scrollWidth,
         height:document.documentElement.scrollHeight,
         shell:!!document.querySelector('#shell').getClientRects().length,
@@ -280,7 +300,7 @@ const path = require('node:path');
     for (const [width,height,size] of [[820,760,16],[1440,900,16],[320,480,32]]) {
       await page.setViewportSize({width,height});
       await page.evaluate(size => {document.documentElement.style.fontSize=size+'px';},size);
-      await page.waitForTimeout(150);
+      await waitForViewportFit();
       const fit=await page.evaluate(() => ({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,
         shown:!!document.getElementById('shell').getClientRects().length,notice:!!document.getElementById('no-fit').getClientRects().length,
         clipped:[...document.querySelectorAll('[data-measure]')].filter(e=>e.getClientRects().length &&
@@ -290,7 +310,7 @@ const path = require('node:path');
     }
     await page.setViewportSize({width:1200,height:760});
     await page.evaluate(() => {document.documentElement.style.fontSize='16px';});
-    await page.waitForTimeout(150);
+    await waitForViewportFit();
     await page.locator('#prompt-retry').click();
     assert(await page.locator('#prompt-continue').isDisabled(), 'One accepted command disables its old prompt');
     await page.evaluate(() => window.testProgress({prompt:{id:'run:20',screen:'instructions',controls:['continue']}}));
@@ -306,9 +326,9 @@ const path = require('node:path');
     assert(await page.locator('#marker-inventory-dialog').isVisible());
     await page.locator('#marker-inventory-close').click();
     await page.evaluate(() => window.testProgress({ streams:[...window.testSnapshot().progress.streams,
-      { uid:'derived-ui', source_id:'respyra-breathing-ui', name:'Respyra-Calibrated-Breathing', type:'Respiration',
+      { uid:'derived-ui', source_id:'respyra-breathing-ui', name:'Respyra-BreathCal', type:'Respiration',
         numeric:true, signal:'live', lsl_time:2, channels:[{ index:0, label:'Calibrated breathing', unit:'normalized', value:null }] }] }));
-    await page.waitForTimeout(150);
+    await waitForViewportFit();
     if (!await page.locator('#shell').isVisible()) assert.fail(JSON.stringify(await page.evaluate(() => {
       const shell = document.querySelector('#shell'); shell.hidden = false;
       const regions = ['#shell','.content','#hub','#streams','#hub-body','#stream-body','#stream-selection','.stream-section','#stream-list','#plot-section'];

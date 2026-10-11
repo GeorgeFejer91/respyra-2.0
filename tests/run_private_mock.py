@@ -118,7 +118,7 @@ try:
     from pylsl import StreamInlet, resolve_streams
     deadline = time.monotonic() + 30
     source_id = None
-    suffix = {"pca": "_ChestMotion", "phan": "_ChestMotion-DT"}.get(args.polar_metric)
+    suffix = {"pca": "_ChestPCA", "phan": "_ChestDT"}.get(args.polar_metric)
     while time.monotonic() < deadline:
         streams = [stream for stream in resolve_streams(wait_time=1)
                    if (stream.name().endswith(suffix) if suffix else "Vernier" in stream.name())]
@@ -146,11 +146,11 @@ try:
     if args.mode == "startup":
         from pylsl import resolve_byprop
         base = info.name().removesuffix(suffix)
-        names = {"pca": base + "_ChestMotion",
-                 "phan": base + "_ChestMotion-DT",
-                 "pca_valid": base + "_PCA-Valid",
-                 "axis_valid": base + "_Phan-Valid",
-                 "quality": base + "_PCA-Quality"}
+        names = {"pca": base + "_ChestPCA",
+                 "phan": base + "_ChestDT",
+                 "pca_valid": base + "_PCAValid",
+                 "axis_valid": base + "_DTValid",
+                 "quality": base + "_PCAQuality"}
         inlets = {key: StreamInlet(resolve_byprop("name", name, timeout=5)[0], recover=False)
                   for key, name in names.items()}
         reference = {}
