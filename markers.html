@@ -29,7 +29,7 @@
         <h1 data-measure>Experiment marker library</h1>
         <p data-measure>Every current event type that Respyra can send to its LSL marker outlet and the bundled RespiRecorder: 94 marker types covering setup, input, calibration, trial phases, assessments, control actions and cleanup. Which events occur depends on the run, its options and any errors.</p>
         <div class="link-list"><a href="#inventory" data-measure>Browse all marker types</a><a href="#fields" data-measure>Payload dictionary</a><a href="./marker-catalog.json" download data-measure>Download the complete JSON catalog</a></div>
-        <p class="qualification" data-measure>Reference for the v2.3.14 event contract (respyra-event-markers-v1), generated from the experiment's Python catalog. Field descriptions include documentation clarifications. This public page contains event definitions; actual sent markers and counts belong to each local recording.</p>
+        <p class="qualification" data-measure>Reference for the v2.3.15 event contract (respyra-event-markers-v1), generated from the experiment's Python catalog. Field descriptions include documentation clarifications. This public page contains event definitions; actual sent markers and counts belong to each local recording.</p>
       </section>
       <section class="app-reference respyra" aria-labelledby="stream-title">
         <header class="reference-heading"><img class="app-icon" src="./logo.svg" width="32" height="32" alt=""><h2 id="stream-title" data-measure>Respyra — event stream and recording</h2></header>
@@ -261,7 +261,7 @@
           </li>
           <li id="event-recording.started" data-marker-name="recording.started" data-marker-group="recording">
             <div><h3><a href="#event-recording.started"><code>recording.started</code></a></h3></div>
-            <div><p data-measure>The native recorder has subscribed to the selected input, markers and the derived breathing stream and received samples from each, before setup acceptance and PsychoPy display creation. pre_recording_events preserves earlier setup marker payloads; subject, session, task, and variables identify this XDF run.</p>
+            <div><p data-measure>The native recorder has subscribed to the selected input, markers and derived breathing streams and received samples from each, before setup acceptance and PsychoPy display creation. pre_recording_events preserves earlier setup marker payloads; subject, session, task, and variables identify this XDF run.</p>
               <div class="marker-payload"><span data-measure>Payload fields</span><ul aria-label="recording.started payload fields"><li><a href="#field-source_ids" data-marker-field="source_ids"><code>source_ids</code></a></li><li><a href="#field-subject" data-marker-field="subject"><code>subject</code></a></li><li><a href="#field-session" data-marker-field="session"><code>session</code></a></li><li><a href="#field-task" data-marker-field="task"><code>task</code></a></li><li><a href="#field-variables" data-marker-field="variables"><code>variables</code></a></li><li><a href="#field-policy" data-marker-field="policy"><code>policy</code></a></li><li><a href="#field-excluded_uids" data-marker-field="excluded_uids"><code>excluded_uids</code></a></li><li><a href="#field-pre_recording_events" data-marker-field="pre_recording_events"><code>pre_recording_events</code></a></li></ul></div>
             </div>
           </li>
@@ -685,7 +685,7 @@
 <div id="field-signal_unit" data-field-name="signal_unit"><dt><code>signal_unit</code></dt><dd data-measure>Native input unit: N for Vernier Force or g for Polar waveform.</dd></div>
 <div id="field-source" data-field-name="source"><dt><code>source</code></dt><dd data-measure>Experiment input API that observed or discarded the key: waitKeys, check_keys, clearEvents, local_control, or remote_control. Controller responses are semantic commands, not physical keyboard events.</dd></div>
 <div id="field-source_id" data-field-name="source_id"><dt><code>source_id</code></dt><dd data-measure>Exact LSL source_id of the selected study input stream.</dd></div>
-<div id="field-source_ids" data-field-name="source_ids"><dt><code>source_ids</code></dt><dd data-measure>Required selected input and marker source IDs subscribed by the native recorder.</dd></div>
+<div id="field-source_ids" data-field-name="source_ids"><dt><code>source_ids</code></dt><dd data-measure>Required selected input, calibrated, comparison, marker source IDs subscribed by the native recorder.</dd></div>
 <div id="field-stream_name" data-field-name="stream_name"><dt><code>stream_name</code></dt><dd data-measure>LSL name of the selected study input stream.</dd></div>
 <div id="field-streams" data-field-name="streams"><dt><code>streams</code></dt><dd data-measure>Discovery results: list of objects with source_id, stream_name, stream_type, compatible, and reason. Rejected streams are included; compatible requires unique source_id and one exact supported input contract.</dd></div>
 <div id="field-study_name" data-field-name="study_name"><dt><code>study_name</code></dt><dd data-measure>Configured human-readable study name.</dd></div>
@@ -724,7 +724,7 @@
             </div>
           </li></ul></section>
     </main>
-    <footer><p data-measure>Respyra 2.0 by George Fejer · Definitions follow the experiment's event catalog.</p><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.14/src/mpi/event_markers/catalog.json" data-measure>Shipped v2.3.14 catalog source</a></footer>
+    <footer><p data-measure>Respyra 2.0 by George Fejer · Definitions follow the experiment's event catalog.</p><a href="https://github.com/GeorgeFejer91/respyra-2.0/blob/v2.3.15/src/mpi/event_markers/catalog.json" data-measure>Shipped v2.3.15 catalog source</a></footer>
   </div>
 </body>
 </html>
