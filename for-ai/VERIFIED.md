@@ -5,6 +5,30 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Stable verified downloads and website curation — 2026-10-13
+
+- VERIFIED source `5f9b2cd03b3a5c49c0abaa56ec85f2eb9faea9a5`: `/download` entry
+  point, generated static suite-first page, three individual installers, Berlin
+  update date/time, common navigation and old `#download` redirect/fallback.
+  [WEBSITE.md](./WEBSITE.md) routes release selection, checks and publication.
+- `node scripts/prepare-web.mjs`, `python for-ai/scripts/check-website-release.py`
+  and `node tests/check_project_site.cjs` passed: exact public tag/server hashes,
+  sizes and anonymous access for all four qualified installers; six pages/48
+  layouts, enlarged text, dark theme, no-JS downloads and both download/QR routes.
+  Headless Chrome 155.0.8059.40, Node 24.19.0, Playwright 1.62.1; changed images inspected.
+- VERIFIED the revised `scripts/publish-phone.ps1` published the allowlisted
+  site, including `download/`, from clean source/Pages checkouts. Pages
+  `6818b7751cf844257eb973cd4ed87a23f9beeffc` built; ten ordinary public files and
+  source provenance matched exact Git blobs, including `/download` → `/download/`.
+  Hosted browser checks passed four desktop/mobile/theme layouts, suite-first
+  links, update time, legacy routing and JavaScript-disabled downloads.
+- REUSED exact Suite 2.3.15 / Mini 0.6.11 installed-artifact qualification in
+  [the shipment receipt](./verified/suite-shipment-20261013.md). Runtime owners
+  and installer bytes are unchanged; no installer rebuild applies.
+- Evidence: ignored `download-release-check.json`, `markers-site-evidence.json`,
+  `download-page-public-parity.json`, `download-page-live-result.json`, publication
+  logs and screenshots in `.for-ai-local/`. Scope: public website/release curation.
+
 ## Single default-variable table — 2026-10-13
 
 - VERIFIED source `de244c36fcb2abe4359195df857cae16c3bd3cb4`: one three-column
