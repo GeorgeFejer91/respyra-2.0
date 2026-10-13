@@ -8,6 +8,7 @@ import argparse
 import csv
 import ctypes
 import json
+import math
 import os
 import sys
 import time
@@ -148,31 +149,48 @@ try:
         from pylsl import resolve_byprop
         base = info.name().removesuffix(suffix)
         names = {"pca": base + "_ChestPCA",
-                 "phan": base + "_ChestDT",
-                 "pca_valid": base + "_PCAValid",
-                 "axis_valid": base + "_DTValid",
-                 "quality": base + "_PCAQuality"}
+                 "phan": base + "_ChestDT"}
         inlets = {key: StreamInlet(resolve_byprop("name", name, timeout=5)[0], recover=False)
                   for key, name in names.items()}
+        from xml.etree import ElementTree as ET
+        indexes = {}
+        for key, inlet in inlets.items():
+            metadata = ET.fromstring(inlet.info(timeout=2).as_xml())
+            assert metadata.findtext("desc/schema") == "adr-waveform/2"
+            channels = metadata.findall("desc/channels/channel")
+            indexes[key] = {channel.findtext("metric_id"): index for index, channel in enumerate(channels)}
+            assert len(channels) == (3 if key == "pca" else 4)
+            assert channels[0].findtext("role") == "waveform" and channels[0].findtext("unit") == "g"
+            assert {channel.findtext("role") for channel in channels[1:]} <= {"quality", "validity"}
+        assert not any(resolve_byprop("name", base + suffix, timeout=.1)
+                       for suffix in ("_PCAValid", "_DTValid", "_PCAQuality"))
         reference = {}
         with (project / ".for-ai-local/polar-reference-30000.csv").open(encoding="utf-8-sig", newline="") as handle:
             for row in csv.DictReader(handle):
                 if int(row["tick"]) == 1200:
                     reference[row["metric_id"]] = float(row["value"])
-        samples = {key: [] for key in names}
+        samples = {key: [] for key in (*names, "pca_valid", "axis_valid", "quality")}
         deadline = time.monotonic() + 16
         while time.monotonic() < deadline:
             for key, inlet in inlets.items():
                 rows, times = inlet.pull_chunk(timeout=0, max_samples=1024)
-                samples[key].extend((stamp, row[0]) for row, stamp in zip(rows, times, strict=True))
-            if all(len(samples[key]) >= 10 for key in ("pca", "phan")) and {0, 1} <= {
-                int(value) for _, value in samples["pca_valid"]}:
+                for row, stamp in zip(rows, times, strict=True):
+                    if math.isfinite(row[0]):
+                        samples[key].append((stamp, row[0]))
+                    if key == "pca":
+                        samples["pca_valid"].append((stamp, row[indexes[key]["adr_pca_valid"]]))
+                        samples["quality"].append((stamp, row[indexes[key]["adr_pca_quality"]]))
+                    else:
+                        samples["axis_valid"].append((stamp, row[indexes[key]["adr_axis_difference_valid"]]))
+            if all(len(samples[key]) >= 10 for key in ("pca", "phan")) and any(
+                value == 1 for _, value in samples["pca_valid"]):
                 break
             time.sleep(.02)
         for inlet in inlets.values():
             inlet.close_stream()
         assert all(len(samples[key]) >= 10 for key in ("pca", "phan"))
-        assert {0, 1} <= {int(value) for _, value in samples["pca_valid"]}
+        assert samples["pca_valid"] and all(value in (0, 1) for _, value in samples["pca_valid"])
+        assert any(value == 1 for _, value in samples["pca_valid"])
         assert samples["axis_valid"] and all(value == 1 for _, value in samples["axis_valid"][-10:])
         assert samples["quality"] and all(0 <= value <= 1 for _, value in samples["quality"])
         first = {key: samples[key][0] for key in ("pca", "phan")}
