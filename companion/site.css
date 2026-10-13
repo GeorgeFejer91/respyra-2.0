@@ -42,12 +42,9 @@ footer { padding: 0 0 28px; color: #465b65; font-size: .875rem; }
 nav [aria-current=page] { text-decoration: underline; text-decoration-thickness: 2px; }
 .page-title { padding: 32px 0 24px; }
 .page-title h1 { margin-bottom: 12px; }
-.source-links { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 18px 0; }
-.source-links a { border-bottom: 3px solid var(--source, var(--line)); padding-bottom: 4px; }
 .polar { --source: var(--polar); --source-ink: var(--polar-ink); }
 .vernier { --source: var(--vernier); --source-ink: var(--vernier-ink); }
 .respyra { --source: var(--respyra); --source-ink: var(--respyra-ink); }
-.source-links a, .variables h2 { color: var(--source-ink); }
 .app-reference { display: grid; min-width: 0; min-height: 0; gap: var(--panel-gap); margin: 24px 0; padding: var(--panel-gap); border: 1px solid var(--line); border-left: 3px solid var(--source, var(--respyra)); border-radius: 4px; background: var(--surface); }
 .app-reference > * { min-width: 0; min-height: 0; margin: 0; }
 .reference-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
@@ -98,6 +95,11 @@ th:first-child, td:first-child { padding-left: 0; width: 30%; }
 code { font-size: .9em; overflow-wrap: anywhere; }
 .stream-inventory th:first-child { width: 30%; }
 .stream-inventory th:nth-child(2) { width: 25%; }
+.stream-inventory tbody { border-left: 3px solid var(--source); }
+.stream-inventory tbody th:first-child { padding-left: 12px; }
+.stream-inventory tbody th code, .inventory-group h2 { color: var(--source-ink); }
+.stream-inventory .inventory-group th { width: auto; padding: 16px 12px; border-top: 1px solid var(--line); background: var(--surface); }
+.inventory-group h2 { margin: 0; font-size: 1.125rem; }
 .stream-inventory p { margin: 0; }
 .inventory-cell-label { display: none; }
 @media (max-width: 900px) {
@@ -105,7 +107,7 @@ code { font-size: .9em; overflow-wrap: anywhere; }
   .stream-inventory { position: relative; }
   .stream-inventory thead { position: absolute; top: 0; left: 0; width: 100%; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
   .stream-inventory tr { padding: 16px 0; border-bottom: 1px solid var(--line); }
-  .stream-inventory th, .stream-inventory td { display: block; width: 100%; padding: 6px 0; border: 0; }
+  .stream-inventory th, .stream-inventory td { display: block; width: 100%; padding: 6px 12px; border: 0; }
   .stream-inventory th:first-child { width: 100%; }
   .stream-inventory thead th { width: 100%; }
   .inventory-cell-label { display: block; margin-bottom: 4px; font-weight: 600; }

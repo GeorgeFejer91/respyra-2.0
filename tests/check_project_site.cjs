@@ -50,44 +50,38 @@ const screenshots = path.resolve('.for-ai-local');
     const defaults = primaryIds.map(id => catalog.find(metric => metric.id === id));
     assert(defaults.every(Boolean));
     await page.goto(base + 'variables.html');
-    assert.deepEqual(await page.locator('#polar [data-variable-id]').evaluateAll(rows => rows.map(row => row.dataset.variableId)),
-      primaryIds);
-    for (const metric of defaults) assert((await page.locator(`[data-variable-id="${metric.id}"] code`).textContent()).includes('Polar_' + metric.streamSuffix));
-    assert.deepEqual(await page.locator('#polar [data-support-id]').evaluateAll(rows => rows.map(row => row.dataset.supportId)),
-      ['adr_pca_quality','adr_pca_valid','adr_axis_difference_valid','polar_signal_state']);
-    assert.equal(await page.locator('#polar-support').getAttribute('open'), null);
-    await page.locator('#polar-support summary').click();
-    assert(await page.locator('[data-support-id="adr_pca_valid"]').isVisible());
-    const vernierDiagnostics = ['sequence','dropped_rows_before','device_drop_reports_before','sample_period_us','decode_latency_ns','host_receive_timestamp_ns','encoding_code'];
-    assert.deepEqual(await page.locator('#vernier [data-variable-id]').evaluateAll(rows => rows.map(row => row.dataset.variableId)),
-      ['force','respiration_rate','steps','step_rate','vernier_signal_state',...vernierDiagnostics]);
-    assert.equal(await page.locator('#respyra [data-variable-id]').count(), 3);
-    assert.equal(await page.locator('[data-variable-id] strong').count(), 22);
-    assert.equal(await page.locator('[data-csv-id] strong').count(), 17);
-    assert.deepEqual(await page.locator('[data-csv-id]').evaluateAll(rows => rows.slice(-4).map(row => row.dataset.csvId)), ['lsl_time_s','utc_time','berlin_time','time_reference']);
-    assert(await page.locator('#naming').isVisible());
-    assert(await page.getByText(/the defaults record 14 streams/).isVisible());
+    assert.equal(await page.locator('main table').count(), 1, 'One canonical stream table');
+    assert.equal(await page.locator('main .app-reference, main details, [data-variable-id], [data-support-id], [data-csv-id], #naming').count(), 0,
+      'The variable page must not repeat the table in separate reference panels');
+    assert(await page.getByText(/All available streams below are selected for recording by default, even when not displayed/).isVisible());
     const streamNames = [
       'Polar_rawECG', 'Polar_rawACC', 'Polar_HR', 'Polar_RR', 'Polar_ChestPCA', 'Polar_ChestDT',
       'Polar_BreathPhase', 'Polar_Link', 'Vernier_rawForce', 'Vernier_Link',
       'Respyra_rawForce_calibrated', 'Respyra_ChestPCA_calibrated', 'Respyra_ChestDT_calibrated', 'Respyra-Events',
     ];
     const inventory = page.locator('.stream-inventory');
+    const streamRows = inventory.locator('.stream-row');
     assert.deepEqual(await inventory.locator('thead th').allTextContents(), ['Stream name', 'Recorded contents', 'Long-form description']);
     assert.deepEqual(await inventory.locator('tbody th code').allTextContents(), streamNames);
-    assert.equal(await inventory.locator('tbody tr').count(), 14);
-    assert((await inventory.locator('tbody tr').evaluateAll(rows => rows.map(row => row.children.length))).every(count => count === 3));
+    assert.equal(await streamRows.count(), 14);
+    assert((await streamRows.evaluateAll(rows => rows.map(row => row.children.length))).every(count => count === 3));
+    assert.deepEqual(await inventory.locator('tbody').evaluateAll(groups => groups.map(group => ({
+      source:group.id, count:group.querySelectorAll('.stream-row').length,
+      label:document.getElementById(group.getAttribute('aria-labelledby')).textContent,
+      columns:group.querySelector('.inventory-group th').colSpan,
+    }))), [
+      {source:'polar', count:8, label:'Polar Stream Mini · 8 streams', columns:3},
+      {source:'vernier', count:2, label:'Vernier Stream Mini · 2 streams', columns:3},
+      {source:'respyra', count:4, label:'Respyra 2.0 · 4 streams', columns:3},
+    ]);
+    assert.deepEqual(await inventory.locator('#polar .stream-row th code').allTextContents(),
+      [...defaults.map(metric => 'Polar_' + metric.streamSuffix), 'Polar_Link']);
     assert((await inventory.locator('tbody td:last-child p').allTextContents()).every(text => text.length > 240), 'Every stream needs a substantive long-form description');
-    assert((await inventory.locator('tbody tr').nth(8).textContent()).includes('Seven additional channels'));
-    assert((await inventory.locator('tbody tr').nth(10).textContent()).includes('(Force − center) / amplitude'));
-    assert((await inventory.locator('tbody tr').nth(4).textContent()).includes('principal component analysis (PCA)'), 'PCA must be written out in the inventory');
-    assert.equal(await page.locator('[data-support-id="respyra_housekeeping"]').count(), 0);
-    assert.equal(await page.locator('#vernier-optional').getAttribute('open'), null);
-    await page.locator('#vernier-optional summary').click();
-    assert(await page.locator('[data-optional-id="vernier_breathing"]').isVisible());
-    assert(await page.getByText(/Two outlets start selected/).isVisible());
-    const definitions = await page.locator('[data-variable-id] p').allTextContents();
-    assert(definitions.every(text => text.length > 80), 'Every default variable needs a substantive definition');
+    assert((await streamRows.nth(8).textContent()).includes('Seven additional channels'));
+    assert((await streamRows.nth(10).textContent()).includes('(Force − center) / amplitude'));
+    for (const row of [4, 11]) assert((await streamRows.nth(row).textContent()).includes('principal component analysis (PCA)'), 'PCA must be written out in the inventory');
+    assert((await streamRows.nth(4).textContent()).includes('plus PCA quality and validity'));
+    assert((await streamRows.nth(5).textContent()).includes('plus DT validity, PCA validity and PCA quality'));
     await page.goto(base + 'about.html');
     assert(await page.getByText(/current Windows release is v2.3.15/).isVisible());
     assert.equal(await page.getByRole('link', {name:'George Fejer · Google Scholar'}).getAttribute('href'), 'https://scholar.google.com/citations?hl=en&user=GPARoloAAAAJ');
@@ -216,9 +210,10 @@ const screenshots = path.resolve('.for-ai-local');
     await page.goto(base + 'variables.html');
     for (const scheme of ['light','dark']) {
       await page.emulateMedia({ colorScheme:scheme });
-      const colors = await page.locator('.source-links .polar, .source-links .vernier, .source-links .respyra').evaluateAll(links => links.map(link => getComputedStyle(link).borderBottomColor));
+      const colors = await page.locator('.stream-inventory tbody').evaluateAll(groups => groups.map(group => getComputedStyle(group).borderLeftColor));
       assert.deepEqual(colors, scheme === 'light' ? ['rgb(213, 0, 28)','rgb(229, 179, 27)','rgb(9, 105, 218)'] : ['rgb(255, 64, 85)','rgb(229, 179, 27)','rgb(127, 198, 255)']);
-      assert.deepEqual(await page.locator('#polar, #vernier, #respyra').evaluateAll(panels => panels.map(panel => getComputedStyle(panel).borderLeftColor)), colors);
+      assert.deepEqual(await page.locator('.inventory-group h2').evaluateAll(headings => headings.map(heading => getComputedStyle(heading).color)),
+        scheme === 'light' ? ['rgb(185, 0, 24)','rgb(118, 90, 0)','rgb(9, 105, 218)'] : ['rgb(255, 120, 135)','rgb(240, 204, 85)','rgb(127, 198, 255)']);
     }
     assert.deepEqual(errors, []);
     const checkedPaths = ['companion/index.html','companion/study.html','companion/variables.html','companion/markers.html','companion/about.html',
