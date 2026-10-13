@@ -5,6 +5,48 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Data-folder permissions and 2.3.15 local candidates — 2026-10-13
+
+- Artifact source: `d0d0f77fcaf91060c4b3249c0a02661f5ffe6f34`. The three folder
+  handlers were absent from the application command manifest/main capability.
+  Only the local main window now receives their generated grants. The regression
+  check failed against released main before the fix.
+- VERIFIED captured/headless checks: eight web tests, eight layouts/22 actions,
+  14 locked Cargo tests, Rustfmt, locked all-target Clippy, and 39 focused Python
+  setup/bridge/process tests. Bundled CPython 3.10.11 imports, app-local CRT and
+  independently decoded native XDF round trip passed in both packaging builds.
+- VERIFIED final NSIS payload on a private Win32 desktop/private LSL session:
+  the actual Use path button acknowledged an existing Unicode/spaced directory;
+  native Browse displayed its chooser and cancellation retained the selection;
+  Open reached its handler and rejected a removed folder; relative paths were
+  rejected; the displayed remembered path survived restart. Screenshot inspected.
+  The restart fixture now waits for the rendered path rather than an asynchronous
+  predicate that can finish before setup is ready.
+- VERIFIED exact final suite upgrade from 2.3.14 and same-version reinstall:
+  18,453 engine files, two Mini payloads, eight shortcuts, versioned preferences
+  backups, and 18 retained recording files. Private uninstall retained all 18
+  files with unchanged hashes. Guards restored user registration, shortcuts,
+  settings and the original executable. Mini 0.6.10 installers were reused by
+  exact digest; the diff from their compiled revision to the pin is documentation
+  only. Native main extraction matched between standalone and suite.
+- Final native executable SHA-256:
+  `7414dc0c18b8aaf9fcff6eca2de94ac73dd155f4e528d5c923eba47cc7309ad4`.
+  Suite SHA-256: `6ee109db22cf00d61ffbe1da2b53216e1c3ab679a4ccf44f1e63be72c314a80c`.
+  The matching 704,672,242-byte source companion passed the source/lock/archive
+  checks in `build_release_sources.py`. Evidence: ignored folder build/native
+  logs, `folder-install-evidence/`, `folder-uninstall-evidence/`, source-bundle
+  log and the release manifests/checksums.
+- PARTIAL broader installed readiness: the existing native fixture expected an
+  obsolete exact input label and checked hidden Settings controls. A scratch
+  adaptation selected the unique input option by value and opened Settings;
+  selection passed, but synthetic Space did not advance the private PsychoPy
+  prompt. The separate live hosted-phone check disconnected before approval.
+  Assertions/timeouts were retained. These scopes are unqualified, not passes.
+- NOT RUN actual Explorer opening (it can reuse the active desktop), native
+  chooser selection beyond cancellation, full study, hardware and clean VM.
+  No release promotion or public download update. Keep these installers local
+  candidates until the missing/failed distribution scopes are qualified.
+
 ## Concise default stream names and suite 2.3.14 — 2026-10-11
 
 - Artifact source/tag `v2.3.14`: `e6c6e800ab8a28f1bb6dc14e740517fbc50c91b6`; pinned Mini 0.6.10

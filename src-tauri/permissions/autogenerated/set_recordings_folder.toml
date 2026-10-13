@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-recordings-folder"
+description = "Enables the set_recordings_folder command without any pre-configured scope."
+commands.allow = ["set_recordings_folder"]
+
+[[permission]]
+identifier = "deny-set-recordings-folder"
+description = "Denies the set_recordings_folder command without any pre-configured scope."
+commands.deny = ["set_recordings_folder"]
