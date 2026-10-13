@@ -1,7 +1,7 @@
 """A plateau must not conceal a shifted or altered mock recording."""
 import numpy as np
 import pytest
-from scripts.audit_polar_mock_xdf import _metric_source_id, _mock_acc, _mock_sequence_start
+from scripts.audit_polar_mock_xdf import _metric_source_id, _mock_acc, _mock_sequence_start, _recorded_metric
 
 
 @pytest.mark.parametrize("suffix,identity_suffix", [
@@ -13,6 +13,8 @@ from scripts.audit_polar_mock_xdf import _metric_source_id, _mock_acc, _mock_seq
     ("PCAValid", "PCA-Valid"),
     ("DTValid", "Phan-Valid"),
     ("ACC", "Accelerometer"),
+    ("rawACC", "Accelerometer"),
+    ("rawECG", "ECG"),
     ("PCA-Breathing", "PCA-Breathing"),
     ("Phan-Breathing", "Phan-Breathing"),
     ("Accelerometer", "Accelerometer"),
@@ -41,3 +43,11 @@ def test_complete_match_still_requires_consistent_stream_age():
     reference = _mock_acc(12000)
     with pytest.raises(AssertionError, match="inconsistent with stream age"):
         _mock_sequence_start(reference[6050:8468], reference, 1000)
+
+
+def test_auditor_finds_readiness_inside_the_waveform_without_a_scalar_copy():
+    bundle = {"info": {"desc": [{"channels": [{"channel": [
+        {"metric_id": ["adr_pca_waveform"]}, {"metric_id": ["adr_pca_quality"]},
+        {"metric_id": ["adr_pca_valid"]}]}]}]}, "time_series": np.array([[0.02, 0.8, 1]])}
+    stream, index = _recorded_metric({"Polar_ChestPCA": bundle}, "Polar", "adr_pca_valid", "PCAValid")
+    assert stream is bundle and stream["time_series"][0, index] == 1

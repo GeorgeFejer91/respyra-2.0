@@ -8,18 +8,46 @@ import time
 from collections import deque
 from xml.etree import ElementTree
 
-from mpi.lsl_force import LSLForceError, LSLForceSource
+from mpi.lsl_force import LSLForceError, LSLForceSource, calibrated_stream_name
 
 
 POLAR_CONTRACTS = {"respyra-polar-pca/1": 1, "respyra-polar-phan-signed/1": 2}
+
+
+def bundled_polar_layout(desc, channel_count, contract):
+    """Bind waveform and same-row readiness by channel metadata, never labels."""
+    channels = desc.findall("channels/channel")
+    ids = [channel.findtext("metric_id") for channel in channels]
+    required = {"adr_pca_valid"}
+    if contract == "respyra-polar-phan-signed/1":
+        required.add("adr_axis_difference_valid")
+    declared = set(filter(None, (desc.findtext("validity_channels") or "").split(",")))
+    waveform = desc.findtext("waveform_channel")
+    if (len(channels) != channel_count or not all(ids) or len(set(ids)) != len(ids)
+            or waveform not in ids or declared != required
+            or not required.issubset(ids) or "adr_pca_quality" not in ids):
+        raise LSLForceError("Polar bundled channel metadata does not match its input contract")
+    index = ids.index(waveform)
+    if channels[index].findtext("unit") != "g" or channels[index].findtext("role") != "waveform":
+        raise LSLForceError("Polar bundled waveform must be signed g")
+    validity = tuple(ids.index(metric) for metric in sorted(required))
+    if any(channels[i].findtext("unit") != "0/1" or channels[i].findtext("role") != "validity"
+           for i in validity):
+        raise LSLForceError("Polar bundled validity channels must be 0/1")
+    quality = channels[ids.index("adr_pca_quality")]
+    if quality.findtext("unit") not in {"0–1", "0-1"} or quality.findtext("role") != "quality":
+        raise LSLForceError("Polar bundled quality channel must be 0–1")
+    return index, validity, [dict(index=i, label=c.findtext("label") or ids[i],
+                                  unit=c.findtext("unit"), metric_id=ids[i], role=c.findtext("role"))
+                             for i, c in enumerate(channels)]
 
 
 def validate_polar_info(info) -> tuple[str, tuple[str, ...]]:
     """Return a compatible waveform contract and its declared validity references."""
     from pylsl import cf_float32, cf_double64
 
-    if info.channel_count() != 1 or info.channel_format() not in (cf_float32, cf_double64):
-        raise LSLForceError("Requires a one-channel floating-point breathing waveform")
+    if info.channel_format() not in (cf_float32, cf_double64):
+        raise LSLForceError("Requires a floating-point breathing waveform")
     if not math.isfinite(info.nominal_srate()) or info.nominal_srate() < 0:
         raise LSLForceError("Breathing waveform has an invalid sampling rate")
     root = ElementTree.fromstring(info.as_xml())
@@ -36,12 +64,17 @@ def validate_polar_info(info) -> tuple[str, tuple[str, ...]]:
         names = (desc.findtext("companion_streams") or "").split(",")
         if len(ids) == len(names):
             declared = tuple(name for metric, name in zip(ids, names) if metric.endswith("_valid") and name)
+    schema = desc.findtext("schema")
     if (not info.source_id()
-            or desc.findtext("schema") != "adr-waveform/1"
+            or schema not in {"adr-waveform/1", "adr-waveform/2"}
             or desc.findtext("stream_role") != "respiration_candidate"
             or desc.findtext("raw_source_metric_id") != "raw_acc"
-            or desc.findtext("respyra_signal_role") != "signed_breathing_level"
-            or desc.findtext("channels/channel/unit") != "g"
+            or desc.findtext("respyra_signal_role") != "signed_breathing_level"):
+        raise LSLForceError("Polar candidate does not match its Respyra input contract")
+    if schema == "adr-waveform/2":
+        bundled_polar_layout(desc, info.channel_count(), contract)
+        return contract, ()
+    if (info.channel_count() != 1 or desc.findtext("channels/channel/unit") != "g"
             or len(set(declared)) != POLAR_CONTRACTS[contract]):
         raise LSLForceError("Polar candidate does not match its Respyra input contract")
     return contract, tuple(sorted(declared))
@@ -50,11 +83,13 @@ def validate_polar_info(info) -> tuple[str, tuple[str, ...]]:
 class LSLPolarSource(LSLForceSource):
     """Use valid signed ACC projections in the existing study phase API."""
 
-    def __init__(self, inlet, source_id, stream_name, contract_id, valid_inlets):
-        super().__init__(inlet, 0, source_id, stream_name,
+    def __init__(self, inlet, source_id, stream_name, contract_id, valid_inlets,
+                 waveform_index=0, validity_indices=(), channels=()):
+        super().__init__(inlet, waveform_index, source_id, stream_name, channels or
                          [{"index": 0, "label": "Breathing-level candidate", "unit": "g"}])
         self.contract_id = contract_id
         self.valid_inlets = valid_inlets
+        self.validity_indices = validity_indices
         self.valid_history = {name: deque(maxlen=2048) for name in valid_inlets}
         self.polarity = 1
         self.ever_valid = False
@@ -71,12 +106,15 @@ class LSLPolarSource(LSLForceSource):
             return
         self.calibrated_id = identity
         self.calibrated_run_id = run_id
-        name = f"Respyra-Compare-{suffix}" if comparison else "Respyra-BreathCal"
-        info = StreamInfo(name, "Respiration", 1, 0, cf_float32, identity)
+        name = calibrated_stream_name(self.stream_name)
+        info = StreamInfo(name, "Respiration", len(self.channels), 0, cf_float32, identity)
         desc = info.desc()
         for key, value in {
             "application": "Respyra 2.0", "raw_source_id": self.source_id,
+            "stream_protocol": "respyra-stream/1",
+            "raw_source_name": self.stream_name,
             "input_contract": self.contract_id,
+            "raw_waveform_channel_index": str(self.force_index),
             "formula": "(polarity * waveform_g - center_g) / amplitude_g",
             "before_calibration": "NaN; parameters are in calibration.completed markers",
             "role": "comparison" if comparison else "feedback",
@@ -86,6 +124,16 @@ class LSLPolarSource(LSLForceSource):
         channel = desc.append_child("channels").append_child("channel")
         channel.append_child_value("label", "Calibrated breathing")
         channel.append_child_value("unit", "normalized")
+        channel.append_child_value("role", "waveform")
+        channel.append_child_value("validity_channels", ",".join(c["metric_id"] for c in self.channels
+                                                                  if c.get("role") == "validity"))
+        for definition in self.channels:
+            if definition["index"] == self.force_index:
+                continue
+            channel = desc.child("channels").append_child("channel")
+            for key in ("label", "unit", "metric_id", "role"):
+                if definition.get(key):
+                    channel.append_child_value(key, definition[key])
         self.calibrated_outlet = StreamOutlet(info)
         self.calibrated_uid = self.calibrated_outlet.get_info().uid()
 
@@ -104,17 +152,22 @@ class LSLPolarSource(LSLForceSource):
             raise LSLForceError(f"Polar breathing stream failed: {exc}") from exc
         accepted = []
         for row, timestamp in zip(rows, times, strict=True):
-            if (len(row) != 1 or not math.isfinite(row[0])
+            if (len(row) != len(self.channels) or not math.isfinite(row[self.force_index])
+                    or not all(math.isfinite(row[i]) and row[i] >= 0.5 for i in self.validity_indices)
                     or not all(self._valid_at(history, timestamp)
                                for history in self.valid_history.values())):
                 continue
-            value = self.polarity * float(row[0])
+            value = self.polarity * float(row[self.force_index])
             accepted.append((timestamp, value))
             self.latest_sample = (timestamp, [value])
             if self.calibrated_outlet is not None:
                 normalized = ((value - self.center) / self.amplitude
                               if self.center is not None else math.nan)
-                self.calibrated_outlet.push_sample([normalized], timestamp=timestamp)
+                # All channels are NaN before range calibration, so a finite
+                # native receipt still proves a finite calibrated waveform.
+                diagnostics = ([row[c["index"]] for c in self.channels if c["index"] != self.force_index]
+                               if self.center is not None else [math.nan] * (len(self.channels) - 1))
+                self.calibrated_outlet.push_sample([normalized, *diagnostics], timestamp=timestamp)
                 if self.center is not None:
                     self.calibrated_sample = timestamp
         if accepted:
@@ -161,7 +214,7 @@ def open_polar_source(resolved, timeout=20.0):
                     else item.name() == name)
         deadline = time.monotonic() + timeout
         found = []
-        while time.monotonic() < deadline:
+        while flags and time.monotonic() < deadline:
             found = resolve_streams(wait_time=min(1.0, deadline - time.monotonic()))
             if all(sum(referenced(item, name) for item in found) == 1 for name in flags):
                 break
@@ -180,7 +233,9 @@ def open_polar_source(resolved, timeout=20.0):
                 companion.close_stream()
                 raise LSLForceError(f"Polar validity outlet metadata changed: {name}")
             valid_inlets[name] = companion
-        source = LSLPolarSource(inlet, info.source_id(), info.name(), contract, valid_inlets)
+        layout = (bundled_polar_layout(desc, info.channel_count(), contract)
+                  if desc.findtext("schema") == "adr-waveform/2" else (0, (), ()))
+        source = LSLPolarSource(inlet, info.source_id(), info.name(), contract, valid_inlets, *layout)
         source.uid = info.uid()
         while time.monotonic() < deadline:
             if source.get_all():

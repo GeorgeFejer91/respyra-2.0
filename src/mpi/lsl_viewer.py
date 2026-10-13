@@ -7,6 +7,7 @@ import time
 from xml.etree import ElementTree as ET
 
 
+
 class LSLViewer:
     def __init__(self, marker_id):
         self.marker_id = marker_id
@@ -53,7 +54,9 @@ class LSLViewer:
                             channel = metadata[index] if index < len(metadata) else None
                             channels.append({"index": index,
                                 "label": (channel.findtext("label") if channel is not None else None) or f"Channel {index + 1}",
-                                "unit": channel.findtext("unit", "") if channel is not None else "", "value": None})
+                                "unit": channel.findtext("unit", "") if channel is not None else "",
+                                "role": channel.findtext("role", "measurement") if channel is not None else "measurement",
+                                "value": None})
                         streams[uid] = (inlet, {"uid": uid, "source_id": full.source_id(),
                             "name": full.name(), "type": full.type(), "numeric": full.channel_format() != cf_string,
                             "channels": channels, "lsl_time": None}, None)

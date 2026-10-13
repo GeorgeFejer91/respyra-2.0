@@ -42,13 +42,15 @@ feedback. See `RECORDING.md`.
   `src/mpi/signal.py` provides signal helpers.
 - `src/mpi/lsl_force.py` discovers the three supported input contracts and
   validates the Vernier raw Force (N) LSL outlet. `src/mpi/lsl_polar.py`
-  validates and consumes the two Polar ACC-derived outlets and their validity
+  validates and consumes the two Polar ACC-derived bundles and legacy validity
   companions; `src/mpi/polar_calibration.py` calibrates their signed g values.
   The input owner stores accepted source identity. `src/mpi/lsl_setup.py`
   owns discovery/selection for the HTML participant/session form,
   reconnects saved input, and gates Start on a live accepted source plus native
   recording readiness. `src/mpi/recording.py` supervises the pinned LabRecorder
   adapter under `native/recorder/` and verifies XDF completion.
+  The two Mini Link outlets remain separate recorded Bluetooth housekeeping
+  exceptions; the native watcher captures their original events and timestamps.
   That XDF is the primary analysis artifact: LSL headers and the recorded
   start marker provide channel/source and subject/session/task context for
   direct PyXDF/MNE or MNELAB import. XDF is not itself a BIDS raw format.
@@ -121,7 +123,7 @@ feedback. See `RECORDING.md`.
   `tests/test_desktop_process.py`,
   `tests/test_lsl_setup.py`, and
   `tests/test_signal.py` cover the local logic and a short simulated study run.
-  A selected Mini input, its validity companions when Polar is chosen, and an
+  A selected Mini input with bundled Polar readiness (or legacy validity companions), and an
   isolated display test environment are needed to verify the full experiment.
 
 ## Signal boundary
@@ -130,7 +132,7 @@ The suite starts with Mini acquisition defaults: Vernier publishes its raw
 `VernierRaw` device outlet (including Force in N) and connection-event markers;
 its other six outputs start off. Polar publishes direct ECG, ACC, heart rate and RR
 plus Chest Motion, Chest Motion DT and Flowborne phase, with the three required
-quality/validity companions. All-in-one and other derived metrics start off.
+quality/validity channels inside each waveform. All-in-one and other derived metrics start off.
 Starting with suite 0.3.11, installation resets Mini output choices to study
 defaults with a preferences backup; other settings and recordings are retained.
 Choices made afterward persist until the next suite installation.
@@ -262,4 +264,4 @@ calibration; unselected Polar polarity stays native +1 pending analysis.
 Git and runnable checks are the authority for branch, revision, and behavior.
 Do not turn this section into a second status ledger.
 
-Default recording and naming policy: D-0021 in DECISIONS.md, implemented in Suite 2.3.14 / Mini 0.6.10. The essential publisher selection is 11 Polar plus 2 Vernier outlets; Respyra adds selected calibration, usable comparisons and events (17 total with all three inputs). Exact names and abbreviations are documented in docs/stream-names.md and the live variables reference. Recorder discovery remains all-published; input hooks default Off.
+Default recording selection: D-0021 in DECISIONS.md, implemented in Suite 2.3.14 / Mini 0.6.10. Updated naming follows D-0022: visible Polar/Vernier prefixes and Respyra_<input name>_calibrated. D-0023 bundles waveform quality/readiness. D-0026 keeps Polar_Link and Vernier_Link as separate recorded Bluetooth housekeeping streams and removes the combined collector. D-0027 names the complete Vernier row Vernier_rawForce, its calibrated Force channel Respyra_rawForce_calibrated, and the optional scalar copy Vernier_rawForceOnly. With both devices and all three usable calibrated inputs, eight Polar, two Vernier and four Respyra outlets give 14 default streams. Other discovery remains independent of View. Protocol and names are in docs/stream-protocol.md and docs/stream-names.md. Input hooks default Off. Suite 2.3.15 / Mini 0.6.11 is the candidate for this contract; its installed/public evidence must pass before promotion.

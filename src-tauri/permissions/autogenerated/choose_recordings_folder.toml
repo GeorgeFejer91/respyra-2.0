@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-choose-recordings-folder"
+description = "Enables the choose_recordings_folder command without any pre-configured scope."
+commands.allow = ["choose_recordings_folder"]
+
+[[permission]]
+identifier = "deny-choose-recordings-folder"
+description = "Denies the choose_recordings_folder command without any pre-configured scope."
+commands.deny = ["choose_recordings_folder"]

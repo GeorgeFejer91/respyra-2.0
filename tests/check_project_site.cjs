@@ -31,15 +31,15 @@ const screenshots = path.resolve('.for-ai-local');
     await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
     assert.notEqual(await page.locator('html').getAttribute('data-pretext-fit'), 'unavailable');
     assert.equal(await page.getByRole('link', { name:'Download Respyra Suite for Windows' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.14/00-Respyra-Suite_2.3.14_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.15/00-Respyra-Suite_2.3.15_x64-setup.exe');
     assert.equal(await page.getByRole('link', { name:'Respyra 2.0 only' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.14/Respyra-2.0_2.3.14_x64-setup.exe');
+      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.15/Respyra-2.0_2.3.15_x64-setup.exe');
     for (const [name, file] of [
-      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.10_x64-setup.exe'],
-      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.10_x64-setup.exe'],
+      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.11_x64-setup.exe'],
+      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.11_x64-setup.exe'],
     ]) {
       assert.equal(await page.getByRole('link', { name }).getAttribute('href'),
-        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.14/' + file);
+        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.15/' + file);
     }
     for (const name of ['Download Vernier Stream Mini separately', 'Download Polar Stream Mini separately', 'Stream and data-flow wiki', 'Read the original preprint']) {
       assert(await page.getByRole('link', { name }).isVisible(), name);
@@ -52,7 +52,7 @@ const screenshots = path.resolve('.for-ai-local');
     await page.goto(base + 'variables.html');
     assert.deepEqual(await page.locator('#polar [data-variable-id]').evaluateAll(rows => rows.map(row => row.dataset.variableId)),
       primaryIds);
-    for (const metric of defaults) assert((await page.locator(`[data-variable-id="${metric.id}"] code`).textContent()).includes('H10_' + metric.streamSuffix));
+    for (const metric of defaults) assert((await page.locator(`[data-variable-id="${metric.id}"] code`).textContent()).includes('Polar_' + metric.streamSuffix));
     assert.deepEqual(await page.locator('#polar [data-support-id]').evaluateAll(rows => rows.map(row => row.dataset.supportId)),
       ['adr_pca_quality','adr_pca_valid','adr_axis_difference_valid','polar_signal_state']);
     assert.equal(await page.locator('#polar-support').getAttribute('open'), null);
@@ -66,7 +66,22 @@ const screenshots = path.resolve('.for-ai-local');
     assert.equal(await page.locator('[data-csv-id] strong').count(), 17);
     assert.deepEqual(await page.locator('[data-csv-id]').evaluateAll(rows => rows.slice(-4).map(row => row.dataset.csvId)), ['lsl_time_s','utc_time','berlin_time','time_reference']);
     assert(await page.locator('#naming').isVisible());
-    assert(await page.getByText(/can advertise 17 default outlets/).isVisible());
+    assert(await page.getByText(/the defaults record 14 streams/).isVisible());
+    const streamNames = [
+      'Polar_rawECG', 'Polar_rawACC', 'Polar_HR', 'Polar_RR', 'Polar_ChestPCA', 'Polar_ChestDT',
+      'Polar_BreathPhase', 'Polar_Link', 'Vernier_rawForce', 'Vernier_Link',
+      'Respyra_rawForce_calibrated', 'Respyra_ChestPCA_calibrated', 'Respyra_ChestDT_calibrated', 'Respyra-Events',
+    ];
+    const inventory = page.locator('.stream-inventory');
+    assert.deepEqual(await inventory.locator('thead th').allTextContents(), ['Stream name', 'Recorded contents', 'Long-form description']);
+    assert.deepEqual(await inventory.locator('tbody th code').allTextContents(), streamNames);
+    assert.equal(await inventory.locator('tbody tr').count(), 14);
+    assert((await inventory.locator('tbody tr').evaluateAll(rows => rows.map(row => row.children.length))).every(count => count === 3));
+    assert((await inventory.locator('tbody td:last-child p').allTextContents()).every(text => text.length > 240), 'Every stream needs a substantive long-form description');
+    assert((await inventory.locator('tbody tr').nth(8).textContent()).includes('Seven additional channels'));
+    assert((await inventory.locator('tbody tr').nth(10).textContent()).includes('(Force − center) / amplitude'));
+    assert((await inventory.locator('tbody tr').nth(4).textContent()).includes('principal component analysis (PCA)'), 'PCA must be written out in the inventory');
+    assert.equal(await page.locator('[data-support-id="respyra_housekeeping"]').count(), 0);
     assert.equal(await page.locator('#vernier-optional').getAttribute('open'), null);
     await page.locator('#vernier-optional summary').click();
     assert(await page.locator('[data-optional-id="vernier_breathing"]').isVisible());
@@ -74,7 +89,7 @@ const screenshots = path.resolve('.for-ai-local');
     const definitions = await page.locator('[data-variable-id] p').allTextContents();
     assert(definitions.every(text => text.length > 80), 'Every default variable needs a substantive definition');
     await page.goto(base + 'about.html');
-    assert(await page.getByText(/current Windows release is v2.3.14/).isVisible());
+    assert(await page.getByText(/current Windows release is v2.3.15/).isVisible());
     assert.equal(await page.getByRole('link', {name:'George Fejer · Google Scholar'}).getAttribute('href'), 'https://scholar.google.com/citations?hl=en&user=GPARoloAAAAJ');
     assert.equal(await page.getByRole('link', {name:'George Fejer · ORCID'}).getAttribute('href'), 'https://orcid.org/0000-0002-4904-5504');
     assert(await page.getByText(/Micah Allen and the Embodied Computation Group created/).isVisible());
@@ -151,6 +166,10 @@ const screenshots = path.resolve('.for-ai-local');
           element.getClientRects().length && (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)).map(element => ({text:element.textContent.slice(0,60),scrollHeight:element.scrollHeight,clientHeight:element.clientHeight,scrollWidth:element.scrollWidth,clientWidth:element.clientWidth})),
       }));
       assert(!result.horizontal && !result.clipped.length, JSON.stringify({ width,result }));
+      if (file === 'variables.html' && (width === 390 || width === 960)) {
+        await page.locator('#outlets').scrollIntoViewIfNeeded();
+        await page.screenshot({ path:path.join(screenshots, `stream-inventory-${width}.png`) });
+      }
       if (file === 'markers.html') {
         const panels = await page.locator('.app-reference').evaluateAll(elements => elements.map(element => ({
           width:element.scrollWidth - element.clientWidth, height:element.scrollHeight - element.clientHeight,

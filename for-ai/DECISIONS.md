@@ -405,7 +405,7 @@ decision and link both entries.
 ## D-0021 — Pin essential study outputs and concise scientific stream names
 
 - Date: 2026-10-11
-- Status: Accepted
+- Status: Accepted; naming superseded by D-0022, recording selection retained.
 - Context: The user confirmed the essential recorded-variable selection and
   requested shorter descriptive names in a new downloadable suite.
 - Decision: Fresh Polar selects ECG, three-axis ACC, HR, RR, the signed PCA and
@@ -437,3 +437,121 @@ decision and link both entries.
 - Supersedes: D-0019's broad Mini selection target; retains its selected-only
   feedback and default capture of all actually published streams. D-0020's
   backed-up output reset and local diagnostics remain in force.
+
+## D-0022 — Visible producer prefixes and identifiable calibrated copies
+
+- Date: 2026-10-12
+- Status: Accepted
+- Decision: Prefix every Mini outlet with Polar or Vernier, retaining custom
+  identifiers after that prefix. Use rawECG/rawACC for direct Polar samples and
+  rawVernier for the complete Vernier device row; keep rawForce for its optional
+  scalar copy. Respyra replaces the original producer prefix with Respyra and
+  appends _calibrated for both selected and alternative compatible inputs.
+  Retain original source name/ID and transformation/role metadata. Desktop rows
+  show the full outlet name. Every live usable recorded feedback input gets its
+  own calibrated outlet at Start; comparison recording defaults on and View
+  selection does not affect capture. Preserve explicit recording opt-outs.
+- Consequences: Default Polar/H10 identity migration retains historical source
+  IDs. Custom identifiers follow the producer label; exact Polar is now a
+  reserved factory prefix. Check publisher output, all three input-selection
+  paths, XDF values/headers and analysis import. Names describe the source tree;
+  they do not establish a changed installed or published artifact.
+- Supersedes: D-0021's source-prefix/display naming, retaining its default
+  publisher selection, selected-only feedback and all-published recording.
+
+## D-0023 — Put breathing readiness inside the variable stream
+
+- Date: 2026-10-13
+- Status: Accepted by the user's explicit request.
+- Decision: Polar ChestPCA/ChestDT use `adr-waveform/2` variable bundles with
+  same-row quality/readiness channels. Their Respyra calibrated copies retain
+  these channels after accepted range calibration; all derived fields are NaN
+  before calibration. The computation plan retains diagnostic dependencies even
+  when standalone copies are off. Feedback accepts only finite, ready rows.
+- Default selection: seven Polar signal outlets plus Link, two Vernier outlets,
+  three usable calibrated inputs plus events: 14 outlets with both devices.
+  Standalone PCAQuality/PCAValid/DTValid are optional. Link remains an event stream.
+- Compatibility: Existing metric IDs, source identities, waveform calculations
+  and study behavior remain; legacy scalar/companion inputs are accepted.
+- Supersedes: D-0021/D-0022's standalone required-diagnostic outlet counts.
+
+## D-0024 — Engineer streams for experimental variables and BIDS/MNE analysis
+
+- Date: 2026-10-13
+- Status: Accepted by the user's explicit request.
+- Contract: `docs/stream-protocol.md`, version `respyra-stream/1`, routes future
+  stream changes. Distinguish measurement/waveform channels from quality,
+  validity, diagnostics and events. Several waveforms declare their own readiness
+  references rather than sharing every flag indiscriminately.
+- Decision: Verified XDF completion automatically exports BIDS primary data and
+  linked support tables, preserving all recorded channel values and indices.
+  Additional streams use readable source-name labels. The MNE reader selects
+  experimental variables by default, applies readiness before explicit irregular
+  resampling, preserves gaps/class codes and scales supported voltage channels
+  to SI units. N/g/mg/normalized values retain units as MNE misc; no automatic
+  FIF export or mandatory MNE runtime dependency is introduced.
+- Skills: User-authorized quality-implementation and test-engineering installed
+  from kabiir90/Software-Engineering-Skills; existing control-plane gates prevail.
+
+## D-0025 — One recorded Housekeeping stream for both devices
+
+- Date: 2026-10-13
+- Status: Superseded by D-0026 at the user's explicit request.
+- Decision: Keep the Minis' device-connection reports as internal transport
+  inputs, and aggregate them in one required `Respyra_Housekeeping` diagnostic
+  stream. Hide/exclude the two transport streams from Respyra's visible list and
+  native capture, including late discovery. Preserve device identity, source
+  name/ID and source report time. Distinguish Link-input availability from
+  reported Bluetooth state; unknown stays unknown until a report arrives.
+- Ownership: NativeRecording starts/stops the collector with the recording,
+  requires native sample receipt and closed-XDF completion, and reports collector
+  failures. One input's loss is diagnostic and does not stop the other input.
+- Result: With both devices and all usable calibrated inputs, 13 streams are
+  recorded by default; two additional Link transport outlets exist on LSL.
+  Quality/readiness remain inside waveform bundles. Study events remain separate
+  experimental timing data. BIDS preserves Housekeeping as a support table.
+- Supersedes: D-0023's separate recorded Link streams and count of 14.
+
+## D-0026 — Each applet keeps its own Bluetooth Link stream
+
+- Date: 2026-10-13
+- Status: Accepted by the user's explicit request.
+- Decision: Polar_Link and Vernier_Link are the two dedicated housekeeping
+  exceptions in the default setup. Each Mini owns its Bluetooth loss/recovery
+  events. Respyra shows and records both directly, including late discovery.
+  Remove the combined collector and its filtering/lifecycle/marker fields.
+- Contract: Preserve producer source IDs, codes 1 lost / 2 restored, event
+  timestamps and sparse event roles. No signal strength or recovery is invented.
+  Quiet Link streams do not block Start; XDF retains empty headers/footers.
+  Nonempty Link data exports as supporting BIDS tables and requires explicit
+  support selection for MNE. Quality/readiness stay in the waveform bundles;
+  acquisition diagnostics stay in their raw measurement stream.
+- Defaults: Eight Polar outlets, two Vernier outlets, three usable calibrated
+  copies and study events: 14 streams recorded by default with both devices.
+- Supersedes: D-0025's combined stream, hidden inputs and count of 13.
+
+## D-0027 — Name the complete Vernier raw stream for Force
+
+- Date: 2026-10-13
+- Status: Accepted by the user's explicit naming request.
+- Decision: Rename the default complete row from Vernier_rawVernier to
+  Vernier_rawForce, yielding Respyra_rawForce_calibrated for its Force channel.
+  Keep every device channel and acquisition diagnostic inside the raw row.
+  The optional scalar copy uses Vernier_rawForceOnly to avoid a name collision.
+- Contract: Preserve existing source IDs, metric IDs, saved selection keys,
+  channel labels/roles, units, formulas and acquisition timestamps. Old recordings
+  retain their original names. Defaults still record 14 outlets when available.
+- Supersedes: D-0022's Vernier aggregate/scalar display names only.
+
+## D-0028 — Ship the approved inventory in Suite 2.3.15 / Mini 0.6.11
+
+- Date: 2026-10-13
+- Status: Accepted by the user's explicit approval and public-shipment request.
+- Decision: Publish the D-0026/D-0027 inventory consistently in all programs,
+  standalone/suite installers, source, public Pages, variable table and wiki.
+  Write out principal component analysis (PCA) in the table descriptions.
+- Gates: Commit/pin clean source, build new artifacts, qualify their exact
+  installed payloads on private Windows desktops, retain matching source/
+  manifest/checksum evidence, verify draft parity, then public downloads and
+  fresh deployed-asset parity. Historical names/IDs and prior release evidence
+  remain intentional compatibility/history. No physical BLE or signing claim.

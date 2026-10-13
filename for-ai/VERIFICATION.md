@@ -66,6 +66,12 @@ passes as background-qualified. This policy edit does not require a GUI test.
 
 ## Select checks by impact
 
+Apply [CONSISTENCY.md](./CONSISTENCY.md) for affected renames/contracts and due
+suite inventory reviews. Trace implementation, documentation and packaging
+consumers before selecting checks. Search/link agreement alone cannot verify
+runtime names or installed/published parity; record each surface separately and
+reuse unchanged evidence under the rules below.
+
 For parallel candidate recording, `tests/check_parallel_recording.py` must run
 headlessly in a private LSL SessionID. It must independently decode a closed
 XDF and check three raw inputs, three separate calibrated outlets, paired
@@ -431,3 +437,24 @@ Report checks run now, recorded evidence reused and why omitted suites are
 unaffected. Report exact commands or observed surfaces, results, untested scope,
 commit SHA,
 remote synchronization, CI/deployment state, and whether `for-ai/` changed.
+
+## Stream protocol changes
+
+For docs/stream-protocol.md changes, verify producer metadata and intrinsic
+diagnostics with Mini verify_adr_lsl in separate/single/both modes and the
+actual Respyra reader. Run the three private-session parallel-recording captures,
+check every original XDF channel across BIDS data/support tables with
+check_bids_compatibility.py, validate BIDS and open MNE measurement/support views.
+Test per-waveform readiness references, SI voltage scaling, class-code/gap
+resampling and legacy inputs. Mini --streams UI verification selects the
+changed default/picker/mock behavior; it does not replace the unrelated full
+battery/titlebar layout gate. All checks remain headless/CLI/private-session.
+
+For Link housekeeping or recorder-selection changes, run focused recorder/
+setup/marker tests and the three private-session parallel captures. Each must
+contain both nonempty Link streams with original loss/recovery codes and no
+combined Housekeeping stream. Verify visible Link rows, late discovery, sparse
+or empty Link outlets without a Start block, closed-XDF footers, exact BIDS
+values/timestamps and MNE supporting-channel selection. Unchanged Mini producer
+contracts can reuse their recorded real-publication evidence. All runs remain
+headless/private-session; hardware and installed runtime claims are separate.

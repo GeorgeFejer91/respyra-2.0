@@ -15,8 +15,18 @@
    user's active windows. An unavailable isolated runner leaves GUI checks
    `NOT RUN`; continue the safe applicable work without opening test windows.
 6. Review the diff for accidental scope, secrets, generated output, and stale
-   context.
+   context. Complete the applicable [consistency sweep](./CONSISTENCY.md) and
+   report source, installed and published agreement separately.
 7. Update project memory and publish only when the rules below apply.
+
+## Recurring consistency review
+
+At session start, check [CONSISTENCY.md](./CONSISTENCY.md)'s cadence against the
+latest suite-wide receipt in [VERIFIED.md](./VERIFIED.md). Apply its focused
+change, release and periodic triggers; record gaps rather than treating stale
+installer or website contents as current. The protocol owns the cadence and
+procedure. Reuse valid checks under `VERIFICATION.md`; this is not a request to
+rerun the full test matrix or publish outside the task's authorization.
 
 ## Control-plane update triggers
 
@@ -63,6 +73,8 @@ forever.
 - Intended files changed; unrelated work left untouched.
 - Verification run, valid evidence reused, omitted checks with impact reason,
   and evidence limitations.
+- Consistency sweep scope/result when applicable, including intentional legacy
+  names and any pending installer or live-documentation alignment.
 - `for-ai/` update: yes/no and why.
 - Commit SHA, branch, remote sync, CI/deployment result.
 - Remaining blocker or next smallest product decision.

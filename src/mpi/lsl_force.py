@@ -18,6 +18,15 @@ class LSLForceError(RuntimeError):
     """The required raw force stream is missing or unusable."""
 
 
+def calibrated_stream_name(stream_name: str) -> str:
+    """Replace a publisher prefix while retaining the input's signal name."""
+    for prefix in ("Polar-H10-Mini_", "Vernier-GDX-Mini_", "Polar_", "H10_", "Vernier_", "Polar-", "H10-", "Vernier-"):
+        if stream_name.startswith(prefix):
+            stream_name = stream_name[len(prefix):]
+            break
+    return f"Respyra_{stream_name or 'breathing'}_calibrated"
+
+
 def force_channel_index(xml: str, channel_count: int) -> int:
     """Find the raw GDX-RB Force (N) channel without assuming its position."""
     root = ElementTree.fromstring(xml)
@@ -64,7 +73,7 @@ class ForceStreamCandidate:
 def scan_force_streams(wait_time: float = 1.0) -> list[ForceStreamCandidate]:
     """List visible streams and the three exact study-input contracts."""
     from pylsl import StreamInlet, resolve_streams
-    from mpi.lsl_polar import validate_polar_info
+    from mpi.lsl_polar import validate_polar_info, bundled_polar_layout
 
     candidates = []
     for resolved in resolve_streams(wait_time=wait_time):
@@ -82,7 +91,9 @@ def scan_force_streams(wait_time: float = 1.0) -> list[ForceStreamCandidate]:
                 reason = "Compatible: raw Force (N)"
             else:
                 contract, _ = validate_polar_info(full_info)
-                index = 0
+                desc = ElementTree.fromstring(full_info.as_xml()).find("desc")
+                index = (bundled_polar_layout(desc, full_info.channel_count(), contract)[0]
+                         if desc.findtext("schema") == "adr-waveform/2" else 0)
                 reason = f"Compatible: {contract} (g)"
         except Exception as exc:
             reason = str(exc)
@@ -175,10 +186,13 @@ class LSLForceSource:
             return
         self.calibrated_id = identity
         self.calibrated_run_id = run_id
-        name = f"Respyra-Compare-{suffix}" if comparison else "Respyra-BreathCal"
+        name = calibrated_stream_name(self.stream_name)
         info = StreamInfo(name, "Respiration", 1, 0, cf_float32, identity)
         desc = info.desc()
         for key, value in {"application": "Respyra 2.0", "raw_source_id": self.source_id,
+                           "stream_protocol": "respyra-stream/1",
+                           "raw_source_name": self.stream_name,
+                           "raw_waveform_channel_index": str(self.force_index),
                            "formula": "(force_n - center_n) / amplitude_n",
                            "before_calibration": "NaN; parameters are in calibration.completed markers",
                            "role": "comparison" if comparison else "feedback"}.items():
@@ -186,6 +200,7 @@ class LSLForceSource:
         channel = desc.append_child("channels").append_child("channel")
         channel.append_child_value("label", "Calibrated breathing")
         channel.append_child_value("unit", "normalized")
+        channel.append_child_value("role", "waveform")
         self.calibrated_outlet = StreamOutlet(info)
         self.calibrated_uid = self.calibrated_outlet.get_info().uid()
 

@@ -26,11 +26,13 @@ the easiest interpretation.
 | --- | --- |
 | Scope, goals, boundaries, architecture, current state | [`PROJECT.md`](./PROJECT.md) |
 | HTML interface design and viewport fitting | [`HTML-UI.md`](./HTML-UI.md) |
+| Stream engineering roles, channel bundles and BIDS/MNE analysis | [`../docs/stream-protocol.md`](../docs/stream-protocol.md) |
 | Native LSL/XDF recording, calibration boundary and completion evidence | [`RECORDING.md`](./RECORDING.md) |
 | Which installed skills apply and in what order | [`SKILLS.md`](./SKILLS.md) |
 | Acceptance criteria, commands, gates, evidence limits | [`VERIFICATION.md`](./VERIFICATION.md) |
 | Verification inventory, prior results and reuse limits | [`VERIFIED.md`](./VERIFIED.md) |
 | Session loop, updates, Git publication, handoff | [`WORKFLOW.md`](./WORKFLOW.md) |
+| Cross-suite naming, documentation/installer drift, periodic consistency sweeps | [`CONSISTENCY.md`](./CONSISTENCY.md) |
 | Standalone Windows installer, runtime inputs, installation and release gates | [`PACKAGING.md`](./PACKAGING.md) |
 | Why a durable choice was made or superseded | [`DECISIONS.md`](./DECISIONS.md) |
 
@@ -40,11 +42,13 @@ task touches.
 ## Session loop
 
 1. Resolve the repository root and inspect Git status before changing anything.
+   Check whether the periodic inventory review in `CONSISTENCY.md` is due.
 2. State the requested observable outcome and select the task-owned documents,
    skills, and verification gates.
 3. Inspect the existing owner before adding code, files, dependencies, or
    abstractions.
-4. Make the smallest complete change and preserve unrelated work.
+4. Make the smallest complete change and preserve unrelated work. Follow
+   `CONSISTENCY.md` when changing a name, default or cross-surface contract.
 5. Select checks by change impact; reuse valid recorded passes and run only
    affected focused/integration checks. The verification catalogue is not a
    mandatory full-project checklist. Run checks in the background without

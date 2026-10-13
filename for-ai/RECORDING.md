@@ -1,6 +1,6 @@
 # Native recording contract
 
-Default candidate capture: Start advertises one `Respyra-Compare-*`
+Default candidate capture: Start advertises one `Respyra_<input name>_calibrated`
 normalized LSL outlet for every other live compatible Vernier Force or Polar
 PCA/signed-Phan input whose raw Record box remains checked. The native recorder
 requires each such raw and derived outlet to supply samples before the study
@@ -18,8 +18,9 @@ Read for recorder, Start, calibration/stream lifecycle, XDF or remote-data work.
 Input suitability uses channel format, units, measurement/waveform role and
 declared readiness references, never stream or channel display names. Stable
 source IDs bind recording/reconnection and declared validity companions;
-their spelling is unrestricted. Polar supports one Float32/Double64 signed
-g waveform with a known processing contract and finite live valid samples;
+their spelling is unrestricted. Polar supports a Float32/Double64 signed g waveform with a known processing
+contract and same-row quality/readiness channels. Legacy scalar inputs with
+separate validity companions remain accepted;
 Flowborne class codes cannot drive feedback. Legacy Mini companion metadata
 remains accepted. Raw Vernier Force is selected by sensor/unit/type metadata.
 The user superseded external-recorder-only operation with recording bundled into
@@ -30,7 +31,7 @@ Source/provenance is in `native/recorder/README.md`.
   `mpi.recording.NativeRecording` owns the native child's private pipes, output,
   readiness, stop and file completion. HTML/phone Start uses the existing action
   path; neither may select an executable, arbitrary path or shell command.
-- Start prepares `Respyra-BreathCal` before launching the recorder and
+- Start prepares the selected `Respyra_<input name>_calibrated` before launching the recorder and
   requires the exact selected raw input, marker and derived subscriptions plus actual samples
   from each before participant setup acceptance or PsychoPy creation. Failure
   rejects Start. Before calibration, the derived channel emits NaN with the raw
@@ -54,16 +55,29 @@ Source/provenance is in `native/recorder/README.md`.
   footers. Its reconstruction covers the protocol, response markers and breathing
   samples; exact rendered frame pixels and flip times are not in XDF.
 - One native watch query records visible streams and discovers later streams.
+  Polar_Link and Vernier_Link are the default standalone housekeeping exceptions:
+  each Mini owns its Bluetooth loss/recovery event outlet. Both are visible and
+  recorded directly unless explicitly opted out. They retain source identity and
+  event time; no combined collector duplicates or rewrites them. Sparse Link
+  outlets need not supply samples for Start. Closed XDF retains empty headers/
+  footers; BIDS exports nonempty Link events as timed supporting tables, excluded
+  from default MNE experimental-variable selection. Quality/readiness remain in
+  the waveform bundles and acquisition diagnostics remain in the raw aggregate.
   The setup Record checkboxes can exclude specific discovered LSL UIDs before
   Start; the accepted raw input, Respyra derived outlet and event markers override
   exclusions. Unseen later streams record by default. View selection is local
   to the plot and does not change XDF capture.
+  Selected and comparison waveforms retain the input name after replacing the
+  producer prefix with `Respyra` and adding `_calibrated`. Headers keep the
+  original `raw_source_name`, source ID, formula and feedback/comparison role;
+  stable IDs, not display names, bind the required streams. See
+  [stream names](../docs/stream-names.md).
   Stable source IDs deduplicate; source-less streams use UID. A producer must
   exist before subscription: late discovery cannot recover samples sent before
   connection. Publish a required derived outlet early if its first sample matters.
-  Additional streams do not replace the selected validated input. Polar validity
-  companions remain separate recorded streams unless the experimenter excludes
-  them; the accepted waveform, derived outlet and markers remain mandatory.
+  Additional streams do not replace the selected validated input. Polar quality/validity channels belong to their waveform bundles and are
+  recorded intrinsically. Optional standalone copies remain selectable;
+  the accepted waveform, derived outlet and markers remain mandatory.
 - Recorder errors fail the study at cancellation checkpoints. Normal, stopped
   and failed runs attempt recording finalization after source/display cleanup.
   `recording.finalizing` remains inside XDF; final HTML result/Close markers follow it.
@@ -91,15 +105,19 @@ Source/provenance is in `native/recorder/README.md`.
   Mini streams. A numeric outlet is BIDS physiology only when its positive nominal
   rate agrees with every recorded interval within 2%; otherwise use a timed
   `_beh.tsv` table without asserting a regular rate. String outlets also use timed
-  behavioral tables. Each table preserves the original sample timestamps relative
+  behavioral tables. Mixed streams export primary measurement columns and a linked support table.
+  Channel roles, original indices and MNE type/scale metadata follow
+  `docs/stream-protocol.md`. Each table preserves the original sample timestamps relative
   to the selected raw input and sidecar metadata preserves LSL identity, labels,
   units, channel order and processing provenance. Do not invent dropped samples.
   BIDS tables preserve integer channel values exactly and retain double-precision
   values to round-trip precision; MNE Raw may lose precision for integers above
   2^53, so the BIDS table and XDF remain the data authority for those channels.
   `mpi.bids_mne.read_bids_signal` opens fixed-rate physiology as MNE Raw and
-  requires an explicit rate for irregular resampling; all channels remain MNE
-  `misc` until their physical units and type are mapped deliberately. XDF remains
+  requires an explicit rate for irregular resampling; only experimental measurements are selected by default. Bundled readiness
+  masks unusable waveform samples; supported voltage channels convert to volts
+  and their MNE type, while Force/ACC/normalized breathing remain `misc`.
+  Supporting channels require explicit `include_support=True`. XDF remains
   the full-stream timing authority, including empty streams. BIDS export failure reports
   an error while preserving the verified XDF and participant record. Earlier
   recordings in `%LOCALAPPDATA%/Respira/data` remain untouched.

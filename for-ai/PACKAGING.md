@@ -1,11 +1,16 @@
 # Windows standalone packaging protocol
 
-Fresh suite preferences must retain the Mini defaults: published `Vernier_Raw`
-(all device channels, including Force in N, and acquisition diagnostics) plus
-`Vernier_Link` connection events; the other six Vernier outlets start off.
-Polar defaults publish `H10_ECG`, `H10_ACC`, `H10_HR`, `H10_RR`, `H10_ChestPCA`,
-`H10_ChestDT`, `H10_BreathPhase`, `H10_PCAQuality`, `H10_PCAValid`, `H10_DTValid`
-and `H10_Link`. Polar All-in-one and other derived metrics start off.
+Fresh suite preferences must retain the updated Mini defaults:
+`Vernier_rawForce` (all available device measurements and acquisition
+diagnostics) plus the `Vernier_Link` Bluetooth housekeeping stream. Polar defaults
+publish `Polar_rawECG`, `Polar_rawACC`, `Polar_HR`, `Polar_RR`, `Polar_ChestPCA`,
+`Polar_ChestDT`, `Polar_BreathPhase` and the `Polar_Link` Bluetooth housekeeping
+stream. Chest streams bundle quality/validity; scalar diagnostic copies and
+All-in-one outputs start off. Both Link streams are recorded directly by default.
+With both devices and three usable calibrated inputs, the default recorded
+inventory is 14 streams.
+Suite 2.3.15 / Mini 0.6.11 is the release candidate for these defaults. Promote
+only its exact qualified artifacts and keep historical release references intact.
 Use [`../docs/stream-names.md`](../docs/stream-names.md) for naming/identity migration;
 internal metric IDs, units and scientific processing are retained. Respyra defaults all visible/later LSL streams and
 parallel comparison waveforms to recording. Starting with suite 0.3.11, installation,
@@ -95,6 +100,12 @@ launch them on the user's active desktop; missing isolation leaves those gates
   and native subscription evidence before Start acceptance.
 
 ## Build and evidence
+
+Use [CONSISTENCY.md](./CONSISTENCY.md) for the suite-wide review before release
+promotion. Reconcile intended names/defaults with the actual bundled producers,
+consumers and installed settings, and bind documentation to the exact candidate.
+Record pending source-versus-release differences until delivery is verified;
+an updated source reference alone does not qualify the installer or live site.
 
 1. Inspect status, versions, locks, license changes and capacity. Preserve user
    work. Generated caches may be cleaned with Cargo, never user recordings.

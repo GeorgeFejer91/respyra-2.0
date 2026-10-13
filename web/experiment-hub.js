@@ -432,27 +432,6 @@ import { participantOptions, selectParticipant } from './participant-options.js'
     function applyDiscovery(payload) {
       const now = performance.now() / 1000;
       latestRows = Array.isArray(payload.streams) ? payload.streams : [];
-      const families = new Map();
-      for (const row of latestRows) {
-        const parts = row.name.split(/[-_]/).filter(Boolean);
-        if (!families.has(parts[0])) families.set(parts[0], []);
-        families.get(parts[0]).push(parts);
-      }
-      const commonPrefixes = new Map();
-      for (const [family, names] of families) {
-        const prefix = [...names[0]];
-        for (const parts of names.slice(1)) while (prefix.length && !prefix.every((word, index) => parts[index] === word)) prefix.pop();
-        commonPrefixes.set(family, names.length > 1 ? prefix.length : 0);
-      }
-      const shortNames = latestRows.map(row => {
-        const parts = row.name.split(/[-_]/).filter(Boolean);
-        const prefixLength = commonPrefixes.get(parts[0]);
-        if (!prefixLength) return row.name;
-        return (parts.slice(prefixLength).length ? parts.slice(prefixLength) : parts.slice(1, 3)).join(' ') || row.name;
-      });
-      const shortNameCounts = new Map();
-      for (const name of shortNames) shortNameCounts.set(name, (shortNameCounts.get(name) || 0) + 1);
-      const shortNameIndex = new Map();
       discoveryError = payload.error || '';
       const eligible = latestRows.filter(row => row.compatible);
       if (selectedSource && !eligible.some(row => row.uid === selectedSource)) selectedSource = '';
@@ -461,13 +440,10 @@ import { participantOptions, selectParticipant } from './participant-options.js'
       if (selectedSource) sourceAssigned = true;
       const actualProcessed = latestRows.some(row => row.source_id?.startsWith('respyra-breathing-'));
 
-      streams = latestRows.map((row, index) => {
+      streams = latestRows.map(row => {
         const id = row.uid, processed = !!row.source_id?.startsWith('respyra-breathing-');
-        const baseName = shortNames[index];
-        const nextIndex = (shortNameIndex.get(baseName) || 0) + 1;
-        shortNameIndex.set(baseName, nextIndex);
-        const shortName = processed ? 'Respyra breathing' : shortNameCounts.get(baseName) > 1 ? `${baseName} ${nextIndex}` : baseName;
-        const required = id === selectedSource || (processed && !!selectedSource);
+        const comparison = !!row.source_id?.startsWith('respyra-comparison-');
+        const required = id === selectedSource || ((processed || comparison) && !!selectedSource);
         const choice = choices.get(id) || {};
         const channels = row.numeric ? row.channels.map(channel => {
           const key = `${id}:${channel.index}`;
@@ -487,7 +463,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
           }
           if (history.points.length > 4096) history.points.splice(0, history.points.length - 4096);
           histories.set(key, history);
-          return { name: channel.label, plotLabel: `${channel.label}${channel.unit ? ` (${channel.unit})` : ''}`, points: history.points };
+          return { name: channel.label, role: channel.role || 'measurement', plotLabel: `${channel.label}${channel.unit ? ` (${channel.unit})` : ''}`, points: history.points };
         }) : [];
         const markerKey = `marker:${id}`;
         const markerHistory = histories.get(markerKey) || { last: null, points: [] };
@@ -496,27 +472,27 @@ import { participantOptions, selectParticipant } from './participant-options.js'
           markerHistory.last = row.lsl_time; markerHistory.points.push(now);
         }
         histories.set(markerKey, markerHistory);
-        return { id, name: row.name, shortName, detail: `${row.type} · ${row.signal} · ${row.reason} · ${row.channels.length} channels`,
+        return { id, name: row.name, detail: `${row.type} · ${row.signal} · ${row.reason} · ${row.channels.length} channels`,
           compatible: row.compatible, signal: row.signal,
           record: required || (native ? !nativeExcluded.has(id) : choice.record !== false),
-          display: choice.display ?? required, required, processed, channels, numeric: row.numeric,
+          display: choice.display ?? (required && !comparison), required, processed, channels, numeric: row.numeric,
           markers: markerHistory.points, color: colorFor(id, processed) };
       });
-      if (selectedSource && !actualProcessed) streams.push({ id: 'pending-calibrated', name: 'Respyra-BreathCal', shortName: 'Respyra breathing',
+      if (selectedSource && !actualProcessed) streams.push({ id: 'pending-calibrated', name: `Respyra_calibrated (from ${eligible.find(row => row.uid === selectedSource).name})`,
         detail: 'Prepared at Start; calibrated values begin after calibration', record: true, display: false, required: true,
         pending: true, channels: [], markers: [], color: '#4ed482' });
       if (selectedSource && (!native || nativeState.phase === 'setup') && (native ? nativeState.compare_inputs !== false : $('compare-inputs').checked)) {
         for (const candidate of eligible.filter(row => row.uid !== selectedSource &&
           (native ? !nativeExcluded.has(row.uid) : choices.get(row.uid)?.record !== false))) {
-          streams.push({ id: `pending-comparison:${candidate.uid}`, name: `Comparison waveform for ${candidate.name}`,
-            shortName: `Comparison · ${candidate.name}`, detail: 'Prepared at Start from this raw input; calibrated independently',
+          streams.push({ id: `pending-comparison:${candidate.uid}`, name: `Respyra_calibrated (from ${candidate.name})`,
+            detail: 'Prepared at Start from this raw input; calibrated independently',
             record: true, display: false, required: true, pending: true, channels: [], markers: [], color: '#4ed482' });
         }
       }
       streams.sort((a, b) => Number(b.id === selectedSource) - Number(a.id === selectedSource) ||
         Number(b.id === 'pending-calibrated' || b.processed) - Number(a.id === 'pending-calibrated' || a.processed));
 
-      const signature = JSON.stringify([selectedSource, discoveryError, nativeProgress.health?.signal, eligible.map(row => [row.uid, row.type]), streams.map(({ id, name, shortName, signal, required, pending, record }) => [id, name, shortName, signal, required, pending, record])]);
+      const signature = JSON.stringify([selectedSource, discoveryError, nativeProgress.health?.signal, eligible.map(row => [row.uid, row.type]), streams.map(({ id, name, signal, required, pending, record }) => [id, name, signal, required, pending, record])]);
       if (signature !== discoverySignature) {
         discoverySignature = signature;
         renderSourceOptions(eligible);
@@ -591,7 +567,7 @@ import { participantOptions, selectParticipant } from './participant-options.js'
         const displayLetter = document.createElement('span'); displayLetter.dataset.measure = ''; displayLetter.textContent = 'V';
         displayWrap.append(display, displayLetter);
         const identity = document.createElement('div'); identity.className = 'stream-identity'; identity.innerHTML = `<span class="stream-name" data-measure></span>`;
-        identity.children[0].textContent = stream.shortName || stream.name;
+        identity.children[0].textContent = stream.name;
         identity.title = `${stream.name} · ${stream.detail}${stream.required ? ' · required recording' : ''}`;
         row.append(recordWrap, displayWrap, identity); list.append(row);
       }
@@ -606,7 +582,10 @@ import { participantOptions, selectParticipant } from './participant-options.js'
 
     }
     function displayedChannels() {
-      return streams.filter(stream => stream.display).flatMap(stream => (stream.channels || []).map(channel => ({ stream, channel })));
+      return streams.filter(stream => stream.display).flatMap(stream => (stream.channels || [])
+        .filter(channel => ['measurement', 'waveform'].includes(channel.role) ||
+          !stream.channels.some(candidate => ['measurement', 'waveform'].includes(candidate.role)))
+        .map(channel => ({ stream, channel })));
     }
     const colors = new Map();
     function colorFor(id, processed) {

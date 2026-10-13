@@ -1,6 +1,6 @@
 # Respyra 2.0
 
-**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.14/00-Respyra-Suite_2.3.14_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.14) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
+**[Download Respyra Suite for Windows](https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.15/00-Respyra-Suite_2.3.15_x64-setup.exe)** · [Separate installers](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.15) · [Project wiki and data-flow diagrams](https://github.com/GeorgeFejer91/respyra-2.0/wiki) · [Installation guide](docs/windows-install.md) · [Project website](https://georgefejer91.github.io/respyra-2.0/)
 
 Respyra 2.0 is a Windows app for a Python breathing target-tracking study. The PsychoPy task asks
 participants to follow a breathing target while visual feedback is normal,
@@ -15,7 +15,7 @@ Respyra 2.0 is developed by George Fejer. The project site includes a [default r
 
 The pinned `mini-streams` submodule provides [Vernier Stream Mini and Polar Stream Mini](https://github.com/GeorgeFejer91/Polar-Mini-Stream). `pnpm package:suite` builds both individual Mini installers, the separate Respyra installer, and a suite installer with all three applications and a common launcher. Clone with `git clone --recurse-submodules` to build the suite.
 
-The **v2.3.14 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.14) are on this repository's GitHub Release. Fresh Polar preferences select ECG, three-axis accelerometer, native heart rate/RR, Chest Motion, Chest Motion DT and Flowborne phase, with required readiness flags; other Polar metrics remain optional. Vernier defaults to raw device data (including Force) and connection events; its other six outputs remain optional. Respyra has one main feedback-input selector and records every visible LSL stream by default, with a separately calibrated comparison outlet for each other live compatible input. Closing a study recording automatically produces its six-panel summary from the verified XDF. The Data folder path is visible and editable. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
+The **v2.3.15 Windows suite preview** is the primary download above. Its installer provides four desktop and Start menu shortcuts: Respyra 2.0, Polar Stream Mini, Vernier Stream Mini, and **Launch Respyra Suite**. All [four installers and their checksums](https://github.com/GeorgeFejer91/respyra-2.0/releases/tag/v2.3.15) are on this repository's GitHub Release. Fresh Polar preferences select ECG, three-axis accelerometer, native heart rate/RR, Chest Motion, Chest Motion DT and Flowborne phase, with quality/readiness channels bundled inside both chest waveforms; other Polar metrics remain optional. Vernier defaults to Vernier_rawForce (all device measurements and acquisition diagnostics) and Vernier_Link; its other six outputs remain optional. Respyra has one main feedback-input selector and records every visible LSL stream by default, with a separately calibrated comparison outlet for each other live compatible input. Closing a study recording automatically produces its six-panel summary from the verified XDF. The Data folder path is visible and editable. Settings and Record boxes allow opt-outs. Physical Bluetooth reconnect and real-device recording remain unqualified for this preview.
 
 The importable Python package keeps its original name, `mpi`.
 
@@ -34,7 +34,7 @@ The attributed original [Respyra logo](assets/branding/README.md) is included.
 ## Setup
 
 The [experiment audit](docs/experiment-audit.md) compares this study with the
-original import. Suite 2.3.14 adds
+original import. Suite 2.3.15 adds
 [UTC/Berlin timestamp fields](docs/timestamps.md), using an optional free HTTPS
 reference and automatic offline computer-clock fallback.
 
@@ -87,7 +87,7 @@ samples and a unique stable source ID. Polar also requires the experimenter to
 choose whether inhalation raises or lowers the waveform. The run stops if valid
 samples disappear.
 
-**Respyra-BreathCal** is advertised before recording and contains
+**Respyra_&lt;input name&gt;_calibrated** is advertised for each compatible recorded breathing input before recording and contains
 NaN until calibration. It then publishes the selected signal centered and
 scaled by its calibrated amplitude, retaining the raw inlet's synchronized
 timestamps and calibration metadata. Values are not clipped or adjusted by

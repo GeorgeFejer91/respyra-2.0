@@ -48,7 +48,7 @@ def test_bids_export_writes_events_and_timed_breathing(monkeypatch, tmp_path):
         sidecar = json.loads((directory / f"{stem}_recording-raw_physio.json").read_text(encoding="utf-8"))
         assert sidecar["Columns"] == ["timestamp", "channel1"]
         assert sidecar["SamplingFrequency"] == 10
-        irregular = f"sub-002_ses-001_task-respyra_acq-lsl01_run-{run:02d}_beh"
+        irregular = f"sub-002_ses-001_task-respyra_acq-polaracc_run-{run:02d}_beh"
         with (directory / f"{irregular}.tsv").open(encoding="utf-8", newline="") as handle:
             assert list(csv.reader(handle, delimiter="\t")) == [
                 ["timestamp", "channel1"], ["0.020000000", "0.1"],
@@ -58,7 +58,7 @@ def test_bids_export_writes_events_and_timed_breathing(monkeypatch, tmp_path):
         assert mini_sidecar["channel1"]["Units"] == "g"
         assert mini_sidecar["LSLSource"]["SourceID"] == "mini-acc"
         assert "SamplingFrequency" not in mini_sidecar
-        assert (directory / f"{stem}_recording-lsl02_physio.tsv.gz").exists()
+        assert (directory / f"{stem}_recording-polarecg_physio.tsv.gz").exists()
         assert (directory / f"sub-002_ses-001_task-respyra_acq-lsl03_run-{run:02d}_beh.tsv").exists()
         counter_path = directory / f"sub-002_ses-001_task-respyra_acq-lsl04_run-{run:02d}_beh.tsv"
         assert counter_path.read_text(encoding="utf-8").splitlines()[1].endswith(str(2**53 + 1))
@@ -70,3 +70,31 @@ def test_bids_export_writes_events_and_timed_breathing(monkeypatch, tmp_path):
     with pytest.raises(json.JSONDecodeError):
         export_bids(tmp_path / "recording.xdf", tmp_path, ("raw", "markers", "calibrated"), "P002", "001")
     assert not list(directory.glob("*_run-03_*"))
+
+
+def test_bundled_export_keeps_measurements_separate_from_linked_readiness(monkeypatch, tmp_path):
+    raw = {"info": {"source_id": ["raw"], "name": ["Polar_ChestPCA"], "type": ["Respiration"],
+        "channel_format": ["float32"], "channel_count": ["3"], "nominal_srate": ["10"],
+        "desc": [{"channels": [{"channel": [
+            {"label": ["ChestPCA"], "unit": ["g"], "role": ["waveform"]},
+            {"label": ["PCAQuality"], "unit": ["0–1"], "role": ["quality"]},
+            {"label": ["PCAValid"], "unit": ["0/1"], "role": ["validity"]},
+        ]}]}]}, "time_stamps": [10.0, 10.1, 10.2],
+        "time_series": [[0.01, 0.0, 0.0], [0.02, 0.8, 1.0], [0.03, 0.0, 0.0]]}
+    calibrated = {**raw, "info": {**raw["info"], "source_id": ["calibrated"]}}
+    markers = {"info": {"source_id": ["events"], "channel_format": ["string"]},
+               "time_stamps": [10.1], "time_series": [[json.dumps({"event": "run.completed"})]]}
+    monkeypatch.setattr("pyxdf.load_xdf", lambda *args, **kwargs: ([raw, markers, calibrated], {}))
+    directory = export_bids(tmp_path / "test.xdf", tmp_path, ("raw", "events", "calibrated"), "P002", "001")
+    stem = "sub-002_ses-001_task-respyra_run-01_recording-raw"
+    sidecar = json.loads((directory / f"{stem}_physio.json").read_text())
+    assert sidecar["Columns"] == ["timestamp", "channel1"]
+    assert sidecar["channel1"]["ValidityColumns"] == ["channel3"]
+    assert sidecar["channel1"]["MNEType"] == "misc"
+    assert sidecar["SupportTable"] == f"{stem}support_physio.tsv.gz"
+    with gzip.open(directory / f"{stem}_physio.tsv.gz", "rt") as handle:
+        assert list(csv.reader(handle, delimiter="\t")) == [["0.000000000", "0.01"],
+            ["0.100000000", "0.02"], ["0.200000000", "0.03"]]
+    with gzip.open(directory / sidecar["SupportTable"], "rt") as handle:
+        assert list(csv.reader(handle, delimiter="\t")) == [["0.000000000", "0", "0"],
+            ["0.100000000", "0.8", "1"], ["0.200000000", "0", "0"]]

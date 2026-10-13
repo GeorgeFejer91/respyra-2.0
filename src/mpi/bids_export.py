@@ -13,6 +13,8 @@ from datetime import datetime
 from pathlib import Path
 
 import pyxdf
+from mpi.stream_protocol import (PROTOCOL, DATA_ROLES, SUPPORT_ROLES, channel_role,
+                                 mne_channel_spec, waveform_validity_columns, field as _field)
 from mpi.time_reference import BERLIN, iso_time, recorded_reference, timestamp_fields
 
 
@@ -21,11 +23,6 @@ def _stream(streams, identity):
     if len(matches) != 1 or not len(matches[0]["time_stamps"]):
         raise ValueError(f"BIDS export is missing required XDF stream {identity}")
     return matches[0]
-
-
-def _field(info, key, default=""):
-    value = info.get(key, default)
-    return value[0] if isinstance(value, list) and value else (default if value is None else value)
 
 
 def _regular_frequency(stream):
@@ -44,7 +41,7 @@ def _regular_frequency(stream):
     return nominal
 
 
-def _write_signal(stream, destination, origin, label, reference=None):
+def _write_signal(stream, destination, origin, label, reference=None, *, indices=None, support_table=None):
     stamps = stream["time_stamps"]
     series = stream["time_series"]
     if not len(stamps):
@@ -54,12 +51,14 @@ def _write_signal(stream, destination, origin, label, reference=None):
     count = int(_field(stream["info"], "channel_count", len(series[0])))
     if any(len(row) != count for row in series):
         raise ValueError("XDF stream channel count changed during recording")
-    columns = ["timestamp", *[f"channel{index + 1}" for index in range(count)]]
+    indices = list(range(count)) if indices is None else indices
+    columns = ["timestamp", *[f"channel{index + 1}" for index in indices]]
     channel_format = _field(stream["info"], "channel_format")
     numeric = channel_format != "string"
     frequency = _regular_frequency(stream) if numeric else None
     info = stream["info"]
     metadata = {
+        "StreamProtocol": PROTOCOL,
         "TaskName": "Respyra breathing tracking",
         "Description": f"{label} LSL samples with source timestamps relative to the first selected raw breathing sample.",
         "timestamp": {"Description": "Seconds relative to the first selected raw breathing sample", "Units": "s"},
@@ -71,13 +70,23 @@ def _write_signal(stream, destination, origin, label, reference=None):
     }
     desc = (stream["info"].get("desc") or [{}])[0] or {}
     channels = ((desc.get("channels") or [{}])[0] or {}).get("channel", [])
-    for index, name in enumerate(columns[1:]):
+    for index, name in zip(indices, columns[1:]):
         channel = channels[index] if index < len(channels) else {}
         title = channel.get("label", [name])[0]
         unit = channel.get("unit", [""])[0]
         metadata[name] = {"Description": f"{label}: LSL channel {index + 1}", "LongName": title}
+        role = channel_role(channel, _field(info, "type"))
+        kind, scale = mne_channel_spec(channel, _field(info, "type"))
+        metadata[name].update({"ChannelRole": role, "MNEType": kind, "MNEValueScale": scale,
+                               "SourceChannelIndex": index})
+        metadata[name]["Interpolation"] = ("previous" if role in {"validity", "event", "diagnostic"}
+                                            or unit in {"class", "code", "count", "steps"} else "linear")
         if unit:
             metadata[name]["Units"] = unit
+        if role == "waveform":
+            metadata[name]["ValidityColumns"] = waveform_validity_columns(channel, channels, desc)
+    if support_table:
+        metadata["SupportTable"] = support_table
     if reference is not None:
         columns.extend(["lsl_time_s", "utc_unix_s", "berlin_utc_offset_s"])
         metadata.update(_clock_metadata(reference, origin))
@@ -101,7 +110,8 @@ def _write_signal(stream, destination, origin, label, reference=None):
             writer.writerow(columns)
         for stamp, row in zip(stamps, series):
             values = []
-            for value in row:
+            for index in indices:
+                value = row[index]
                 if numeric:
                     if channel_format.startswith("int"):
                         values.append(str(int(value)))
@@ -118,6 +128,27 @@ def _write_signal(stream, destination, origin, label, reference=None):
                 times = [format(float(stamp), ".17g"), format(unix_time, ".17g"), int(offset)]
             writer.writerow([format(float(stamp) - origin, ".9f"), *values, *times])
     path.with_suffix("").with_suffix(".json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+
+
+def _write_stream(stream, staging, filename, origin, label, reference):
+    """Export experimental variables and a linked table of supporting channels."""
+    info = stream["info"]
+    count = int(_field(info, "channel_count", 0))
+    desc = _field(info, "desc", {}) or {}
+    channels = _field(desc, "channels", {}).get("channel", [])
+    roles = [channel_role(channels[i] if i < len(channels) else {}, _field(info, "type"))
+             for i in range(count)]
+    data = [i for i, role in enumerate(roles) if role in DATA_ROLES]
+    support = [i for i, role in enumerate(roles) if role in SUPPORT_ROLES]
+    if not data or not support or _field(info, "channel_format") == "string":
+        _write_signal(stream, staging / filename, origin, label, reference)
+        return
+    support_name = filename.replace(f"recording-{label}", f"recording-{label}support").replace(
+        f"acq-{label}_", f"acq-{label}support_")
+    suffix = "_physio.tsv.gz" if _regular_frequency(stream) is not None else "_beh.tsv"
+    _write_signal(stream, staging / filename, origin, label, reference, indices=data,
+                  support_table=support_name + suffix)
+    _write_signal(stream, staging / support_name, origin, label + " support", reference, indices=support)
 
 
 def _clock_metadata(reference, origin):
@@ -150,7 +181,7 @@ def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], partici
                                            "DatasetType": "raw", "GeneratedBy": [{"Name": "Respyra 2.0"}]}, indent=2) + "\n", encoding="utf-8")
     readme = root / "README"
     if not readme.exists():
-        readme.write_text("Respyra behavioral data exported from verified XDF. Fixed-rate LSL signals are BIDS physiology; irregular or unverified-rate signals and other markers are timed behavioral tables. Sidecars retain source identity, channel units and LSL provenance. The parent XDF is the full source record, including empty outlets. MNE Raw requires regular sampling; irregular tables require explicit resampling for MNE analysis.\n", encoding="utf-8")
+        readme.write_text("Respyra data exported automatically from verified XDF using respyra-stream/1. Experimental variables and linked supporting channels have separate tables. Fixed-rate signals are BIDS physiology; irregular signals and markers are timed behavioral tables. Sidecars retain source identity, channel roles, units and provenance. The parent XDF is the complete archive. mpi.bids_mne.read_bids_signal selects measurements by default, applies waveform readiness and voltage unit scaling, and requires an explicit resampling rate for irregular data.\n", encoding="utf-8")
     directory = root / f"sub-{subject}" / f"ses-{session}" / "beh"
     prefix = f"sub-{subject}_ses-{session}_task-respyra"
     runs = [int(match.group(1)) for path in directory.glob(f"{prefix}_run-*_events.tsv")
@@ -195,13 +226,18 @@ def export_bids(xdf_path: Path, output: Path, required: tuple[str, ...], partici
         for label, stream in (("raw", raw), ("calibrated", calibrated)):
             filename = (f"{stem}_recording-{label}" if _regular_frequency(stream) is not None
                         else f"{prefix}_acq-{label}_run-{run:02d}")
-            _write_signal(stream, staging / filename, origin, label, reference)
+            _write_stream(stream, staging, filename, origin, label, reference)
         others = [stream for stream in streams if stream is not raw and stream is not markers and stream is not calibrated]
+        labels = {"raw", "calibrated", "rawsupport", "calibratedsupport"}
         for index, stream in enumerate(others, start=1):
-            label = f"lsl{index:02d}"
+            label = re.sub(r"[^A-Za-z0-9]", "", _field(stream["info"], "name")).lower()[:64] or f"lsl{index:02d}"
+            base_label, suffix = label, index
+            while label in labels or label + "support" in labels:
+                label, suffix = base_label + str(suffix), suffix + 1
+            labels.update({label, label + "support"})
             filename = (f"{stem}_recording-{label}" if _regular_frequency(stream) is not None
                         else f"{prefix}_acq-{label}_run-{run:02d}")
-            _write_signal(stream, staging / filename, origin, label, reference)
+            _write_stream(stream, staging, filename, origin, label, reference)
         directory.mkdir(parents=True, exist_ok=True)
         promoted = []
         try:

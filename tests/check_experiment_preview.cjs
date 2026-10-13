@@ -64,7 +64,7 @@ const path = require('node:path');
       channels: [{ index: 0, label: 'Heart rate', unit: 'bpm', value: 72 }] };
     discovery = { streams: [raw, heart], error: null };
     await page.waitForFunction(() => document.querySelectorAll('.stream-row').length === 3);
-    assert.deepEqual(await page.locator('.stream-row .stream-name').allTextContents(), ['Synthetic raw Force', 'Respyra breathing', 'Polar heart rate'], 'raw and processed streams lead the compact list');
+    assert.deepEqual(await page.locator('.stream-row .stream-name').allTextContents(), ['Synthetic raw Force', 'Respyra_calibrated (from Synthetic raw Force)', 'Polar heart rate'], 'raw and processed streams lead the compact list with complete names');
     assert.equal(await page.locator('.stream-sub').count(), 0, 'stream chips show only one label');
     assert.equal(await page.locator('.stream-head').count(), 0, 'stream controls need no explanatory legend');
     assert.deepEqual(await page.locator('.stream-row').first().locator('.check span').allTextContents(), ['R', 'V']);
@@ -145,7 +145,7 @@ const path = require('node:path');
       name: 'Respyra-Calibrated-Breathing', type: 'Respyra', compatible: false,
       channels: [{ index: 0, label: 'Breathing', unit: 'N', value: 1 }] };
     discovery = { streams: [raw, second, heart, processed], error: null };
-    await page.waitForFunction(() => document.querySelector('.stream-row:nth-child(2) .stream-name')?.textContent === 'Respyra breathing' && !document.querySelector('.stream-row:nth-child(2) .stream-identity')?.title.includes('Created after calibration'));
+    await page.waitForFunction(() => document.querySelector('.stream-row:nth-child(2) .stream-name')?.textContent === 'Respyra-Calibrated-Breathing' && !document.querySelector('.stream-row:nth-child(2) .stream-identity')?.title.includes('Created after calibration'));
     assert.equal(await page.getByRole('checkbox', { name: 'Record Respyra-Calibrated-Breathing' }).count(), 1, 'real Respyra outlet replaces its pending entry');
     assert(await page.getByRole('checkbox', { name: 'Record Respyra-Calibrated-Breathing' }).isChecked());
     assert(await page.getByRole('checkbox', { name: 'Record Respyra-Calibrated-Breathing' }).isDisabled());

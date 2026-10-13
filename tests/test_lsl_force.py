@@ -7,6 +7,7 @@ import pytest
 from mpi.lsl_force import (
     LSLForceError, connect_force_source, force_channel_index, scan_force_streams,
     load_force_selection, save_force_selection,
+    calibrated_stream_name,
 )
 
 
@@ -19,6 +20,21 @@ XML = """<info><desc>
   <channel><label>Force</label><unit>N</unit>
     <type>RawMeasurement</type><sensor_number>1</sensor_number></channel>
 </channels></desc></info>"""
+
+
+@pytest.mark.parametrize("original,expected", [
+    ("Vernier_rawForce", "Respyra_rawForce_calibrated"),
+    ("Vernier_rawForceOnly", "Respyra_rawForceOnly_calibrated"),
+    ("Vernier_rawVernier", "Respyra_rawVernier_calibrated"),
+    ("Polar_ChestPCA", "Respyra_ChestPCA_calibrated"),
+    ("Polar_ChestDT", "Respyra_ChestDT_calibrated"),
+    ("Polar_session7_ChestPCA", "Respyra_session7_ChestPCA_calibrated"),
+    ("H10_ChestPCA", "Respyra_ChestPCA_calibrated"),
+    ("Polar-Mock-7_ChestPCA", "Respyra_Mock-7_ChestPCA_calibrated"),
+    ("Operator waveform", "Respyra_Operator waveform_calibrated"),
+])
+def test_calibrated_names_preserve_the_original_signal(original, expected):
+    assert calibrated_stream_name(original) == expected
 
 
 def test_force_channel_requires_raw_newtons_metadata():

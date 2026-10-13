@@ -39,7 +39,8 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
   R selects XDF recording; V
   controls the local plot independently. The selected raw input and Respyra
   breathing rows appear first and are mandatory recording
-  channels. All discovered streams are recorded by default, including later
+  channels. Polar_Link and Vernier_Link remain visible recorded housekeeping
+  rows, separate from physiological variables. Discovered streams are recorded by default, including later
   streams unless their current LSL UID was unchecked before Start. The remote button opens a
   QR popup with desktop Approve/Reject on an authenticated request. Settings
   contains the pre-recording marker name and recording-folder chooser. The folder
@@ -48,6 +49,9 @@ Actual native WebView/focus checks follow the isolated-GUI requirement in
   active entries in the Python event catalog. Its own content can scroll; the
   main panel still cannot. It lists possible event types, not a claim that each
   event occurs in every run or lands in the XDF outside recorder lifetime.
+- Show complete outlet names with source prefixes; do not shorten them into
+  ambiguous Raw/Link labels or replace named calibrated streams with a generic
+  Respyra breathing label. Comparisons remain recorded by default with View off.
 - Polar input requires an explicit inhale-direction choice after selection.
   Start prepares the derived outlet, launches respyrecorder, and verifies exact
   selected-input/marker/derived subscriptions and samples before opening PsychoPy.

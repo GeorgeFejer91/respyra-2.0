@@ -2,6 +2,8 @@
 
 import sys
 import types
+import math
+from xml.etree import ElementTree as ET
 from unittest.mock import patch
 
 import pytest
@@ -134,3 +136,86 @@ def test_validity_is_matched_to_each_waveform_timestamp():
     )
     assert source.get_all() == [(100.1, 0.02)]
     source.stop()
+
+
+def bundled_candidate(contract, reordered=False):
+    metric = "adr_pca_waveform" if contract == "respyra-polar-pca/1" else "adr_axis_mean_difference"
+    info = candidate(metric, contract, "Chest movement", ())
+    root = ET.fromstring(info.xml)
+    desc = root.find("desc")
+    desc.find("schema").text = "adr-waveform/2"
+    desc.remove(desc.find("channels"))
+    flags = ["adr_pca_valid"] + (["adr_axis_difference_valid"] if "phan" in contract else [])
+    ET.SubElement(desc, "waveform_channel").text = metric
+    ET.SubElement(desc, "validity_channels").text = ",".join(flags)
+    definitions = [(metric, "g", "waveform"), ("adr_pca_quality", "0–1", "quality")]
+    definitions += [(flag, "0/1", "validity") for flag in flags]
+    if reordered:
+        definitions.reverse()
+    channels = ET.SubElement(desc, "channels")
+    for metric_id, unit, role in definitions:
+        channel = ET.SubElement(channels, "channel")
+        for key, value in dict(metric_id=metric_id, label="Operator label", unit=unit, role=role).items():
+            ET.SubElement(channel, key).text = value
+    info.xml = ET.tostring(root, encoding="unicode")
+    info.channel_count = lambda: len(definitions)
+    return info, definitions
+
+
+@pytest.mark.parametrize("contract,reordered", [("respyra-polar-pca/1", False),
+    ("respyra-polar-phan-signed/1", False), ("respyra-polar-phan-signed/1", True)])
+def test_bundled_waveform_gates_each_row_and_retains_calibrated_diagnostics(contract, reordered):
+    info, definitions = bundled_candidate(contract, reordered)
+    assert validate_polar_info(info) == (contract, ())
+    waveform_index = next(i for i, (_, _, role) in enumerate(definitions) if role == "waveform")
+    valid_row = [0.02 if role == "waveform" else 0.7 if role == "quality" else 1.0
+                 for _, _, role in definitions]
+    invalid_row = valid_row.copy()
+    invalid_row[next(i for i, (_, _, role) in enumerate(definitions) if role == "validity")] = 0
+    closed = []
+
+    class Inlet:
+        def __init__(self, *_args, **_kwargs): pass
+        def info(self, **_kwargs): return info
+        def pull_chunk(self, **_kwargs): return [invalid_row, valid_row], [100.0, 100.1]
+        def close_stream(self): closed.append(True)
+
+    def no_companion_resolution(**_kwargs):
+        raise AssertionError("Bundled streams must not resolve separate validity outlets")
+
+    module = types.SimpleNamespace(StreamInlet=Inlet, resolve_streams=no_companion_resolution,
+        cf_float32=1, cf_double64=2, proc_clocksync=1)
+    with patch.dict(sys.modules, {"pylsl": module}):
+        source = open_polar_source(info, timeout=1)
+        assert source.force_index == waveform_index and source.valid_inlets == {}
+        projected = []
+        source.calibrated_outlet = types.SimpleNamespace(push_sample=lambda row, timestamp: projected.append((row, timestamp)))
+        assert source.get_all() == [(100.1, 0.02)]
+        assert len(projected) == 1 and all(math.isnan(value) for value in projected[0][0])
+        source.center, source.amplitude, source.polarity = -0.01, 0.01, -1
+        assert source.get_all() == [(100.1, -0.02)]
+        assert projected[-1] == ([-1.0, *[value for i, value in enumerate(valid_row) if i != waveform_index]], 100.1)
+        source.stop()
+    assert closed == [True]
+
+
+@pytest.mark.parametrize("fault", ["missing", "duplicate", "wrong_unit", "wrong_role", "wrong_count", "wrong_flags"])
+def test_bundled_channel_contract_rejects_ambiguous_or_missing_readiness(fault):
+    info, _ = bundled_candidate("respyra-polar-phan-signed/1")
+    root = ET.fromstring(info.xml)
+    channels = root.find("desc/channels")
+    if fault == "missing":
+        channels.remove(channels[-1])
+    elif fault == "duplicate":
+        channels[-1].find("metric_id").text = "adr_pca_valid"
+    elif fault == "wrong_unit":
+        channels[-1].find("unit").text = "g"
+    elif fault == "wrong_role":
+        channels[-1].find("role").text = "waveform"
+    elif fault == "wrong_count":
+        info.channel_count = lambda: 9
+    else:
+        root.find("desc/validity_channels").text = "adr_pca_valid"
+    info.xml = ET.tostring(root, encoding="unicode")
+    with pytest.raises(LSLForceError):
+        validate_polar_info(info)

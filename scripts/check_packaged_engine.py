@@ -29,6 +29,7 @@ assert all(Path(path).resolve().is_relative_to(runtime) for path in sys.path), s
 for name in ("numpy", "scipy", "pandas", "matplotlib", "pylsl", "psychopy.core", "psychopy.visual",
              "psychopy.data", "psychopy.event", "pythoncom", "pywintypes",
              "mpi.lsl_force", "mpi.event_markers", "mpi.recording", "mpi.session_summary",
+             "mpi.stream_protocol", "mpi.bids_export", "mpi.bids_mne",
              "mpi.validation_study_jenny", "respyra.core.runner"):
     module = importlib.import_module(name)
     assert Path(module.__file__).resolve().is_relative_to(runtime), (name, module.__file__)
@@ -76,7 +77,7 @@ from mpi.recording import NativeRecording
 identity = "package-proof-" + uuid4().hex
 derived_id = "respyra-breathing-" + uuid4().hex
 raw = StreamOutlet(StreamInfo("Packaged recorder proof", "VernierRaw", 1, 50, cf_float32, identity))
-derived = StreamOutlet(StreamInfo("Respyra-BreathCal", "Respiration", 1, 50, cf_float32, derived_id))
+derived = StreamOutlet(StreamInfo("Respyra_rawForce_calibrated", "Respiration", 1, 50, cf_float32, derived_id))
 stop = threading.Event()
 def push():
     while not stop.wait(.02):

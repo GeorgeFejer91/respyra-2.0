@@ -59,21 +59,22 @@ def check(xdf, events, resample_hz):
                if mne_bids.get_bids_path_from_fname(path).recording == "raw"
                or mne_bids.get_bids_path_from_fname(path).acquisition == "raw")
     origin = float(raw["time_stamps"][0])
-    represented = set()
+    represented = {}
     opened = 0
     samples = 0
     for path, (metadata, source) in sidecars.items():
         info = source["info"]
         stream_id = str(info["stream_id"])
-        assert stream_id not in represented
-        represented.add(stream_id)
         assert metadata["LSLSource"]["SourceID"] == info["source_id"][0]
         assert metadata["LSLSource"]["Name"] == info["name"][0]
         assert metadata["LSLSource"]["ChannelFormat"] == info["channel_format"][0]
         columns, rows = read_table(path, metadata)
         assert columns[0] == "timestamp" and len(rows) == len(source["time_stamps"])
         signal_columns = [column for column in columns[1:] if column.startswith("channel")]
-        assert len(signal_columns) == int(info["channel_count"][0])
+        channel_indices = [int(column.removeprefix("channel")) - 1 for column in signal_columns]
+        covered = represented.setdefault(stream_id, set())
+        assert not covered.intersection(channel_indices), "A source channel was exported twice"
+        covered.update(channel_indices)
         if path.name.endswith("_physio.tsv.gz"):
             nominal = float(info["nominal_srate"][0])
             assert nominal > 0 and metadata["SamplingFrequency"] == nominal
@@ -82,14 +83,15 @@ def check(xdf, events, resample_hz):
         else:
             assert "SamplingFrequency" not in metadata
         channels = (((info.get("desc") or [{}])[0] or {}).get("channels") or [{}])[0].get("channel", [])
-        for index, column in enumerate(signal_columns):
+        for index, column in zip(channel_indices, signal_columns):
             channel = channels[index] if index < len(channels) else {}
             assert metadata[column]["LongName"] == (channel.get("label") or [column])[0]
             assert metadata[column].get("Units", "") == (channel.get("unit") or [""])[0]
         kind = info["channel_format"][0]
         for row, stamp, values in zip(rows, source["time_stamps"], source["time_series"]):
             assert abs(float(row[0]) - (float(stamp) - origin)) <= 1e-9
-            for cell, value in zip(row[1:], values):
+            for column, index in zip(signal_columns, channel_indices):
+                cell, value = row[columns.index(column)], values[index]
                 if kind == "string":
                     assert cell == str(value)
                 elif kind.startswith("int"):
@@ -105,13 +107,25 @@ def check(xdf, events, resample_hz):
                 assert float(row[columns.index('utc_unix_s')]) == unix_time
         samples += len(rows)
         if kind != "string":
-            result, stamps = read_bids_signal(path, sfreq=None if path.suffix == ".gz" else resample_hz)
-            assert result.n_times > 0 and len(result.ch_names) == len(signal_columns)
+            result, stamps = read_bids_signal(path, sfreq=None if path.suffix == ".gz" else resample_hz, include_support=True)
+            expected_channels = int(info["channel_count"][0]) if metadata.get("SupportTable") else len(signal_columns)
+            assert result.n_times > 0 and len(result.ch_names) == expected_channels
             assert len(stamps) == len(rows)
+            primary = [column for column in signal_columns if metadata.get(column, {}).get("ChannelRole", "measurement") in {"measurement", "waveform"}]
+            if primary:
+                variables, _ = read_bids_signal(path, sfreq=None if path.suffix == ".gz" else resample_hz)
+                assert len(variables.ch_names) == len(primary)
+            else:
+                try:
+                    read_bids_signal(path, sfreq=None if path.suffix == ".gz" else resample_hz)
+                except ValueError as exc:
+                    assert "experimental" in str(exc).lower(), str(exc)
+                else:
+                    raise AssertionError("Housekeeping channels must require explicit support selection")
             opened += 1
-    expected = {str(stream["info"]["stream_id"]) for stream in streams
-                if len(stream["time_stamps"]) and stream is not marker_streams[0]}
-    assert represented == expected, {"missing": expected - represented, "extra": represented - expected}
+    expected = {str(stream["info"]["stream_id"]): set(range(int(stream["info"]["channel_count"][0])))
+                for stream in streams if len(stream["time_stamps"]) and stream is not marker_streams[0]}
+    assert represented == expected, {"expected": expected, "represented": represented}
     with events.open(encoding="utf-8", newline="") as handle:
         event_rows = list(csv.DictReader(handle, delimiter="\t"))
     assert len(event_rows) == len(marker_streams[0]["time_stamps"])

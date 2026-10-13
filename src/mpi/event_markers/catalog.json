@@ -86,7 +86,7 @@
     "ui_client_seq": "Optional sequence within the originating browser. ui_seq orders all accepted pipe commands across both controllers.",
     "source": "Experiment input API that observed or discarded the key: waitKeys, check_keys, clearEvents, local_control, or remote_control. Controller responses are semantic commands, not physical keyboard events.",
     "source_id": "Exact LSL source_id of the selected study input stream.",
-    "source_ids": "Required selected input and marker source IDs subscribed by the native recorder.",
+    "source_ids": "Required selected input, calibrated, comparison, marker source IDs subscribed by the native recorder.",
     "policy": "Native recording policy; visible_and_late_except_excluded records current and future streams except explicitly unchecked LSL UIDs.",
     "clock_reference": "Optional frozen respyra-clock-reference-v1 mapping between local LSL and UTC, with Europe/Berlin display zone, timeapi.io/system source, API status, measured RTT and transport uncertainty. Wall-clock accuracy and subsequent drift are not guaranteed. Importers must transform the LSL anchor by the marker clock correction when synchronizing XDF.",
     "pre_recording_events": "Ordered setup marker payloads emitted before native XDF recording began. They retain their original sequence and LSL times inside recording.started; they are not separate XDF samples.",
@@ -111,7 +111,7 @@
   "events": {
     "input.mouse_event": {"when": "Optional mouse events during XDF recording, within Respyra windows.", "fields": ["input_action", "event_lsl_time", "scope", "x", "y", "mouse_data", "flags"]},
     "input.keyboard_event": {"when": "Optional keyboard events during XDF recording, within Respyra windows.", "fields": ["input_action", "event_lsl_time", "scope", "vk_code", "scan_code", "flags"]},
-    "recording.started": {"when": "The native recorder has subscribed to the selected input, markers and the derived breathing stream and received samples from each, before setup acceptance and PsychoPy display creation. pre_recording_events preserves earlier setup marker payloads; subject, session, task, and variables identify this XDF run.", "fields": ["source_ids", "subject", "session", "task", "variables", "policy", "excluded_uids", "pre_recording_events"]},
+    "recording.started": {"when": "The native recorder has subscribed to the selected input, markers and derived breathing streams and received samples from each, before setup acceptance and PsychoPy display creation. pre_recording_events preserves earlier setup marker payloads; subject, session, task, and variables identify this XDF run.", "fields": ["source_ids", "subject", "session", "task", "variables", "policy", "excluded_uids", "pre_recording_events"]},
     "recording.finalizing": {"when": "Study cleanup has finished; the recorder will drain pending samples, close and verify the XDF. This event is inside the recording; the final HTML result/Close markers are outside it.", "fields": []},
     "recording.option.changed": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "Python observes a recording-option checkbox change."},
     "source.polarity.set": {"fields": ["field", "enabled", "ui_seq", "ui_time_ms"], "when": "The experimenter confirms whether inhale lowers the selected Polar waveform before Start."},

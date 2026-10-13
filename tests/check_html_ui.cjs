@@ -152,11 +152,11 @@ const path = require('node:path');
     await page.locator('#feedback-source').selectOption('raw-ui');
     await page.waitForFunction(() => !document.querySelector('#start').disabled);
     assert.equal(await page.locator('#feedback-source').inputValue(), 'raw-ui');
-    const rawRow = page.locator('.stream-row').filter({ hasText:'Vernier Stream Mini' });
+    const rawRow = page.locator('.stream-row').filter({ has:page.getByRole('checkbox',{name:'Record Vernier Stream Mini',exact:true}) });
     assert(await rawRow.getByRole('checkbox', { name:/Record/ }).isChecked());
     assert(await rawRow.getByRole('checkbox', { name:/Record/ }).isDisabled());
-    assert(await page.getByRole('checkbox', { name:'Record StudyPolar_adrPcaWaveform' }).isChecked());
-    assert(await page.getByRole('checkbox', { name:'Record Comparison waveform for StudyPolar_adrPcaWaveform' }).isChecked());
+    assert(await page.getByRole('checkbox', { name:'Record StudyPolar_adrPcaWaveform',exact:true }).isChecked());
+    assert(await page.getByRole('checkbox', { name:'Record Respyra_calibrated (from StudyPolar_adrPcaWaveform)',exact:true }).isChecked());
     assert(await page.getByRole('checkbox', { name:'Record Polar H10 heart rate' }).isChecked());
     const auxRow = page.locator('.stream-row').filter({ hasText:'Polar H10 heart rate' });
     await auxRow.getByRole('checkbox', { name:/Record/ }).uncheck();
@@ -327,7 +327,7 @@ const path = require('node:path');
         plotChildren:[...document.querySelector('#plot-section').children].map(e=>[e.id||e.className,e.clientHeight,e.scrollHeight]) };
       shell.hidden = true; return result;
     })));
-    assert.equal(await page.getByText('Respyra breathing', { exact:true }).count(), 1);
+    assert.equal(await page.getByText('Respyra-BreathCal', { exact:true }).count(), 1);
     for (const name of ['Respyra-BreathCal', 'Respyra-Calibrated-Breathing']) {
       await page.evaluate(name => window.testProgress({streams:window.testSnapshot().progress.streams.map(
         row => row.uid === 'derived-ui' ? {...row,name} : row)}), name);
@@ -335,9 +335,36 @@ const path = require('node:path');
       await record.waitFor();
       assert.equal(await record.count(), 1);
       assert(await record.isChecked());
-      assert.equal(await page.getByText('Respyra breathing',{exact:true}).count(), 1, 'Current and legacy actual outlets replace the pending row');
+      assert.equal(await page.getByText(name,{exact:true}).count(), 1, 'Actual current and legacy outlet names remain visible and replace the pending row');
       if (name !== 'Respyra-BreathCal') assert.equal(await page.getByRole('checkbox',{name:'Record Respyra-BreathCal',exact:true}).count(), 0);
     }
+    await page.evaluate(() => window.testProgress({streams:[
+      ...window.testSnapshot().progress.streams.map(row => row.uid === 'derived-ui' ? {...row,name:'Respyra_rawVernier_calibrated',
+        channels:[{...row.channels[0],role:'waveform'},
+          {index:1,label:'Bundled PCA quality',unit:'0–1',role:'quality',value:0.8},
+          {index:2,label:'Bundled PCA readiness',unit:'0/1',role:'validity',value:1}]} : row),
+      {uid:'comparison-ui',source_id:'respyra-comparison-ui-pca',name:'Respyra_ChestPCA_calibrated',type:'Respiration',numeric:true,signal:'live',lsl_time:2,
+        channels:[{index:0,label:'Calibrated breathing',unit:'normalized',value:0.4}]},
+      {uid:'polar-link-ui',source_id:'polar-link',name:'Polar_Link',type:'Markers',numeric:true,signal:'live',lsl_time:2,channels:[{index:0,label:'Link',unit:'',value:2}]},
+      {uid:'vernier-link-ui',source_id:'vernier-link',name:'Vernier_Link',type:'Markers',numeric:true,signal:'live',lsl_time:2,channels:[{index:0,label:'Link',unit:'',value:2}]}
+    ]}));
+    await page.getByRole('checkbox',{name:'Record Respyra_rawVernier_calibrated',exact:true}).waitFor();
+    assert(!await page.locator('#plot-canvas').textContent().then(text => text.includes('Bundled PCA quality') || text.includes('Bundled PCA readiness')),
+      'Bundled diagnostics are recorded inside the stream without becoming main plot lanes');
+    const observed = new Set();
+    for (let attempt=0; attempt<10; attempt++) {
+      for (const name of await page.locator('.stream-row .stream-name').allTextContents()) observed.add(name);
+      const comparison = page.getByRole('checkbox',{name:'Record Respyra_ChestPCA_calibrated',exact:true});
+      if (await comparison.count()) {
+        assert(await comparison.isChecked());
+        assert(await comparison.isDisabled());
+        assert(!await page.getByRole('checkbox',{name:'Display Respyra_ChestPCA_calibrated',exact:true}).isChecked());
+        await page.screenshot({path:'.for-ai-local/calibrated-stream-recording.png'});
+      }
+      if (await page.locator('#stream-next').isDisabled()) break;
+      await page.locator('#stream-next').click();
+    }
+    for (const name of ['Respyra_rawVernier_calibrated','Respyra_ChestPCA_calibrated','Polar_Link','Vernier_Link']) assert(observed.has(name), `Full source name is visible: ${name}`);
     await page.locator('#stop').click();
     await page.locator('#close').waitFor({ state:'visible' });
     const actions = await page.evaluate(() => window.testActions);

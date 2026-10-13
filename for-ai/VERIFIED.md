@@ -5,6 +5,99 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Consistency protocol and workflow routing — 2026-10-13
+
+- Scope: documentation-only addition of [CONSISTENCY.md](./CONSISTENCY.md) and
+  its README, WORKFLOW, VERIFICATION and PACKAGING routes. This is not a focused
+  product sweep or a suite-wide sweep; no suite review date is established.
+- VERIFIED captured CLI: `powershell -NoProfile -ExecutionPolicy Bypass -File
+  for-ai/scripts/check-context.ps1 -ProjectRoot .` passed against the final
+  protocol/routes before this evidence-only entry. Existing warnings concern
+  oversized DECISIONS/VERIFIED files, the non-main branch and untracked tree.
+  Local-link review passed all 27 links in those five documents; baseline diff,
+  whitespace and conflict-marker review passed.
+- Inputs/evidence: HEAD was unavailable at initial inspection, so tested inputs
+  are bound by SHA-256 rather than a commit. Pre-edit copies, input hashes,
+  `context-check.txt` and `document-review.txt` are retained under ignored
+  `.for-ai-local/consistency-protocol-20261013-9fd389f00457413789c53e3e3f4e008b/`.
+- Limits: no implementation or product contract changed; runtime, installer and
+  deployment checks were not applicable. No commit, push or release performed.
+  Future agents must establish the actual suite-wide receipt under the protocol.
+
+## Producer-prefixed names and calibrated input lineage — 2026-10-12
+
+- VERIFIED source behavior: Polar/Vernier prefixes, direct rawECG/rawACC,
+  rawVernier aggregate, source-prefixed custom identifiers and AllInOne names;
+  historical factory source IDs retained. Respyra uses
+  Respyra_<original input name>_calibrated and stores raw_source_name/ID and
+  feedback/comparison role. Main rows retain full names, and comparison Record
+  stays checked while View can stay unchecked.
+- VERIFIED captured/headless checks: 63 focused Python cases (input, setup,
+  independent ranges and mock auditor); 60 metrics, 47 output and 16 runtime
+  Rust cases; formatting and locked all-target Clippy for affected crates;
+  eight web tests; eight hub layouts/22 actions; 40 project-site layouts;
+  Mini documentation/catalog drift; all three debug app builds. The changed
+  recording-row screenshot was inspected. Additional mock-prefix handling was
+  checked by focused naming tests; factory-name capture behavior is unchanged.
+- VERIFIED private LSL sessions: real Mini Polar publication in separate,
+  single and both modes (including a custom identifier), and real Mini Vernier
+  raw metadata/live Force reception plus creation of its correctly named
+  calibrated outlet. Evidence: ignored prefixed-polar-ec9fbffea1a949c3be413b35dfec08ef
+  and prefixed-vernier-1b8bfbee28d54cf9961fa49cd54f21fe under .for-ai-local/.
+- VERIFIED three closed native XDFs with Force, PCA and DT selected in turn:
+  all three inputs and their three independently calibrated outlets, original
+  names/IDs, paired timestamps/formulas, NaN before calibration, finite data
+  afterward, optional-source loss and footers. Independent PyXDF/MNE opened
+  eight numeric signals in every file; matching BIDS exports retained all values
+  and names and passed bids-validator 1.15.0 with zero errors (NO_AUTHORS only).
+  Evidence: parallel-recording-24956caa88a5419b844f309cac01fcc4,
+  parallel-recording-4152e5fad22e4591aec555a1c19371c6 and
+  parallel-recording-934c3a228c0b4fe79fbc1a9957cc2e0d under .for-ai-local/.
+- Inputs/limits: source and lock hashes are .for-ai-local/source-name-hashes.json;
+  both checkouts still lack HEAD. Captured CLI/headless checks only; live
+  publication/capture used synthetic data, not hardware. The broader Mini UI
+  check failed its existing battery-titlebar readability assertion; no Mini UI
+  layout was modified. No new installer, installed-run, full study, MNELAB,
+  publication or deployment qualification. Naming supersedes D-0021 via D-0022;
+  recording/discovery/calibration owners and explicit opt-outs remain intact.
+
+## Data-folder command permissions — 2026-10-12
+
+- VERIFIED the permission-wiring regression: all three folder commands were
+  omitted from the application manifest and main capability. Tauri's
+  application ACL therefore removed them from native dispatch. The fix adds
+  only their generated permissions to the local `main` window. The error popup
+  and remote controller receive no folder grant.
+- VERIFIED captured CLI: `pnpm test:web` (8 passed, including a regression
+  observed failing before the fix), `pnpm check:ui` (8 layouts, 22 actions,
+  zero page errors), locked Cargo tests (14 passed), Rustfmt, locked all-target
+  Clippy with `-D warnings`, and `pnpm tauri build --debug --no-bundle -- --locked`.
+  The folder-area headless screenshot was inspected.
+- VERIFIED rebuilt native WebView on a private Win32 desktop and private LSL
+  SessionID: the actual Use path button applied an existing Unicode/spaced
+  folder; the Browse command showed a Windows chooser and returned false on
+  targeted cancellation without changing the selection; Open reached its
+  handler and rejected a removed test folder; invalid relative paths were
+  rejected; a fresh process restored the saved folder. No active-desktop input
+  or user preferences were changed. The current Python source ran through a
+  test-only launcher using the installed isolated CPython 3.10.11 interpreter.
+- Inputs: `src-tauri/build.rs`, `capabilities/main.json`, generated folder
+  permissions, `tests/folder-permissions.test.mjs`, and their native/UI consumers.
+  This checkout has no HEAD; exact input/lock/executable SHA-256 values are in
+  `.for-ai-local/folder-controls-native-20261012/source-hashes.json`. Rust/Cargo
+  1.96.0, Node 24.19.0. Native executable SHA-256:
+  `ac16a139e20fe79bbe1b18332b13dd0d7fba7937a3011ce98ea626cb5a806574`.
+- Evidence: captured check output and ignored
+  `.for-ai-local/folder-controls-native-20261012/worker.log`,
+  `native-command-results.json`, and `native-folders.png`. The operator guide
+  now explains shortened labels and which breathing/diagnostic streams to keep.
+- Limits: actual Explorer opening was NOT RUN because the shell may reuse the
+  active desktop; Browse selection was not automated beyond cancellation.
+  No installer, release, full study or hardware check was run. Recording,
+  signal, marker and study implementations are unchanged. Refresh this receipt
+  after changes to command registration, capabilities, folder handlers or their
+  UI/backend consumers; it does not qualify the currently installed binary.
+
 ## Concise default stream names and suite 2.3.14 — 2026-10-11
 
 - Artifact source/tag `v2.3.14`: `e6c6e800ab8a28f1bb6dc14e740517fbc50c91b6`; pinned Mini 0.6.10
@@ -1289,3 +1382,19 @@ the respective scope needs current evidence; panel styling does not need it.
   `chest-public-receipt.json`, `chest-public-download.json`, `chest-pages-build.json`
   and corresponding upload/publication/parity logs. This subsequent publication
   receipt does not change the deployed site or the qualified installer inputs.
+
+## 2026-10-13 — Stream bundles and experimental BIDS/MNE protocol
+
+See [the routed receipt](verified/stream-protocol-20261013.md) for source hashes,
+79 Python/123 Rust checks, real Mini input interoperability, three closed native
+XDF/BIDS/MNE runs, UI scope and remaining release/hardware limits.
+
+## 2026-10-13 — Shared Housekeeping
+
+Historical D-0025 evidence, superseded by D-0026 below. See [the routed receipt](verified/housekeeping-20261013.md) for the former single diagnostic output, transport exclusions, XDF/BIDS/MNE checks, source hashes and evidence limits.
+
+## 2026-10-13 — Separate Bluetooth Link housekeeping
+
+See [the current receipt](verified/device-links-20261013.md) for D-0026: visible,
+directly recorded Polar/Vernier Link streams, quiet and late discovery, three
+closed XDF/BIDS/MNE captures, 92 Python checks, source hashes and release limits.

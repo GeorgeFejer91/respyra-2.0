@@ -40,8 +40,24 @@ def _metric_source_id(base, suffix):
     identity_suffix = {"ChestMotion": "PCA-Breathing", "ChestMotion-DT": "Phan-Breathing",
                        "ChestPCA": "PCA-Breathing", "ChestDT": "Phan-Breathing",
                        "PCAValid": "PCA-Valid", "DTValid": "Phan-Valid",
-                       "PCAQuality": "PCA-Quality", "ACC": "Accelerometer"}.get(suffix, suffix)
+                       "PCAQuality": "PCA-Quality", "ACC": "Accelerometer",
+                       "rawACC": "Accelerometer", "rawECG": "ECG"}.get(suffix, suffix)
     return f"polar-h10-{base}_{identity_suffix}"
+
+
+def _recorded_metric(by_name, base, metric, suffix):
+    standalone = by_name.get(base + "_" + suffix)
+    if standalone is not None:
+        return standalone, 0
+    for waveform in ("adr_pca_waveform", "adr_axis_mean_difference"):
+        bundle = by_name.get(base + "_" + CURRENT_SUFFIXES[waveform])
+        if bundle is None:
+            continue
+        desc = bundle["info"]["desc"][0]
+        for index, channel in enumerate(desc["channels"][0]["channel"]):
+            if channel.get("metric_id") == [metric]:
+                return bundle, index
+    raise AssertionError(f"Recorded stream or bundled channel is missing: {metric}")
 
 
 def _round_rust(values):
@@ -98,8 +114,9 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     raw_suffix = next(suffix for suffix in ("_ACC", "_Accelerometer", "_rawACC")
                       if raw["info"]["name"][0].endswith(suffix))
     base = raw["info"]["name"][0].removesuffix(raw_suffix)
+    identity_base = raw["info"]["source_id"][0].removeprefix("polar-h10-").rsplit("_", 1)[0]
     assert raw["info"]["name"] == [base + raw_suffix]
-    metric_names = (CURRENT_SUFFIXES if raw_suffix == "_ACC" else
+    metric_names = (CURRENT_SUFFIXES if base + "_ChestPCA" in by_name else
                     PREVIOUS_SUFFIXES if raw_suffix == "_Accelerometer" else METRICS)
     if base + "_PCA-Breathing" in by_name:
         metric_names = {**PREVIOUS_SUFFIXES, "adr_pca_waveform": "PCA-Breathing",
@@ -132,24 +149,28 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     metric_errors = {}
     post_finalization_tail = {}
     for metric, suffix in metric_names.items():
-        stream = by_name[base + "_" + suffix]
+        stream, channel_index = _recorded_metric(by_name, base, metric, suffix)
         info, description = stream["info"], stream["info"]["desc"][0]
-        assert info["source_id"] == [_metric_source_id(base, suffix)]
-        assert info["channel_format"] == ["float32"] and int(info["channel_count"][0]) == 1
+        bundled = description.get("schema") == ["adr-waveform/2"]
+        owner_suffix = CURRENT_SUFFIXES[description["metric_id"][0]] if bundled else suffix
+        assert info["source_id"] == [_metric_source_id(identity_base, owner_suffix)]
+        channels = description["channels"][0]["channel"]
+        assert info["channel_format"] == ["float32"]
+        assert int(info["channel_count"][0]) == (len(channels) if bundled else 1)
         assert float(info["nominal_srate"][0]) == 0
         if metric in {"adr_pca_waveform", "adr_axis_mean_difference"}:
             assert info["type"] == ["Respiration"]
-            assert description["schema"] == ["adr-waveform/1"]
+            assert description["schema"] in (["adr-waveform/1"], ["adr-waveform/2"])
             assert description["metric_id"] == [metric]
             assert description["stream_role"] == ["respiration_candidate"]
             assert description["raw_source_metric_id"] == ["raw_acc"]
             assert description["respyra_signal_role"] == ["signed_breathing_level"]
-            assert description["channels"][0]["channel"][0]["unit"] == ["g"]
+            assert channels[channel_index]["unit"] == ["g"]
         else:
-            assert info["type"] == ["SignalQuality"]
+            assert info["type"] == (["Respiration"] if bundled else ["SignalQuality"])
             if metric.endswith("valid"):
-                assert description["channels"][0]["channel"][0]["unit"] == ["0/1"]
-        values = stream["time_series"][:, 0]
+                assert channels[channel_index]["unit"] == ["0/1"]
+        values = stream["time_series"][:, channel_index]
         stamps = stream["time_stamps"]
         assert len(values) > 100 and np.all(np.diff(stamps) > 0)
         assert np.max(np.abs(np.diff(stamps) - .01)) < .003, f"Lost or duplicated {metric} timestamps"
@@ -174,12 +195,18 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
             assert set(np.unique(values)) <= {0, 1}
         if metric == "adr_pca_quality":
             assert np.all((values >= 0) & (values <= 1))
-        metric_streams[metric] = stream
+        metric_streams[metric] = {**stream, "time_series": values[:, np.newaxis]}
         metric_errors[metric] = error
 
     for mode, (metric, contract) in CONTRACTS.items():
         description = metric_streams[metric]["info"]["desc"][0]
         assert description["respyra_input_contract"] == [contract]
+        if description["schema"] == ["adr-waveform/2"]:
+            required = {"adr_pca_valid"} | ({"adr_axis_difference_valid"} if mode == "phan" else set())
+            assert set(description["validity_channels"][0].split(",")) == required
+            ids = {channel["metric_id"][0] for channel in description["channels"][0]["channel"]}
+            assert required | {"adr_pca_quality"} <= ids
+            continue
         companions = set(description["companion_streams"][0].split(","))
         required = {base + "_" + metric_names["adr_pca_valid"]}
         if mode == "phan":
@@ -203,7 +230,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
         assert counts["run.completed"] == 0
         failed = next(item for item in events if item["event"] == "run.failed")
         assert failed["error_type"] == "LSLForceError" and "lost" in failed["message"]
-        derived = by_name["Respyra-BreathCal"]
+        derived = next(stream for stream in streams if stream["info"]["source_id"][0].startswith("respyra-breathing-"))
         assert np.all(np.isnan(derived["time_series"][:, 0]))
         inspect_xdf(path, [markers["info"]["source_id"][0], derived["info"]["source_id"][0]])
         return {"result": "passed", "xdf": str(path), "outcome": "source_lost",
@@ -213,7 +240,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     if expect_abort:
         assert counts["run.aborted"] == counts["recording.finalizing"] == 1
         assert counts["run.completed"] == counts["run.failed"] == 0
-        derived = by_name["Respyra-BreathCal"]
+        derived = next(stream for stream in streams if stream["info"]["source_id"][0].startswith("respyra-breathing-"))
         assert np.all(np.isnan(derived["time_series"][:, 0]))
         saved = [json.loads(line) for line in (path.parent / "participant-list.jsonl").read_text(encoding="utf-8").splitlines()]
         assert sum(item["xdf_file"] == path.name for item in saved) == 1
@@ -275,7 +302,7 @@ def audit(path: Path, reference: Path = REFERENCE, expect_abort: bool = False,
     assert math.isfinite(center) and math.isfinite(amplitude) and amplitude > 0
     direction = next(item for item in earlier if item["event"] == "source.polarity.set")
     assert calibration["input_polarity"] == (-1 if direction["enabled"] else 1)
-    derived = by_name["Respyra-BreathCal"]
+    derived = next(stream for stream in streams if stream["info"]["source_id"][0].startswith("respyra-breathing-"))
     derived_desc = derived["info"]["desc"][0]
     assert derived_desc["input_contract"] == [contract]
     assert derived_desc["raw_source_id"] == selected["info"]["source_id"]
