@@ -26,6 +26,7 @@ the easiest interpretation.
 | --- | --- |
 | Scope, goals, boundaries, architecture, current state | [`PROJECT.md`](./PROJECT.md) |
 | HTML interface design and viewport fitting | [`HTML-UI.md`](./HTML-UI.md) |
+| Public website curation, stable downloads and Pages publication | [`WEBSITE.md`](./WEBSITE.md) |
 | Stream engineering roles, channel bundles and BIDS/MNE analysis | [`../docs/stream-protocol.md`](../docs/stream-protocol.md) |
 | Native LSL/XDF recording, calibration boundary and completion evidence | [`RECORDING.md`](./RECORDING.md) |
 | Which installed skills apply and in what order | [`SKILLS.md`](./SKILLS.md) |

@@ -40,7 +40,7 @@ const html = `<!doctype html>
         <a href="./study.html" data-measure>Run a study</a>
         <a href="./variables.html" data-measure>Default variables</a>
         <a href="./markers.html" aria-current="page" data-measure>Markers</a>
-        <a href="./#download" data-measure>Download</a>
+        <a href="./download" data-measure>Download</a>
         <a href="./about.html" data-measure>About</a>
         <a href="./remote.html" data-measure>Phone controller</a></nav>
     </header>

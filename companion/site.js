@@ -7,8 +7,14 @@ function openInvitation() {
   return true;
 }
 
-if (!openInvitation()) {
-  window.addEventListener('hashchange', openInvitation);
+function openDownload() {
+  if (location.hash !== '#download') return false;
+  location.replace(new URL('./download/', import.meta.url));
+  return true;
+}
+
+if (!openInvitation() && !openDownload()) {
+  window.addEventListener('hashchange', () => { if (!openInvitation()) openDownload(); });
   const markerList = document.querySelector('#marker-list');
   if (markerList) {
     const search = document.querySelector('#marker-search');

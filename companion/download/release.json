@@ -1,0 +1,39 @@
+{
+  "tag": "v2.3.15",
+  "sourceRevision": "99f7222e6ef741403392c827e09d68988a479f38",
+  "miniSourceRevision": "13638f529d8c6dad771c3acf9088c79c628fa757",
+  "verifiedAt": "2026-10-13",
+  "pageUpdatedAt": "2026-10-13T16:51:23Z",
+  "verificationReceipt": "for-ai/verified/suite-shipment-20261013.md",
+  "preview": true,
+  "installers": [
+    {
+      "id": "suite",
+      "version": "2.3.15",
+      "file": "00-Respyra-Suite_2.3.15_x64-setup.exe",
+      "size": 118890504,
+      "sha256": "b2a0d593e8c06446950f8953a4c5e95827b9c7137f75cfe89ab14690a5be5f29"
+    },
+    {
+      "id": "respyra",
+      "version": "2.3.15",
+      "file": "Respyra-2.0_2.3.15_x64-setup.exe",
+      "size": 113329629,
+      "sha256": "1e8fb90d0d5d989e481e2782d805e2a1f398e428e7623f76d29ae86f7aad9f12"
+    },
+    {
+      "id": "polar",
+      "version": "0.6.11",
+      "file": "Polar-Stream-Mini_0.6.11_x64-setup.exe",
+      "size": 220429324,
+      "sha256": "11f48500113bbb0adf7800c657bd642e13cc7adb1be6d0b4bd44d030223ab02a"
+    },
+    {
+      "id": "vernier",
+      "version": "0.6.11",
+      "file": "Vernier-Stream-Mini_0.6.11_x64-setup.exe",
+      "size": 220239444,
+      "sha256": "6a9916cd47b4207f7d6ce7e041a1d08079b5443d2c40025de9059835ac411520"
+    }
+  ]
+}

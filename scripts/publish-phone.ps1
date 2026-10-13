@@ -1,7 +1,8 @@
-param([switch]$Push)
+param([switch]$Push, [string]$PagesDirectory)
 $ErrorActionPreference = 'Stop'
 $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $publishRoot = Join-Path (Split-Path $sourceRoot -Parent) 'respyra-2.0-pages'
+if ($PagesDirectory) { $publishRoot = (Resolve-Path -LiteralPath $PagesDirectory).Path }
 
 function RunGit([string]$directory, [string[]]$gitArguments) {
     $output = & git -C $directory @gitArguments
@@ -18,6 +19,9 @@ try {
     & pnpm prepare:web
     if ($LASTEXITCODE -ne 0) { throw 'Phone asset preparation failed.' }
 } finally { Pop-Location }
+if (@(RunGit $sourceRoot @('status', '--porcelain')).Count) {
+    throw 'Prepared website assets changed; verify and commit them before publishing.'
+}
 
 if (!(Test-Path -LiteralPath $publishRoot)) {
     RunGit $sourceRoot @('fetch', 'origin')
@@ -47,13 +51,17 @@ if ((RunGit $publishRoot @('branch', '--show-current')) -ne 'gh-pages' -or
 if (@(RunGit $publishRoot @('status', '--porcelain')).Count) {
     throw 'The publication worktree has changes; review them before publishing.'
 }
-$files = @('index.html', 'study.html', 'variables.html', 'markers.html', 'marker-catalog.json', 'about.html', 'images', 'remote.html', 'site.css', 'site.js', 'logo.svg', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js',
+RunGit $publishRoot @('fetch', 'origin', 'gh-pages')
+if ((RunGit $publishRoot @('rev-parse', 'HEAD')) -ne (RunGit $publishRoot @('rev-parse', 'origin/gh-pages'))) {
+    throw 'Bring the clean Pages checkout up to origin/gh-pages before publishing.'
+}
+$files = @('index.html', 'download', 'study.html', 'variables.html', 'markers.html', 'marker-catalog.json', 'about.html', 'images', 'remote.html', 'site.css', 'site.js', 'logo.svg', 'app.js', 'style.css', 'text-fit.js', 'remote-profile.js',
            'controller-ui.js', 'participant-options.js', 'action-queue.js', 'lsl-monitor.js', 'panel.json', 'vendor')
 foreach ($name in $files) {
     Copy-Item -LiteralPath (Join-Path $sourceRoot "companion/$name") -Destination $publishRoot -Recurse -Force
 }
 $provenance = [ordered]@{ repository='https://github.com/GeorgeFejer91/respyra-2.0'; commit=$sourceCommit; profile='respyra.controller/1' }
-$provenance | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $publishRoot 'source.json') -Encoding utf8
+[IO.File]::WriteAllText((Join-Path $publishRoot 'source.json'), ($provenance | ConvertTo-Json) + "`n", (New-Object Text.UTF8Encoding $false))
 [IO.File]::WriteAllText((Join-Path $publishRoot '.nojekyll'), '')
 RunGit $publishRoot (@('add', '--') + $files + @('source.json', '.nojekyll'))
 & git -C $publishRoot diff --cached --quiet

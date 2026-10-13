@@ -6,6 +6,7 @@ const { chromium } = require('playwright');
 const base = 'https://georgefejer91.github.io/respyra-2.0/';
 const root = path.resolve('companion');
 const screenshots = path.resolve('.for-ai-local');
+const sitePages = ['', 'download/','variables.html','markers.html','study.html','about.html'];
 
 (async () => {
   await fs.mkdir(screenshots, { recursive:true });
@@ -18,7 +19,7 @@ const screenshots = path.resolve('.for-ai-local');
     const serve = async route => {
       const relative = new URL(route.request().url()).pathname.slice(new URL(base).pathname.length) || 'index.html';
       if (relative === 'text-spacing.css') return route.fulfill({ contentType:'text/css', body:'html{font-size:32px!important} *{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important} p{margin-bottom:2em!important}' });
-      const file = path.resolve(root, relative);
+      const file = path.resolve(root, relative.endsWith('/') ? relative + 'index.html' : relative);
       if (!file.startsWith(root + path.sep)) return route.abort();
       try {
       await route.fulfill({ body:await fs.readFile(file), contentType:{ '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.woff2':'font/woff2', '.json':'application/json' }[path.extname(file)] || 'application/octet-stream' });
@@ -31,19 +32,25 @@ const screenshots = path.resolve('.for-ai-local');
     await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
     assert.notEqual(await page.locator('html').getAttribute('data-pretext-fit'), 'unavailable');
     assert.equal(await page.getByRole('link', { name:'Download Respyra Suite for Windows' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.15/00-Respyra-Suite_2.3.15_x64-setup.exe');
-    assert.equal(await page.getByRole('link', { name:'Respyra 2.0 only' }).getAttribute('href'),
-      'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.15/Respyra-2.0_2.3.15_x64-setup.exe');
-    for (const [name, file] of [
-      ['Download Vernier Stream Mini separately', 'Vernier-Stream-Mini_0.6.11_x64-setup.exe'],
-      ['Download Polar Stream Mini separately', 'Polar-Stream-Mini_0.6.11_x64-setup.exe'],
-    ]) {
-      assert.equal(await page.getByRole('link', { name }).getAttribute('href'),
-        'https://github.com/GeorgeFejer91/respyra-2.0/releases/download/v2.3.15/' + file);
-    }
-    for (const name of ['Download Vernier Stream Mini separately', 'Download Polar Stream Mini separately', 'Stream and data-flow wiki', 'Read the original preprint']) {
+      './download');
+    assert.equal(await page.locator('main a[href*="releases/download/"]').count(), 0, 'Installer choices belong on the download page');
+    for (const name of ['Stream and data-flow wiki', 'Read the original preprint']) {
       assert(await page.getByRole('link', { name }).isVisible(), name);
     }
+    const downloadRelease = JSON.parse(await fs.readFile('companion/download/release.json', 'utf8'));
+    await page.goto(base + 'download/');
+    assert.equal(page.url(), base + 'download/');
+    assert(await page.getByRole('heading', {name:'Download Respyra Suite', exact:true}).isVisible(), (await page.locator('body').innerText()).slice(0, 300));
+    assert.deepEqual(await page.locator('[data-installer]').evaluateAll(links => links.map(link => link.dataset.installer)), ['suite','respyra','polar','vernier']);
+    assert.deepEqual(await page.locator('[data-installer]').evaluateAll(links => links.map(link => link.getAttribute('href'))),
+      downloadRelease.installers.map(installer => `https://github.com/GeorgeFejer91/respyra-2.0/releases/download/${downloadRelease.tag}/${installer.file}`));
+    assert.equal(await page.locator('main .download-link').count(), 1, 'The full suite is the primary download');
+    assert(await page.locator('#suite').getByText(/Recommended: install all three apps together/).isVisible());
+    assert(await page.locator('#suite').getByText(new RegExp('Latest tested release · ' + downloadRelease.installers[0].version)).isVisible());
+    assert(await page.getByText(/Page updated:/).isVisible());
+    assert.equal(await page.locator('time').getAttribute('datetime'), downloadRelease.pageUpdatedAt);
+    const updateDate = new Intl.DateTimeFormat('en-GB', {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'Europe/Berlin', timeZoneName:'short'}).format(new Date(downloadRelease.pageUpdatedAt));
+    assert.equal(await page.locator('time').textContent(), updateDate);
     const catalogSource = await fs.readFile('mini-streams/docs/metric-catalog.js', 'utf8');
     const catalog = JSON.parse(catalogSource.slice(catalogSource.indexOf('['), catalogSource.lastIndexOf(']') + 1));
     const primaryIds = ['raw_ecg','raw_acc','heart_rate','rr_interval','adr_pca_waveform','adr_axis_mean_difference','adr_moving_average_phase'];
@@ -134,11 +141,18 @@ const screenshots = path.resolve('.for-ai-local');
     assert.equal(await staticPage.locator('#marker-list > li:visible').count(), activeMarkers.length);
     assert(await staticPage.locator('#fields').isVisible());
     assert(await staticPage.locator('#marker-filters').evaluate(element => element.hidden));
+    await staticPage.goto(base + 'download/');
+    assert(await staticPage.getByRole('heading', {name:'Download Respyra Suite', exact:true}).isVisible());
+    assert.equal(await staticPage.locator('[data-installer]').count(), 4, 'All installers remain available without JavaScript');
+    assert.equal(await staticPage.locator('time').getAttribute('datetime'), downloadRelease.pageUpdatedAt);
     await staticContext.close();
-    for (const file of ['', 'variables.html','markers.html','study.html','about.html']) {
+    for (const file of sitePages) {
+      const screenshotName = file.replace(/\/$/, '') || 'index';
       await page.goto(base + file);
       await page.waitForFunction(() => document.querySelector('h1').dataset.pretextFit);
-      assert.equal(await page.locator('nav[aria-label="Site navigation"] a[href="./markers.html"]').count(), 1);
+      assert.equal(await page.locator('nav[aria-label="Site navigation"] a').filter({hasText:/^Markers$/}).count(), 1);
+      const downloadNav = page.getByRole('navigation', {name:'Site navigation'}).getByRole('link', {name:'Download', exact:true});
+      assert.equal(new URL(await downloadNav.getAttribute('href'), page.url()).href, base + 'download');
       for (const image of await page.locator('img').all()) {
         await image.scrollIntoViewIfNeeded();
         await image.evaluate(image => image.decode());
@@ -147,7 +161,8 @@ const screenshots = path.resolve('.for-ai-local');
       for (const href of await page.locator('a[href]').evaluateAll(links => links.map(link => link.getAttribute('href')))) {
         const url = new URL(href, page.url());
         if (url.origin !== new URL(base).origin || !url.pathname.startsWith(new URL(base).pathname)) continue;
-        const relative = url.pathname.slice(new URL(base).pathname.length) || 'index.html';
+        let relative = url.pathname.slice(new URL(base).pathname.length) || 'index.html';
+        if (relative === 'download' || relative.endsWith('/')) relative = relative.replace(/\/$/, '') + '/index.html';
         const linked = await fs.readFile(path.join(root, relative));
         if (url.hash) assert(linked.toString().includes(`id="${url.hash.slice(1)}"`), 'Missing fragment: ' + href);
       }
@@ -171,16 +186,16 @@ const screenshots = path.resolve('.for-ai-local');
         assert(panels.every(panel => panel.width <= 1 && panel.height <= 1), JSON.stringify({ width,panels }));
         assert.notEqual(await page.locator('#marker-reset').getAttribute('data-pretext-fit'), null);
       }
-        if (width === 320 || width === 960) await page.screenshot({ path:path.join(screenshots, `project-${file || 'index'}-${width}.png`), fullPage:true });
+        if (width === 320 || width === 960) await page.screenshot({ path:path.join(screenshots, `project-${screenshotName}-${width}.png`), fullPage:true });
         if (width === 960) {
           await page.evaluate(() => scrollTo(0,0));
-          await page.screenshot({ path:path.join(screenshots, `project-${file || 'index'}-top.png`) });
+          await page.screenshot({ path:path.join(screenshots, `project-${screenshotName}-top.png`) });
         }
       }
       await page.emulateMedia({ colorScheme:'dark', reducedMotion:'reduce' });
       const dark = await page.evaluate(() => ({ horizontal:document.documentElement.scrollWidth > innerWidth + 1 }));
       assert(!dark.horizontal, file + ' dark layout');
-      await page.screenshot({ path:path.join(screenshots, `project-${file || 'index'}-dark.png`), fullPage:true });
+      await page.screenshot({ path:path.join(screenshots, `project-${screenshotName}-dark.png`), fullPage:true });
       await page.emulateMedia({ colorScheme:'light' });
       await page.addStyleTag({ url:base + 'text-spacing.css' });
       await page.setViewportSize({ width:320,height:720 });
@@ -197,7 +212,8 @@ const screenshots = path.resolve('.for-ai-local');
     assert(await page.locator('#visualization').getByText(/automatically saves a six-panel image/).isVisible());
     assert(await page.locator('#troubleshooting').getByText(/separate Error report window/).isVisible());
     await page.goto(base + '#download');
-    assert(await page.getByRole('heading', { name:'Download and set up' }).isVisible());
+    await page.waitForURL(base + 'download/');
+    assert(await page.getByRole('heading', { name:'Download Respyra Suite', exact:true }).isVisible());
     const secret = 'b'.repeat(64);
     await page.goto(base + '#room=brsp_' + 'a'.repeat(64) + '&secret=' + secret);
     try { await page.locator('#viewer-name').waitFor({ timeout:5000 }); }
@@ -216,15 +232,15 @@ const screenshots = path.resolve('.for-ai-local');
         scheme === 'light' ? ['rgb(185, 0, 24)','rgb(118, 90, 0)','rgb(9, 105, 218)'] : ['rgb(255, 120, 135)','rgb(240, 204, 85)','rgb(127, 198, 255)']);
     }
     assert.deepEqual(errors, []);
-    const checkedPaths = ['companion/index.html','companion/study.html','companion/variables.html','companion/markers.html','companion/about.html',
+    const checkedPaths = ['companion/index.html','companion/download/index.html','companion/download/release.json','companion/study.html','companion/variables.html','companion/markers.html','companion/about.html',
       'companion/site.css','companion/site.js','companion/marker-catalog.json','companion/text-fit.js','companion/remote-profile.js',
-      'scripts/prepare-marker-reference.mjs','scripts/prepare-web.mjs','src/mpi/event_markers/catalog.json','tests/check_project_site.cjs','package.json','pnpm-lock.yaml'];
+      'scripts/prepare-download-page.mjs','scripts/prepare-marker-reference.mjs','scripts/prepare-web.mjs','src/mpi/event_markers/catalog.json','tests/check_project_site.cjs','package.json','pnpm-lock.yaml'];
     const hashes = {};
     for (const file of checkedPaths) hashes[file] = require('node:crypto').createHash('sha256').update(await fs.readFile(file)).digest('hex');
     await fs.writeFile(path.join(screenshots, 'markers-site-evidence.json'), JSON.stringify({
       result:'VERIFIED', checkedAt:new Date().toISOString(), node:process.version, playwright:require('playwright/package.json').version,
-      browser:browser.version(), headless:true, currentMarkers:activeMarkers.length, pageLayouts:40, hashes,
+      browser:browser.version(), headless:true, currentMarkers:activeMarkers.length, pageLayouts:sitePages.length * 8, hashes,
     }, null, 2));
-    console.log(`PASS: ${activeMarkers.length} current markers and retired catalog, exact timing/fields/dictionary, search/families/reset/deep links/keyboard/no-JS, app colors, five pages and 40 layouts, enlarged text, local links, installer links, credits and private QR redirect`);
+    console.log(`PASS: ${activeMarkers.length} current markers and retired catalog, exact timing/fields/dictionary, search/families/reset/deep links/keyboard/no-JS, app colors, six pages and 48 layouts, enlarged text, local links, verified download links/date, legacy download and private QR redirects`);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

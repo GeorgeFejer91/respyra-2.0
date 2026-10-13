@@ -157,6 +157,10 @@ an updated source reference alone does not qualify the installer or live site.
    qualified source commit. A GitHub draft's target commit does not create that
    tag until publication. Verify the remote tag SHA and every uploaded asset's
    size/digest before promoting the draft, then verify public download access.
+9. Complete [WEBSITE.md](./WEBSITE.md)'s curation subroutines: promote the exact
+   qualified release record, refresh the stable `/download` page and its visible
+   update date/time, test it and observe the live Pages deployment. Release
+   delivery includes current public downloads, not only uploaded binaries.
 
 ## Distribution gate
 

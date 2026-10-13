@@ -19,6 +19,10 @@
    report source, installed and published agreement separately.
 7. Update project memory and publish only when the rules below apply.
 
+Public website edits and release promotion use [WEBSITE.md](./WEBSITE.md)'s
+selection, preparation/checking and publication/observation subroutines. Keep the
+stable download page on the latest qualified public installer as part of delivery.
+
 ## Recurring consistency review
 
 At session start, check [CONSISTENCY.md](./CONSISTENCY.md)'s cadence against the

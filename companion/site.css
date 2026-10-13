@@ -32,6 +32,9 @@ li { padding-left: 3px; margin: 0 0 11px; }
 .streamer { max-width: 76ch; padding: 16px 0; border-top: 1px solid #ccd5d8; }
 .streamer p { margin-bottom: 8px; }
 .streamer + a { display: inline-block; margin-top: 6px; }
+.download-options .streamer { border-left: 3px solid var(--source); padding: 16px 0 16px 16px; }
+.download-options h3 { color: var(--source-ink); }
+.download-release-note { margin-top: 16px; }
 .link-list { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 12px 0 18px; }
 .citation { padding-left: 15px; border-left: 2px solid #a5b6bc; color: #465b65; }
 .qualification { color: var(--muted); }

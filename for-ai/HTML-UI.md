@@ -117,6 +117,9 @@ dimensions, with full-text reflow instead of clipping or type reduction.
 Polar, Vernier and Respyra. Its three columns are stream name, recorded contents
 and long-form description, including bundled measurement/support channels.
 Do not repeat it in per-device panels or add optional-output/CSV reference sections.
+The stable `download/` page puts the latest verified full suite first, followed
+by the three individual installers and an explicit page update date/time.
+Use [WEBSITE.md](./WEBSITE.md) for its release selection and publication owner.
 `markers.html` and `marker-catalog.json` are generated from the Python catalog,
 including exact current events, timing, all payload definitions and separately
 identified retired names. Definitions describe possible events, not a promise
