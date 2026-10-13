@@ -131,8 +131,8 @@ feedback. See `RECORDING.md`.
 The suite starts with Mini acquisition defaults: Vernier publishes its raw
 `VernierRaw` device outlet (including Force in N) and connection-event markers;
 its other six outputs start off. Polar publishes direct ECG, ACC, heart rate and RR
-plus Chest Motion, Chest Motion DT and Flowborne phase, with the three required
-quality/validity channels inside each waveform. All-in-one and other derived metrics start off.
+plus Chest Motion, Chest Motion DT and Flowborne phase. Chest Motion bundles
+PCA quality/validity; Chest Motion DT bundles DT validity, PCA validity and PCA quality. All-in-one and other derived metrics start off.
 Starting with suite 0.3.11, installation resets Mini output choices to study
 defaults with a preferences backup; other settings and recordings are retained.
 Choices made afterward persist until the next suite installation.
@@ -264,4 +264,4 @@ calibration; unselected Polar polarity stays native +1 pending analysis.
 Git and runnable checks are the authority for branch, revision, and behavior.
 Do not turn this section into a second status ledger.
 
-Default recording selection: D-0021 in DECISIONS.md, implemented in Suite 2.3.14 / Mini 0.6.10. Updated naming follows D-0022: visible Polar/Vernier prefixes and Respyra_<input name>_calibrated. D-0023 bundles waveform quality/readiness. D-0026 keeps Polar_Link and Vernier_Link as separate recorded Bluetooth housekeeping streams and removes the combined collector. D-0027 names the complete Vernier row Vernier_rawForce, its calibrated Force channel Respyra_rawForce_calibrated, and the optional scalar copy Vernier_rawForceOnly. With both devices and all three usable calibrated inputs, eight Polar, two Vernier and four Respyra outlets give 14 default streams. Other discovery remains independent of View. Protocol and names are in docs/stream-protocol.md and docs/stream-names.md. Input hooks default Off. Suite 2.3.15 / Mini 0.6.11 is the candidate for this contract; its installed/public evidence must pass before promotion.
+Default recording selection: D-0021 in DECISIONS.md, implemented in Suite 2.3.14 / Mini 0.6.10. Updated naming follows D-0022: visible Polar/Vernier prefixes and Respyra_<input name>_calibrated. D-0023 bundles waveform quality/readiness. D-0026 keeps Polar_Link and Vernier_Link as separate recorded Bluetooth housekeeping streams and removes the combined collector. D-0027 names the complete Vernier row Vernier_rawForce, its calibrated Force channel Respyra_rawForce_calibrated, and the optional scalar copy Vernier_rawForceOnly. With both devices and all three usable calibrated inputs, eight Polar, two Vernier and four Respyra outlets give 14 default streams. Other discovery remains independent of View. Protocol and names are in docs/stream-protocol.md and docs/stream-names.md. Input hooks default Off. Suite 2.3.15 / Mini 0.6.11 is the published unsigned preview for this contract; installed/public evidence and limits are in verified/suite-shipment-20261013.md.

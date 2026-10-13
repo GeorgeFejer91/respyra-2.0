@@ -9,8 +9,9 @@ stream. Chest streams bundle quality/validity; scalar diagnostic copies and
 All-in-one outputs start off. Both Link streams are recorded directly by default.
 With both devices and three usable calibrated inputs, the default recorded
 inventory is 14 streams.
-Suite 2.3.15 / Mini 0.6.11 is the release candidate for these defaults. Promote
-only its exact qualified artifacts and keep historical release references intact.
+Suite 2.3.15 / Mini 0.6.11 is the published unsigned preview for these defaults.
+Its exact artifacts passed the shipment gates in verified/suite-shipment-20261013.md.
+Keep historical release references intact and qualify each new candidate separately.
 Use [`../docs/stream-names.md`](../docs/stream-names.md) for naming/identity migration;
 internal metric IDs, units and scientific processing are retained. Respyra defaults all visible/later LSL streams and
 parallel comparison waveforms to recording. Starting with suite 0.3.11, installation,

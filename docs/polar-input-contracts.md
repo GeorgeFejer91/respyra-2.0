@@ -55,4 +55,4 @@ measures the same quantity as the Vernier belt or gives equivalent study
 performance. Paired recordings and analysis are still needed for that claim.
 See [Polar Mini's waveform methods and output contracts](https://github.com/GeorgeFejer91/Polar-Mini-Stream/blob/main/docs/adr-waveforms.md).
 
-Updated source names are Polar_ChestPCA and Polar_ChestDT, transformed into Respyra_ChestPCA_calibrated and Respyra_ChestDT_calibrated. Their historical source IDs and metadata contracts remain unchanged; discovery does not depend on display names. The published Suite 2.3.14 installer retains H10-prefixed names until a new build is installed. See [stream names](stream-names.md).
+Updated source names are Polar_ChestPCA and Polar_ChestDT, transformed into Respyra_ChestPCA_calibrated and Respyra_ChestDT_calibrated. Their historical source IDs and metadata contracts remain unchanged; discovery does not depend on display names. Suite 2.3.15 / Mini 0.6.11 publishes these names. The prior Suite 2.3.14 installer retains H10-prefixed names; upgrading installs the new naming contract. See [stream names](stream-names.md).

@@ -5,6 +5,22 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Approved 14-stream suite shipment — 2026-10-13
+
+- VERIFIED suite-wide naming/default/recording review and public shipment of
+  Suite 2.3.15 / Mini 0.6.11: all four installers, complete source/checksums,
+  GitHub main/tags, both live Pages sites and wiki. Full principal component
+  analysis (PCA) term appears in the canonical three-column table.
+- VERIFIED exact installed upgrade/reinstall/defaults/launch/folder controls,
+  14-stream XDF, BIDS/MNE/MNELAB, accelerated 48-trial installed-engine study,
+  summary/plotting, hosted phone lifecycle retry and uninstall retention.
+- Evidence, artifact hashes, every inventory surface, reused source checks,
+  compatibility names and scope limits are in
+  [the shipment receipt](./verified/suite-shipment-20261013.md).
+- Limits: unsigned synthetic Windows preview; hardware, clean machine,
+  physiological/timing and relay-only phone-network qualification remain open.
+  The unchanged native relay-configuration CSP restriction is recorded explicitly.
+
 ## Consistency protocol and workflow routing — 2026-10-13
 
 - Scope: documentation-only addition of [CONSISTENCY.md](./CONSISTENCY.md) and
