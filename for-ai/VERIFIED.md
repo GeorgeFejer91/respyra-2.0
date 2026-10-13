@@ -5,6 +5,25 @@ entry per behavior/check; replace superseded entries rather than adding session
 narration. Record new observed passes here before handoff. Do not run unrelated
 suites to initialize this ledger.
 
+## Single default-variable table — 2026-10-13
+
+- VERIFIED source `de244c36fcb2abe4359195df857cae16c3bd3cb4`: one three-column
+  table, 14 exact default names, 8/2/4 Polar/Vernier/Respyra groups, full principal
+  component analysis wording, bundled channels and default-recording statement.
+- `node scripts/prepare-web.mjs` and `node tests/check_project_site.cjs` passed:
+  five pages/40 layouts, enlarged text, source colors, local/release links and
+  unchanged marker interactions. Headless Chrome 155.0.8059.40, Node 24.19.0,
+  Playwright 1.62.1; changed desktop/mobile/dark screenshots inspected.
+- VERIFIED Pages `6098eb9b028a134c5ad867ca088407fa9672c7a3` built. Ordinary public
+  HTML/CSS and source.json match deployed Git blobs; direct public browser checks
+  passed the exact table, names, groups/colors and four desktop/mobile/theme layouts.
+- Focused default comparison matched Mini constants/catalog and Respyra naming.
+  REUSED the shipment's installed 14-stream XDF/default evidence: Suite 2.3.15
+  and Mini 0.6.11 runtime inputs are unchanged. No installer rebuild is applicable.
+- Evidence: ignored `stream-table-defaults-result.json`, `markers-site-evidence.json`,
+  `stream-table-public-parity.json`, `stream-table-live-result.json` and their
+  logs/screenshots in `.for-ai-local/`. Scope: website presentation/default agreement.
+
 ## Approved 14-stream suite shipment — 2026-10-13
 
 - VERIFIED suite-wide naming/default/recording review and public shipment of
