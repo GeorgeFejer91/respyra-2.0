@@ -110,40 +110,40 @@ def build_conditions(participant: str) -> list[ConditionDef]:
     if number % 2 == 1:
         return (
             # block 1
-            [veridical_fb] * 4
-            + [shallow_fb] * 4
-            + [deep_fb] * 4
+            [veridical_fb] * 3
+            + [shallow_fb] * 3
+            + [deep_fb] * 3
             # block 2
-            + [veridical_no_fb] * 4
-            + [deep_no_fb] * 4
-             + [shallow_no_fb] * 4
+            + [veridical_no_fb] * 3
+            + [deep_no_fb] * 3
+             + [shallow_no_fb] * 3
             # block 3
-            + [shallow_fb] * 4
-            + [deep_fb] * 4
-            + [veridical_fb] * 4
+            + [shallow_fb] * 3
+            + [deep_fb] * 3
+            + [veridical_fb] * 3
             # block 4
-            + [deep_no_fb] * 4
-            + [shallow_no_fb] * 4
-            + [veridical_no_fb] * 4
+            + [deep_no_fb] * 3
+            + [shallow_no_fb] * 3
+            + [veridical_no_fb] * 3
         )
     else:
         return (
             # block 1
-            [veridical_no_fb] * 4
-            + [shallow_no_fb] * 4
-            + [deep_no_fb] * 4
+            [veridical_no_fb] * 3
+            + [shallow_no_fb] * 3
+            + [deep_no_fb] * 3
             # block 2
-            + [veridical_fb] * 4
-            + [deep_fb] * 4
-            + [shallow_fb] * 4
+            + [veridical_fb] * 3
+            + [deep_fb] * 3
+            + [shallow_fb] * 3
             # block 3
-            + [shallow_no_fb] * 4
-            + [deep_no_fb] * 4
-            + [veridical_no_fb] * 4
+            + [shallow_no_fb] * 3
+            + [deep_no_fb] * 3
+            + [veridical_no_fb] * 3
             # block 4
-            + [deep_fb] * 4
-            + [shallow_fb] * 4
-            + [veridical_fb] * 4
+            + [deep_fb] * 3
+            + [shallow_fb] * 3
+            + [veridical_fb] * 3
         )
 
 
